@@ -119,7 +119,3 @@
 ./settings.ini
 ./setup.cfg
 ./utils.py
-./.gitconfig
-./.gitignore
-./.git/info/exclude
-./.git/config
