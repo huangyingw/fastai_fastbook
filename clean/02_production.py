@@ -8,7 +8,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.5.2
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -16,7 +16,12 @@
 # ---
 
 #hide
-from utils import *
+# !pip install -Uqq fastbook
+import fastbook
+fastbook.setup_book()
+
+#hide
+from fastbook import *
 from fastai.vision.widgets import *
 
 # # From Model to Production
@@ -43,9 +48,10 @@ from fastai.vision.widgets import *
 
 # ## Gathering Data
 
+# # clean
 # To download images with Bing Image Search, sign up at Microsoft for a free account. You will be given a key, which you can copy and enter in a cell as follows (replacing 'XXX' with your key and executing it):
 
-key = 'XXX'
+key = os.environ.get('AZURE_SEARCH_KEY', 'XXX')
 
 search_images_bing
 
@@ -53,10 +59,8 @@ results = search_images_bing(key, 'grizzly bear')
 ims = results.attrgot('content_url')
 len(ims)
 
-# + hide_input=true
 #hide
 ims = ['http://3.bp.blogspot.com/-S1scRCkI3vY/UHzV2kucsPI/AAAAAAAAA-k/YQ5UzHEm9Ss/s1600/Grizzly%2BBear%2BWildlife.jpg']
-# -
 
 dest = 'images/grizzly.jpg'
 download_url(ims[0], dest)
@@ -162,11 +166,9 @@ learn_inf.dls.vocab
 btn_upload = widgets.FileUpload()
 btn_upload
 
-# + hide_input=true
 #hide
 # For the book, we can't actually click an upload button, so we fake it
 btn_upload = SimpleNamespace(data = ['images/grizzly.jpg'])
-# -
 
 img = PILImage.create(btn_upload.data[-1])
 
