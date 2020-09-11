@@ -7,17 +7,20 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.5.2
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
 
-# + hide_input=false
 #hide
-from utils import *
-# -
+# !pip install -Uqq fastbook
+import fastbook
+fastbook.setup_book()
+
+#hide
+from fastbook import *
 
 # # CNN Interpretation with CAM
 
@@ -31,7 +34,7 @@ dls = ImageDataLoaders.from_name_func(
 learn = cnn_learner(dls, resnet34, metrics=error_rate)
 learn.fine_tune(1)
 
-img = PILImage.create('images/chapter1_cat_example.jpg')
+img = PILImage.create(image_cat())
 x, = first(dls.test_dl([img]))
 
 

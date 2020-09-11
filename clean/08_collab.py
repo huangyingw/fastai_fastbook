@@ -8,7 +8,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.5.2
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -16,7 +16,12 @@
 # ---
 
 #hide
-from utils import *
+# !pip install -Uqq fastbook
+import fastbook
+fastbook.setup_book()
+
+#hide
+from fastbook import *
 
 # # Collaborative Filtering Deep Dive
 
@@ -142,7 +147,6 @@ learn.fit_one_cycle(5, 5e-3)
 
 # ### Weight Decay
 
-# + hide_input=true
 x = np.linspace(-2,2,100)
 a_s = [1,2,5,10,50] 
 ys = [a * x**2 for a in a_s]
@@ -150,7 +154,6 @@ _,ax = plt.subplots(figsize=(8,6))
 for a,y in zip(a_s,ys): ax.plot(x,y, label=f'a={a}')
 ax.set_ylim([0,5])
 ax.legend();
-# -
 
 model = DotProductBias(n_users, n_movies, 50)
 learn = Learner(dls, model, loss_func=MSELossFlat())
@@ -217,7 +220,6 @@ idxs = movie_bias.argsort()[:5]
 idxs = movie_bias.argsort(descending=True)[:5]
 [dls.classes['title'][i] for i in idxs]
 
-# + hide_input=true
 g = ratings.groupby('title')['rating'].count()
 top_movies = g.sort_values(ascending=False).index.values[:1000]
 top_idxs = tensor([learn.dls.classes['title'].o2i[m] for m in top_movies])
@@ -233,7 +235,6 @@ plt.scatter(X, Y)
 for i, x, y in zip(top_movies[idxs], X, Y):
     plt.text(x,y,i, color=np.random.rand(3)*0.7, fontsize=11)
 plt.show()
-# -
 
 # ### Using fastai.collab
 

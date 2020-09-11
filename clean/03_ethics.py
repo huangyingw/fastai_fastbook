@@ -8,12 +8,17 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.5.2
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
+
+#hide
+# !pip install -Uqq fastbook
+import fastbook
+fastbook.setup_book()
 
 # # Data Ethics
 
@@ -27,7 +32,7 @@
 
 # ### Feedback Loops: YouTube's Recommendation System
 
-# ### Bias: Professor Lantanya Sweeney "Arrested"
+# ### Bias: Professor Latanya Sweeney "Arrested"
 
 # ### Why Does This Matter?
 

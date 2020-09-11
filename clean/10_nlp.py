@@ -8,7 +8,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.5.2
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -16,7 +16,12 @@
 # ---
 
 #hide
-from utils import *
+# !pip install -Uqq fastbook
+import fastbook
+fastbook.setup_book()
+
+#hide
+from fastbook import *
 from IPython.display import display,HTML
 
 # # NLP Deep Dive: RNNs
@@ -82,7 +87,6 @@ nums = num(toks)[:20]; nums
 
 # ### Putting Our Texts into Batches for a Language Model
 
-# + hide_input=false
 stream = "In this chapter, we will go back over the example of classifying movie reviews we studied in chapter 1 and dig deeper under the surface. First we will look at the processing steps necessary to convert text into numbers and how to customize it. By doing this, we'll have another example of the PreProcessor used in the data block API.\nThen we will study how we build a language model and train it for a while."
 tokens = tkn(stream)
 bs,seq_len = 6,15
@@ -90,24 +94,20 @@ d_tokens = np.array([tokens[i*seq_len:(i+1)*seq_len] for i in range(bs)])
 df = pd.DataFrame(d_tokens)
 display(HTML(df.to_html(index=False,header=None)))
 
-# + hide_input=true
 bs,seq_len = 6,5
 d_tokens = np.array([tokens[i*15:i*15+seq_len] for i in range(bs)])
 df = pd.DataFrame(d_tokens)
 display(HTML(df.to_html(index=False,header=None)))
 
-# + hide_input=true
 bs,seq_len = 6,5
 d_tokens = np.array([tokens[i*15+seq_len:i*15+2*seq_len] for i in range(bs)])
 df = pd.DataFrame(d_tokens)
 display(HTML(df.to_html(index=False,header=None)))
 
-# + hide_input=true
 bs,seq_len = 6,5
 d_tokens = np.array([tokens[i*15+10:i*15+15] for i in range(bs)])
 df = pd.DataFrame(d_tokens)
 display(HTML(df.to_html(index=False,header=None)))
-# -
 
 nums200 = toks200.map(num)
 

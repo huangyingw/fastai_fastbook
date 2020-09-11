@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.5.2
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -15,7 +15,12 @@
 # ---
 
 #hide
-from utils import *
+# !pip install -Uqq fastbook
+import fastbook
+fastbook.setup_book()
+
+#hide
+from fastbook import *
 
 # # Training a State-of-the-Art Model
 
@@ -81,7 +86,7 @@ accuracy(preds, targs).item()
 
 # ### End sidebar
 
-# + hide_input=true
+# +
 church = PILImage.create(get_image_files_sorted(path/'train'/'n03028079')[0])
 gas = PILImage.create(get_image_files_sorted(path/'train'/'n03425413')[0])
 church = church.resize((256,256))

@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.5.2
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -15,7 +15,12 @@
 # ---
 
 #hide
-from utils import *
+# !pip install -Uqq fastbook
+import fastbook
+fastbook.setup_book()
+
+#hide
+from fastbook import *
 
 # # A fastai Learner from Scratch
 
