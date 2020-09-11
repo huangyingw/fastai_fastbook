@@ -8,7 +8,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.5.2
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -16,7 +16,12 @@
 # ---
 
 #hide
-from utils import *
+# !pip install -Uqq fastbook
+import fastbook
+fastbook.setup_book()
+
+#hide
+from fastbook import *
 
 # # Your Deep Learning Journey
 
@@ -56,7 +61,7 @@ learn.fine_tune(1)
 
 1+1
 
-img = PILImage.create('images/chapter1_cat_example.jpg')
+img = PILImage.create(image_cat())
 img.to_thumb(192)
 
 # ### End sidebar
@@ -64,10 +69,10 @@ img.to_thumb(192)
 uploader = widgets.FileUpload()
 uploader
 
-# + hide_input=true
+# +
 #hide
 # For the book, we can't actually click an upload button, so we fake it
-uploader = SimpleNamespace(data = ['images/chapter1_cat_example.jpg'])
+# uploader = SimpleNamespace(data = ['images/chapter1_cat_example.jpg'])
 # -
 
 img = PILImage.create(uploader.data[0])
@@ -77,35 +82,28 @@ print(f"Probability it's a cat: {probs[1].item():.6f}")
 
 # ### What Is Machine Learning?
 
-# + hide_input=false
 gv('''program[shape=box3d width=1 height=0.7]
 inputs->program->results''')
 
-# + hide_input=true
 gv('''model[shape=box3d width=1 height=0.7]
 inputs->model->results; weights->model''')
 
-# + hide_input=true
 gv('''ordering=in
 model[shape=box3d width=1 height=0.7]
 inputs->model->results; weights->model; results->performance
 performance->weights[constraint=false label=update]''')
 
-# + hide_input=true
 gv('''model[shape=box3d width=1 height=0.7]
 inputs->model->results''')
-# -
 
 # ### What Is a Neural Network?
 
 # ### A Bit of Deep Learning Jargon
 
-# + hide_input=true
 gv('''ordering=in
 model[shape=box3d width=1 height=0.7 label=architecture]
 inputs->model->predictions; parameters->model; labels->loss; predictions->loss
 loss->parameters[constraint=false label=update]''')
-# -
 
 # ### Limitations Inherent To Machine Learning
 #
