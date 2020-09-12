@@ -7,52 +7,59 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.5.2
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
 
-#hide
-from utils import *
+# hide
+# !pip install -Uqq fastbook
+from fastai.callback.fp16 import *
+from IPython.display import HTML
+from fastai.vision.all import *
+from fastbook import *
+import fastbook
+fastbook.setup_book()
+
+# hide
 
 # # Image Classification
 
 # ## From Dogs and Cats to Pet Breeds
 
-from fastai.vision.all import *
 path = untar_data(URLs.PETS)
 
-#hide
+# hide
 Path.BASE_PATH = path
 
 path.ls()
 
-(path/"images").ls()
+(path / "images").ls()
 
-fname = (path/"images").ls()[0]
+fname = (path / "images").ls()[0]
 
 re.findall(r'(.+)_\d+.jpg$', fname.name)
 
-pets = DataBlock(blocks = (ImageBlock, CategoryBlock),
-                 get_items=get_image_files, 
+pets = DataBlock(blocks=(ImageBlock, CategoryBlock),
+                 get_items=get_image_files,
                  splitter=RandomSplitter(seed=42),
                  get_y=using_attr(RegexLabeller(r'(.+)_\d+.jpg$'), 'name'),
                  item_tfms=Resize(460),
                  batch_tfms=aug_transforms(size=224, min_scale=0.75))
-dls = pets.dataloaders(path/"images")
+dls = pets.dataloaders(path / "images")
 
 # ## Presizing
 
-# + hide_input=false
+# +
 dblock1 = DataBlock(blocks=(ImageBlock(), CategoryBlock()),
-                   get_y=parent_label,
-                   item_tfms=Resize(460))
-dls1 = dblock1.dataloaders([(Path.cwd()/'images'/'grizzly.jpg')]*100, bs=8)
+                    get_y=parent_label,
+                    item_tfms=Resize(460))
+dls1 = dblock1.dataloaders([(Path.cwd() / 'images' / 'grizzly.jpg')] * 100, bs=8)
 dls1.train.get_idxs = lambda: Inf.ones
-x,y = dls1.valid.one_batch()
-_,axs = subplots(1, 2)
+x, y = dls1.valid.one_batch()
+_, axs = subplots(1, 2)
 
 x1 = TensorImage(x.clone())
 x1 = x1.affine_coord(sz=224)
@@ -65,68 +72,71 @@ tfms = setup_aug_tfms([Rotate(draw=30, p=1, size=224), Zoom(draw=1.2, p=1., size
 x = Pipeline(tfms)(x)
 #x.affine_coord(coord_tfm=coord_tfm, sz=size, mode=mode, pad_mode=pad_mode)
 TensorImage(x[0]).show(ctx=axs[0])
-TensorImage(x1[0]).show(ctx=axs[1]);
+TensorImage(x1[0]).show(ctx=axs[1])
 # -
 
 # ### Checking and Debugging a DataBlock
 
 dls.show_batch(nrows=1, ncols=3)
 
-pets1 = DataBlock(blocks = (ImageBlock, CategoryBlock),
-                 get_items=get_image_files, 
-                 splitter=RandomSplitter(seed=42),
-                 get_y=using_attr(RegexLabeller(r'(.+)_\d+.jpg$'), 'name'))
-pets1.summary(path/"images")
+pets1 = DataBlock(blocks=(ImageBlock, CategoryBlock),
+                  get_items=get_image_files,
+                  splitter=RandomSplitter(seed=42),
+                  get_y=using_attr(RegexLabeller(r'(.+)_\d+.jpg$'), 'name'))
+pets1.summary(path / "images")
 
 learn = cnn_learner(dls, resnet34, metrics=error_rate)
+
 learn.fine_tune(2)
+learn.save('05_pet_breeds')
+
+learn.load('05_pet_breeds')
 
 # ## Cross-Entropy Loss
 
 # ### Viewing Activations and Labels
 
-x,y = dls.one_batch()
+x, y = dls.one_batch()
 
 y
 
-preds,_ = learn.get_preds(dl=[(x,y)])
+preds, _ = learn.get_preds(dl=[(x, y)])
 preds[0]
 
-len(preds[0]),preds[0].sum()
+len(preds[0]), preds[0].sum()
 
 # ### Softmax
 
-plot_function(torch.sigmoid, min=-4,max=4)
+plot_function(torch.sigmoid, min=-4, max=4)
 
-#hide
-torch.random.manual_seed(42);
+# hide
+torch.random.manual_seed(42)
 
-acts = torch.randn((6,2))*2
+acts = torch.randn((6, 2)) * 2
 acts
 
 acts.sigmoid()
 
-(acts[:,0]-acts[:,1]).sigmoid()
+(acts[:, 0] - acts[:, 1]).sigmoid()
 
 sm_acts = torch.softmax(acts, dim=1)
 sm_acts
 
 # ### Log Likelihood
 
-targ = tensor([0,1,0,1,1,0])
+targ = tensor([0, 1, 0, 1, 1, 0])
 
 sm_acts
 
 idx = range(6)
 sm_acts[idx, targ]
 
-from IPython.display import HTML
-df = pd.DataFrame(sm_acts, columns=["3","7"])
+df = pd.DataFrame(sm_acts, columns=["3", "7"])
 df['targ'] = targ
 df['idx'] = idx
 df['loss'] = sm_acts[range(6), targ]
 t = df.style.hide_index()
-#To have html code compatible with our script
+# To have html code compatible with our script
 html = t._repr_html_().split('</style>')[1]
 html = re.sub(r'<table id="([^"]+)"\s*>', r'<table >', html)
 display(HTML(html))
@@ -137,7 +147,7 @@ F.nll_loss(sm_acts, targ, reduction='none')
 
 # ### Taking the Log
 
-plot_function(torch.log, min=0,max=4)
+plot_function(torch.log, min=0, max=4)
 
 loss_func = nn.CrossEntropyLoss()
 
@@ -150,7 +160,7 @@ nn.CrossEntropyLoss(reduction='none')(acts, targ)
 # ## Model Interpretation
 
 interp = ClassificationInterpretation.from_learner(learn)
-interp.plot_confusion_matrix(figsize=(12,12), dpi=60)
+interp.plot_confusion_matrix(figsize=(12, 12), dpi=60)
 
 interp.most_confused(min_val=5)
 
@@ -162,7 +172,7 @@ learn = cnn_learner(dls, resnet34, metrics=error_rate)
 learn.fine_tune(1, base_lr=0.1)
 
 learn = cnn_learner(dls, resnet34, metrics=error_rate)
-lr_min,lr_steep = learn.lr_find()
+lr_min, lr_steep = learn.lr_find()
 
 print(f"Minimum/10: {lr_min:.2e}, steepest point: {lr_steep:.2e}")
 
@@ -189,7 +199,7 @@ learn.fit_one_cycle(6, lr_max=1e-5)
 learn = cnn_learner(dls, resnet34, metrics=error_rate)
 learn.fit_one_cycle(3, 3e-3)
 learn.unfreeze()
-learn.fit_one_cycle(12, lr_max=slice(1e-6,1e-4))
+learn.fit_one_cycle(12, lr_max=slice(1e-6, 1e-4))
 
 learn.recorder.plot_loss()
 
@@ -197,7 +207,6 @@ learn.recorder.plot_loss()
 
 # ### Deeper Architectures
 
-from fastai.callback.fp16 import *
 learn = cnn_learner(dls, resnet50, metrics=error_rate).to_fp16()
 learn.fine_tune(6, freeze_epochs=3)
 
@@ -233,5 +242,3 @@ learn.fine_tune(6, freeze_epochs=3)
 
 # 1. Find the paper by Leslie Smith that introduced the learning rate finder, and read it.
 # 1. See if you can improve the accuracy of the classifier in this chapter. What's the best accuracy you can achieve? Look on the forums and the book's website to see what other students have achieved with this dataset, and how they did it.
-
-

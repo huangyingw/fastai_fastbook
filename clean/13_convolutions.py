@@ -8,17 +8,22 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.5.2
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
 
+#hide
+# !pip install -Uqq fastbook
+import fastbook
+fastbook.setup_book()
+
 # +
 #hide
 from fastai.vision.all import *
-from utils import *
+from fastbook import *
 
 matplotlib.rc('image', cmap='Greys')
 # -
@@ -176,7 +181,7 @@ m[0].bias.shape
 
 # ## Color Images
 
-im = image2tensor(Image.open('images/grizzly.jpg'))
+im = image2tensor(Image.open(image_bear()))
 im.shape
 
 show_image(im);

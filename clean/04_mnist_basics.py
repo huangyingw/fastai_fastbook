@@ -8,17 +8,22 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.5.2
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
 
+#hide
+# !pip install -Uqq fastbook
+import fastbook
+fastbook.setup_book()
+
 # +
 #hide
 from fastai.vision.all import *
-from utils import *
+from fastbook import *
 
 matplotlib.rc('image', cmap='Greys')
 # -
@@ -151,14 +156,11 @@ accuracy_3s,accuracy_7s,(accuracy_3s+accuracy_7s)/2
 
 # ## Stochastic Gradient Descent (SGD)
 
-# + hide_input=true
 gv('''
 init->predict->loss->gradient->step->stop
 step->predict[label=repeat]
 ''')
 
-
-# -
 
 def f(x): return x**2
 
@@ -283,12 +285,10 @@ plt.tight_layout()
 
 # ### Summarizing Gradient Descent
 
-# + hide_input=false
 gv('''
 init->predict->loss->gradient->step->stop
 step->predict[label=repeat]
 ''')
-# -
 
 # ## The MNIST Loss Function
 

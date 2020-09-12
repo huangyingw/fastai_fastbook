@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.5.2
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -15,7 +15,12 @@
 # ---
 
 #hide
-from utils import *
+# !pip install -Uqq fastbook
+import fastbook
+fastbook.setup_book()
+
+#hide
+from fastbook import *
 
 # # Application Architectures Deep Dive
 
@@ -37,7 +42,7 @@ from fastai.vision.all import *
 path = untar_data(URLs.PETS)
 files = get_image_files(path/"images")
 
-class SiameseImage(Tuple):
+class SiameseImage(fastuple):
     def show(self, ctx=None, **kwargs): 
         img1,img2,same_breed = self
         if not isinstance(img1, Tensor):
@@ -126,7 +131,7 @@ learn.fit_one_cycle(4, slice(1e-6,1e-4))
 # 1. What is `model_meta`? Try printing it to see what's inside.
 # 1. Read the source code for `create_head` and make sure you understand what each line does.
 # 1. Look at the output of `create_head` and make sure you understand why each layer is there, and how the `create_head` source created it.
-# 1. Figure out how to change the dropout, layer size, and number of layers created by `create_cnn`, and see if you can find values that result in better accuracy from the pet recognizer.
+# 1. Figure out how to change the dropout, layer size, and number of layers created by `cnn_learner`, and see if you can find values that result in better accuracy from the pet recognizer.
 # 1. What does `AdaptiveConcatPool2d` do?
 # 1. What is "nearest neighbor interpolation"? How can it be used to upsample convolutional activations?
 # 1. What is a "transposed convolution"? What is another name for it?

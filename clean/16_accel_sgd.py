@@ -8,19 +8,21 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.5.2
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
 
-# + hide_input=false
 #hide
-from utils import *
+# !pip install -Uqq fastbook
+import fastbook
+fastbook.setup_book()
 
+#hide
+from fastbook import *
 
-# -
 
 # # The Training Process
 
@@ -67,7 +69,6 @@ learn.fit(3, 0.03)
 
 # ## Momentum
 
-# + hide_input=true
 x = np.linspace(-4, 4, 100)
 y = 1 - (x/3) ** 2
 x1 = x + np.random.randn(100) * 0.1
@@ -80,7 +81,6 @@ for i in idx:
     res.append(avg/(1-beta**(i+1)))
 plt.plot(x1[idx],np.array(res), color='red');
 
-# + hide_input=true
 x = np.linspace(-4, 4, 100)
 y = 1 - (x/3) ** 2
 x1 = x + np.random.randn(100) * 0.1
@@ -97,8 +97,6 @@ for beta,ax in zip(betas, axs.flatten()):
     ax.plot(x1[idx],np.array(res), color='red');
     ax.set_title(f'beta={beta}')
 
-
-# -
 
 def average_grad(p, mom, grad_avg=None, **kwargs):
     if grad_avg is None: grad_avg = torch.zeros_like(p.grad.data)

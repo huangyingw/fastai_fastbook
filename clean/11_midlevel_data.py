@@ -8,7 +8,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.5.2
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -16,7 +16,12 @@
 # ---
 
 #hide
-from utils import *
+# !pip install -Uqq fastbook
+import fastbook
+fastbook.setup_book()
+
+#hide
+from fastbook import *
 from IPython.display import display,HTML
 
 # # Data Munging with fastai's Mid-Level API
@@ -160,7 +165,7 @@ path = untar_data(URLs.PETS)
 files = get_image_files(path/"images")
 
 
-class SiameseImage(Tuple):
+class SiameseImage(fastuple):
     def show(self, ctx=None, **kwargs): 
         img1,img2,same_breed = self
         if not isinstance(img1, Tensor):
@@ -249,7 +254,7 @@ dls = tls.dataloaders(after_item=[Resize(224), ToTensor],
 
 # Congratulations—you've completed all of the chapters in this book that cover the key practical parts of training models and using deep learning! You know how to use all of fastai's built-in applications, and how to customize them using the data block API and loss functions. You even know how to create a neural network from scratch, and train it! (And hopefully you now know some of the questions to ask to make sure your creations help improve society too.)
 #
-# The knowledge you already have is enough to create full working prototypes of many types of neural network application. More importantly, it will help you understand the capabilities and limitations of deep learning models, and how to design a system that's well adapted to them.
+# The knowledge you already have is enough to create full working prototypes of many types of neural network applications. More importantly, it will help you understand the capabilities and limitations of deep learning models, and how to design a system that's well adapted to them.
 #
 # In the rest of this book we will be pulling apart those applications, piece by piece, to understand the foundations they are built on. This is important knowledge for a deep learning practitioner, because it is what allows you to inspect and debug models that you build and create new applications that are customized for your particular projects.
 

@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.5.2
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -15,7 +15,12 @@
 # ---
 
 #hide
-from utils import *
+# !pip install -Uqq fastbook
+import fastbook
+fastbook.setup_book()
+
+#hide
+from fastbook import *
 
 # # Other Computer Vision Problems
 
@@ -116,7 +121,7 @@ dls.show_batch(nrows=1, ncols=3)
 
 learn = cnn_learner(dls, resnet18)
 
-x,y = dls.train.one_batch()
+x,y = to_cpu(dls.train.one_batch())
 activs = learn.model(x)
 activs.shape
 
@@ -224,7 +229,7 @@ learn.fine_tune(3, lr)
 
 math.sqrt(0.0001)
 
-learn.show_results(ds_idx=1, max_n=3, figsize=(6,8))
+learn.show_results(ds_idx=1, nrows=3, figsize=(6,8))
 
 # ## Conclusion
 
