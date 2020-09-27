@@ -14,21 +14,26 @@
 #     name: python3
 # ---
 
-#hide
+# hide
 # !pip install -Uqq fastbook
+from waterfall_chart import plot as waterfall
+from treeinterpreter import treeinterpreter
+import warnings
+from sklearn.inspection import plot_partial_dependence
+from IPython.display import Image, display_svg, SVG
+from dtreeviz.trees import *
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
+from fastai.tabular.all import *
+from pandas.api.types import is_string_dtype, is_numeric_dtype, is_categorical_dtype
+from kaggle import api
+from fastbook import *
 import fastbook
+import kaggle
 fastbook.setup_book()
 
 # +
-#hide
-from fastbook import *
-from kaggle import api
-from pandas.api.types import is_string_dtype, is_numeric_dtype, is_categorical_dtype
-from fastai.tabular.all import *
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.tree import DecisionTreeRegressor
-from dtreeviz.trees import *
-from IPython.display import Image, display_svg, SVG
+# hide
 
 pd.options.display.max_rows = 20
 pd.options.display.max_columns = 8
@@ -44,38 +49,30 @@ pd.options.display.max_columns = 8
 
 # ### Kaggle Competitions
 
-creds = ''
-
-cred_path = Path('~/.kaggle/kaggle.json').expanduser()
-if not cred_path.exists():
-    cred_path.parent.mkdir(exist_ok=True)
-    cred_path.write(creds)
-    cred_path.chmod(0o600)
-
 path = URLs.path('bluebook')
 path
 
-#hide
+# hide
 Path.BASE_PATH = path
 
 # +
 if not path.exists():
     path.mkdir()
-    api.competition_download_cli('bluebook-for-bulldozers', path=path)
-    file_extract(path/'bluebook-for-bulldozers.zip')
+    kaggle.api.competition_download_cli('bluebook-for-bulldozers', path=path)
+    file_extract(path / 'bluebook-for-bulldozers.zip')
 
 path.ls(file_type='text')
 # -
 
 # ### Look at the Data
 
-df = pd.read_csv(path/'TrainAndValid.csv', low_memory=False)
+df = pd.read_csv(path / 'TrainAndValid.csv', low_memory=False)
 
 df.columns
 
 df['ProductSize'].unique()
 
-sizes = 'Large','Large / Medium','Medium','Small','Mini','Compact'
+sizes = 'Large', 'Large / Medium', 'Medium', 'Small', 'Mini', 'Compact'
 
 df['ProductSize'] = df['ProductSize'].astype('category')
 df['ProductSize'].cat.set_categories(sizes, ordered=True, inplace=True)
@@ -90,7 +87,7 @@ df[dep_var] = np.log(df[dep_var])
 
 df = add_datepart(df, 'saledate')
 
-df_test = pd.read_csv(path/'Test.csv', low_memory=False)
+df_test = pd.read_csv(path / 'Test.csv', low_memory=False)
 df_test = add_datepart(df_test, 'saledate')
 
 ' '.join(o for o in df.columns if o.startswith('sale'))
@@ -100,18 +97,18 @@ df_test = add_datepart(df_test, 'saledate')
 procs = [Categorify, FillMissing]
 
 # +
-cond = (df.saleYear<2011) | (df.saleMonth<10)
-train_idx = np.where( cond)[0]
+cond = (df.saleYear < 2011) | (df.saleMonth < 10)
+train_idx = np.where(cond)[0]
 valid_idx = np.where(~cond)[0]
 
-splits = (list(train_idx),list(valid_idx))
+splits = (list(train_idx), list(valid_idx))
 # -
 
-cont,cat = cont_cat_split(df, 1, dep_var=dep_var)
+cont, cat = cont_cat_split(df, 1, dep_var=dep_var)
 
 to = TabularPandas(df, procs, cat, cont, y_names=dep_var, splits=splits)
 
-len(to.train),len(to.valid)
+len(to.train), len(to.valid)
 
 to.show(3)
 
@@ -124,42 +121,42 @@ to1.items[['state', 'ProductGroup', 'Drive_System', 'Enclosure']].head(3)
 
 to.classes['ProductSize']
 
-(path/'to.pkl').save(to)
+(path / 'to.pkl').save(to)
 
 # ### Creating the Decision Tree
 
-#hide
-to = (path/'to.pkl').load()
+# hide
+to = (path / 'to.pkl').load()
 
-xs,y = to.train.xs,to.train.y
-valid_xs,valid_y = to.valid.xs,to.valid.y
+xs, y = to.train.xs, to.train.y
+valid_xs, valid_y = to.valid.xs, to.valid.y
 
 m = DecisionTreeRegressor(max_leaf_nodes=4)
-m.fit(xs, y);
+m.fit(xs, y)
 
 draw_tree(m, xs, size=7, leaves_parallel=True, precision=2)
 
 samp_idx = np.random.permutation(len(y))[:500]
 dtreeviz(m, xs.iloc[samp_idx], y.iloc[samp_idx], xs.columns, dep_var,
-        fontname='DejaVu Sans', scale=1.6, label_fontsize=10,
-        orientation='LR')
+         fontname='DejaVu Sans', scale=1.6, label_fontsize=10,
+         orientation='LR')
 
-xs.loc[xs['YearMade']<1900, 'YearMade'] = 1950
-valid_xs.loc[valid_xs['YearMade']<1900, 'YearMade'] = 1950
+xs.loc[xs['YearMade'] < 1900, 'YearMade'] = 1950
+valid_xs.loc[valid_xs['YearMade'] < 1900, 'YearMade'] = 1950
 
 # +
 m = DecisionTreeRegressor(max_leaf_nodes=4).fit(xs, y)
 
 dtreeviz(m, xs.iloc[samp_idx], y.iloc[samp_idx], xs.columns, dep_var,
-        fontname='DejaVu Sans', scale=1.6, label_fontsize=10,
-        orientation='LR')
+         fontname='DejaVu Sans', scale=1.6, label_fontsize=10,
+         orientation='LR')
 # -
 
 m = DecisionTreeRegressor()
-m.fit(xs, y);
+m.fit(xs, y)
 
 
-def r_mse(pred,y): return round(math.sqrt(((pred-y)**2).mean()), 6)
+def r_mse(pred, y): return round(math.sqrt(((pred - y)**2).mean()), 6)
 def m_rmse(m, xs, y): return r_mse(m.predict(xs), y)
 
 
@@ -181,7 +178,7 @@ m.get_n_leaves()
 # ## Random Forests
 
 # +
-#hide
+# hide
 # pip install —pre -f https://sklearn-nightly.scdn8.secure.raxcdn.com scikit-learn —U
 # -
 
@@ -190,11 +187,11 @@ m.get_n_leaves()
 def rf(xs, y, n_estimators=40, max_samples=200_000,
        max_features=0.5, min_samples_leaf=5, **kwargs):
     return RandomForestRegressor(n_jobs=-1, n_estimators=n_estimators,
-        max_samples=max_samples, max_features=max_features,
-        min_samples_leaf=min_samples_leaf, oob_score=True).fit(xs, y)
+                                 max_samples=max_samples, max_features=max_features,
+                                 min_samples_leaf=min_samples_leaf, oob_score=True).fit(xs, y)
 
 
-m = rf(xs, y);
+m = rf(xs, y)
 
 m_rmse(m, xs, y), m_rmse(m, valid_xs, valid_y)
 
@@ -202,7 +199,7 @@ preds = np.stack([t.predict(valid_xs) for t in m.estimators_])
 
 r_mse(preds.mean(0), valid_y)
 
-plt.plot([r_mse(preds[:i+1].mean(0), valid_y) for i in range(40)]);
+plt.plot([r_mse(preds[:i + 1].mean(0), valid_y) for i in range(40)])
 
 # ### Out-of-Bag Error
 
@@ -224,8 +221,8 @@ preds_std[:5]
 # ### Feature Importance
 
 def rf_feat_importance(m, df):
-    return pd.DataFrame({'cols':df.columns, 'imp':m.feature_importances_}
-                       ).sort_values('imp', ascending=False)
+    return pd.DataFrame({'cols': df.columns, 'imp': m.feature_importances_}
+                        ).sort_values('imp', ascending=False)
 
 
 fi = rf_feat_importance(m, xs)
@@ -234,14 +231,14 @@ fi[:10]
 
 # +
 def plot_fi(fi):
-    return fi.plot('cols', 'imp', 'barh', figsize=(12,7), legend=False)
+    return fi.plot('cols', 'imp', 'barh', figsize=(12, 7), legend=False)
 
-plot_fi(fi[:30]);
+plot_fi(fi[:30])
 # -
 
 # ### Removing Low-Importance Variables
 
-to_keep = fi[fi.imp>0.005].cols
+to_keep = fi[fi.imp > 0.005].cols
 len(to_keep)
 
 xs_imp = xs[to_keep]
@@ -253,7 +250,7 @@ m_rmse(m, xs_imp, y), m_rmse(m, valid_xs_imp, valid_y)
 
 len(xs.columns), len(xs_imp.columns)
 
-plot_fi(rf_feat_importance(m, xs_imp));
+plot_fi(rf_feat_importance(m, xs_imp))
 
 # ### Removing Redundant Features
 
@@ -262,17 +259,17 @@ cluster_columns(xs_imp)
 
 def get_oob(df):
     m = RandomForestRegressor(n_estimators=40, min_samples_leaf=15,
-        max_samples=50000, max_features=0.5, n_jobs=-1, oob_score=True)
+                              max_samples=50000, max_features=0.5, n_jobs=-1, oob_score=True)
     m.fit(df, y)
     return m.oob_score_
 
 
 get_oob(xs_imp)
 
-{c:get_oob(xs_imp.drop(c, axis=1)) for c in (
-    'saleYear', 'saleElapsed', 'ProductGroupDesc','ProductGroup',
+{c: get_oob(xs_imp.drop(c, axis=1)) for c in (
+    'saleYear', 'saleElapsed', 'ProductGroupDesc', 'ProductGroup',
     'fiModelDesc', 'fiBaseModel',
-    'Hydraulics_Flow','Grouser_Tracks', 'Coupler_System')}
+    'Hydraulics_Flow', 'Grouser_Tracks', 'Coupler_System')}
 
 to_drop = ['saleYear', 'ProductGroupDesc', 'fiBaseModel', 'Grouser_Tracks']
 get_oob(xs_imp.drop(to_drop, axis=1))
@@ -280,11 +277,11 @@ get_oob(xs_imp.drop(to_drop, axis=1))
 xs_final = xs_imp.drop(to_drop, axis=1)
 valid_xs_final = valid_xs_imp.drop(to_drop, axis=1)
 
-(path/'xs_final.pkl').save(xs_final)
-(path/'valid_xs_final.pkl').save(valid_xs_final)
+(path / 'xs_final.pkl').save(xs_final)
+(path / 'valid_xs_final.pkl').save(valid_xs_final)
 
-xs_final = (path/'xs_final.pkl').load()
-valid_xs_final = (path/'valid_xs_final.pkl').load()
+xs_final = (path / 'xs_final.pkl').load()
+valid_xs_final = (path / 'valid_xs_final.pkl').load()
 
 m = rf(xs_final, y)
 m_rmse(m, xs_final, y), m_rmse(m, valid_xs_final, valid_y)
@@ -293,16 +290,15 @@ m_rmse(m, xs_final, y), m_rmse(m, valid_xs_final, valid_y)
 
 p = valid_xs_final['ProductSize'].value_counts(sort=False).plot.barh()
 c = to.classes['ProductSize']
-plt.yticks(range(len(c)), c);
+plt.yticks(range(len(c)), c)
 
 ax = valid_xs_final['YearMade'].hist()
 
 # +
-from sklearn.inspection import plot_partial_dependence
 
-fig,ax = plt.subplots(figsize=(12, 4))
-plot_partial_dependence(m, valid_xs_final, ['YearMade','ProductSize'],
-                        grid_resolution=20, ax=ax);
+fig, ax = plt.subplots(figsize=(12, 4))
+plot_partial_dependence(m, valid_xs_final, ['YearMade', 'ProductSize'],
+                        grid_resolution=20, ax=ax)
 # -
 
 # ### Data Leakage
@@ -310,49 +306,46 @@ plot_partial_dependence(m, valid_xs_final, ['YearMade','ProductSize'],
 # ### Tree Interpreter
 
 # +
-#hide
-import warnings
+# hide
 warnings.simplefilter('ignore', FutureWarning)
 
-from treeinterpreter import treeinterpreter
-from waterfall_chart import plot as waterfall
 # -
 
 row = valid_xs_final.iloc[:5]
 
-prediction,bias,contributions = treeinterpreter.predict(m, row.values)
+prediction, bias, contributions = treeinterpreter.predict(m, row.values)
 
 prediction[0], bias[0], contributions[0].sum()
 
-waterfall(valid_xs_final.columns, contributions[0], threshold=0.08, 
-          rotation_value=45,formatting='{:,.3f}');
+waterfall(valid_xs_final.columns, contributions[0], threshold=0.08,
+          rotation_value=45, formatting='{:,.3f}')
 
 # ## Extrapolation and Neural Networks
 
 # ### The Extrapolation Problem
 
-#hide
+# hide
 np.random.seed(42)
 
-x_lin = torch.linspace(0,20, steps=40)
+x_lin = torch.linspace(0, 20, steps=40)
 y_lin = x_lin + torch.randn_like(x_lin)
-plt.scatter(x_lin, y_lin);
+plt.scatter(x_lin, y_lin)
 
 xs_lin = x_lin.unsqueeze(1)
-x_lin.shape,xs_lin.shape
+x_lin.shape, xs_lin.shape
 
-x_lin[:,None].shape
+x_lin[:, None].shape
 
-m_lin = RandomForestRegressor().fit(xs_lin[:30],y_lin[:30])
+m_lin = RandomForestRegressor().fit(xs_lin[:30], y_lin[:30])
 
 plt.scatter(x_lin, y_lin, 20)
-plt.scatter(x_lin, m_lin.predict(xs_lin), color='red', alpha=0.5);
+plt.scatter(x_lin, m_lin.predict(xs_lin), color='red', alpha=0.5)
 
 # ### Finding Out-of-Domain Data
 
 # +
 df_dom = pd.concat([xs_final, valid_xs_final])
-is_valid = np.array([0]*len(xs_final) + [1]*len(valid_xs_final))
+is_valid = np.array([0] * len(xs_final) + [1] * len(valid_xs_final))
 
 m = rf(df_dom, is_valid)
 rf_feat_importance(m, df_dom)[:6]
@@ -361,12 +354,12 @@ rf_feat_importance(m, df_dom)[:6]
 m = rf(xs_final, y)
 print('orig', m_rmse(m, valid_xs_final, valid_y))
 
-for c in ('SalesID','saleElapsed','MachineID'):
-    m = rf(xs_final.drop(c,axis=1), y)
-    print(c, m_rmse(m, valid_xs_final.drop(c,axis=1), valid_y))
+for c in ('SalesID', 'saleElapsed', 'MachineID'):
+    m = rf(xs_final.drop(c, axis=1), y)
+    print(c, m_rmse(m, valid_xs_final.drop(c, axis=1), valid_y))
 
 # +
-time_vars = ['SalesID','MachineID']
+time_vars = ['SalesID', 'MachineID']
 xs_final_time = xs_final.drop(time_vars, axis=1)
 valid_xs_time = valid_xs_final.drop(time_vars, axis=1)
 
@@ -374,9 +367,9 @@ m = rf(xs_final_time, y)
 m_rmse(m, valid_xs_time, valid_y)
 # -
 
-xs['saleYear'].hist();
+xs['saleYear'].hist()
 
-filt = xs['saleYear']>2004
+filt = xs['saleYear'] > 2004
 xs_filt = xs_final_time[filt]
 y_filt = y[filt]
 
@@ -385,7 +378,7 @@ m_rmse(m, xs_filt, y_filt), m_rmse(m, valid_xs_time, valid_y)
 
 # ### Using a Neural Network
 
-df_nn = pd.read_csv(path/'TrainAndValid.csv', low_memory=False)
+df_nn = pd.read_csv(path / 'TrainAndValid.csv', low_memory=False)
 df_nn['ProductSize'] = df_nn['ProductSize'].astype('category')
 df_nn['ProductSize'].cat.set_categories(sizes, ordered=True, inplace=True)
 df_nn[dep_var] = np.log(df_nn[dep_var])
@@ -393,7 +386,7 @@ df_nn = add_datepart(df_nn, 'saledate')
 
 df_nn_final = df_nn[list(xs_final_time.columns) + [dep_var]]
 
-cont_nn,cat_nn = cont_cat_split(df_nn_final, max_card=9000, dep_var=dep_var)
+cont_nn, cat_nn = cont_cat_split(df_nn_final, max_card=9000, dep_var=dep_var)
 
 cont_nn.append('saleElapsed')
 cat_nn.remove('saleElapsed')
@@ -414,19 +407,18 @@ to_nn = TabularPandas(df_nn_final, procs_nn, cat_nn, cont_nn,
 dls = to_nn.dataloaders(1024)
 
 y = to_nn.train.y
-y.min(),y.max()
+y.min(), y.max()
 
-from fastai.tabular.all import *
 
-learn = tabular_learner(dls, y_range=(8,12), layers=[500,250],
+learn = tabular_learner(dls, y_range=(8, 12), layers=[500, 250],
                         n_out=1, loss_func=F.mse_loss)
 
 learn.lr_find()
 
 learn.fit_one_cycle(5, 1e-2)
 
-preds,targs = learn.get_preds()
-r_mse(preds,targs)
+preds, targs = learn.get_preds()
+r_mse(preds, targs)
 
 learn.save('nn')
 
@@ -437,9 +429,9 @@ learn.save('nn')
 # ## Ensembling
 
 rf_preds = m.predict(valid_xs_time)
-ens_preds = (to_np(preds.squeeze()) + rf_preds) /2
+ens_preds = (to_np(preds.squeeze()) + rf_preds) / 2
 
-r_mse(ens_preds,valid_y)
+r_mse(ens_preds, valid_y)
 
 # ### Boosting
 
@@ -490,5 +482,3 @@ r_mse(ens_preds,valid_y)
 # 1. Implement the decision tree algorithm in this chapter from scratch yourself, and try it on the datase you used in the first exercise.
 # 1. Use the embeddings from the neural net in this chapter in a random forest, and see if you can improve on the random forest results we saw.
 # 1. Explain what each line of the source of `TabularModel` does (with the exception of the `BatchNorm1d` and `Dropout` layers).
-
-
