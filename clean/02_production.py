@@ -15,14 +15,14 @@
 #     name: python3
 # ---
 
-#hide
+# hide
 # !pip install -Uqq fastbook
+from fastai.vision.widgets import *
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-#hide
-from fastbook import *
-from fastai.vision.widgets import *
+# hide
 
 # # From Model to Production
 
@@ -51,33 +51,19 @@ from fastai.vision.widgets import *
 # # clean
 # To download images with Bing Image Search, sign up at Microsoft for a free account. You will be given a key, which you can copy and enter in a cell as follows (replacing 'XXX' with your key and executing it):
 
-key = os.environ.get('AZURE_SEARCH_KEY', 'XXX')
 
-search_images_bing
-
-results = search_images_bing(key, 'grizzly bear')
-ims = results.attrgot('content_url')
-len(ims)
-
-#hide
+# hide
 ims = ['http://3.bp.blogspot.com/-S1scRCkI3vY/UHzV2kucsPI/AAAAAAAAA-k/YQ5UzHEm9Ss/s1600/Grizzly%2BBear%2BWildlife.jpg']
 
 dest = 'images/grizzly.jpg'
 download_url(ims[0], dest)
 
 im = Image.open(dest)
-im.to_thumb(128,128)
+im.to_thumb(128, 128)
 
-bear_types = 'grizzly','black','teddy'
+bear_types = 'grizzly', 'black', 'teddy'
 path = Path('bears')
 
-if not path.exists():
-    path.mkdir()
-    for o in bear_types:
-        dest = (path/o)
-        dest.mkdir(exist_ok=True)
-        results = search_images_bing(key, f'{o} bear')
-        download_images(dest, urls=results.attrgot('content_url'))
 
 fns = get_image_files(path)
 fns
@@ -85,7 +71,7 @@ fns
 failed = verify_images(fns)
 failed
 
-failed.map(Path.unlink);
+failed.map(Path.unlink)
 
 # ### Sidebar: Getting Help in Jupyter Notebooks
 
@@ -94,8 +80,8 @@ failed.map(Path.unlink);
 # ## From Data to DataLoaders
 
 bears = DataBlock(
-    blocks=(ImageBlock, CategoryBlock), 
-    get_items=get_image_files, 
+    blocks=(ImageBlock, CategoryBlock),
+    get_items=get_image_files,
     splitter=RandomSplitter(valid_pct=0.2, seed=42),
     get_y=parent_label,
     item_tfms=Resize(128))
@@ -141,7 +127,7 @@ cleaner = ImageClassifierCleaner(learn)
 cleaner
 
 # +
-#hide
+# hide
 # for idx in cleaner.delete(): cleaner.fns[idx].unlink()
 # for idx,cat in cleaner.change(): shutil.move(str(cleaner.fns[idx]), path/cat)
 # -
@@ -155,7 +141,7 @@ learn.export()
 path = Path()
 path.ls(file_exts='.pkl')
 
-learn_inf = load_learner(path/'export.pkl')
+learn_inf = load_learner(path / 'export.pkl')
 
 learn_inf.predict('images/grizzly.jpg')
 
@@ -166,18 +152,19 @@ learn_inf.dls.vocab
 btn_upload = widgets.FileUpload()
 btn_upload
 
-#hide
+# hide
 # For the book, we can't actually click an upload button, so we fake it
-btn_upload = SimpleNamespace(data = ['images/grizzly.jpg'])
+btn_upload = SimpleNamespace(data=['images/grizzly.jpg'])
 
 img = PILImage.create(btn_upload.data[-1])
 
 out_pl = widgets.Output()
 out_pl.clear_output()
-with out_pl: display(img.to_thumb(128,128))
+with out_pl:
+    display(img.to_thumb(128, 128))
 out_pl
 
-pred,pred_idx,probs = learn_inf.predict(img)
+pred, pred_idx, probs = learn_inf.predict(img)
 
 lbl_pred = widgets.Label()
 lbl_pred.value = f'Prediction: {pred}; Probability: {probs[pred_idx]:.04f}'
@@ -191,24 +178,26 @@ btn_run
 def on_click_classify(change):
     img = PILImage.create(btn_upload.data[-1])
     out_pl.clear_output()
-    with out_pl: display(img.to_thumb(128,128))
-    pred,pred_idx,probs = learn_inf.predict(img)
+    with out_pl:
+        display(img.to_thumb(128, 128))
+    pred, pred_idx, probs = learn_inf.predict(img)
     lbl_pred.value = f'Prediction: {pred}; Probability: {probs[pred_idx]:.04f}'
+
 
 btn_run.on_click(on_click_classify)
 # -
 
-#hide
-#Putting back btn_upload to a widget for next cell
+# hide
+# Putting back btn_upload to a widget for next cell
 btn_upload = widgets.FileUpload()
 
-VBox([widgets.Label('Select your bear!'), 
+VBox([widgets.Label('Select your bear!'),
       btn_upload, btn_run, out_pl, lbl_pred])
 
 # ### Turning Your Notebook into a Real App
 
 # +
-#hide
+# hide
 # # !pip install voila
 # # !jupyter serverextension enable voila —sys-prefix
 # -
@@ -257,5 +246,3 @@ VBox([widgets.Label('Select your bear!'),
 # 1. When might it be best to avoid certain types of data augmentation?
 # 1. For a project you're interested in applying deep learning to, consider the thought experiment "What would happen if it went really, really well?"
 # 1. Start a blog, and write your first blog post. For instance, write about what you think deep learning might be useful for in a domain you're interested in.
-
-
