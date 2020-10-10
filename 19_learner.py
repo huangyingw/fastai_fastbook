@@ -99,7 +99,7 @@ show_image(x, title=lbls[y]);
 
 # As you see, our dataset is returning the independent and dependent variables as a tuple, which is just what we need. We'll need to be able to collate these into a mini-batch. Generally this is done with `torch.stack`, which is what we'll use here:
 
-def collate(idxs, ds): 
+def collate(idxs, ds):
     xb,yb = zip(*[ds[i] for i in idxs])
     return torch.stack(xb),torch.stack(yb)
 
@@ -187,17 +187,17 @@ Parameter(tensor(3.))
 class Module:
     def __init__(self):
         self.hook,self.params,self.children,self._training = None,[],[],False
-        
+
     def register_parameters(self, *ps): self.params += ps
     def register_modules   (self, *ms): self.children += ms
-        
+
     @property
     def training(self): return self._training
     @training.setter
     def training(self,v):
         self._training = v
         for m in self.children: m.training=v
-            
+
     def parameters(self):
         return self.params + sum([m.parameters() for m in self.children], [])
 
@@ -205,12 +205,12 @@ class Module:
         super().__setattr__(k,v)
         if isinstance(v,Parameter): self.register_parameters(v)
         if isinstance(v,Module):    self.register_modules(v)
-        
+
     def __call__(self, *args, **kwargs):
         res = self.forward(*args, **kwargs)
         if self.hook is not None: self.hook(res, args)
         return res
-    
+
     def cuda(self):
         for p in self.parameters(): p.data = p.data.cuda()
 
@@ -243,7 +243,7 @@ class ConvLayer(Module):
         self.act,self.stride = act,stride
         init = nn.init.kaiming_normal_ if act else nn.init.xavier_normal_
         init(self.w)
-    
+
     def forward(self, x):
         x = F.conv2d(x, self.w, self.b, stride=self.stride, padding=1)
         if self.act: x = F.relu(x)
@@ -270,7 +270,7 @@ class Linear(Module):
         self.w = Parameter(torch.zeros(nf,ni))
         self.b = Parameter(torch.zeros(nf))
         nn.init.xavier_normal_(self.w)
-    
+
     def forward(self, x): return x@self.w.t() + self.b
 
 
@@ -383,7 +383,7 @@ loss
 
 # Note that the formula:
 #
-# $$\log \left ( \frac{a}{b} \right ) = \log(a) - \log(b)$$ 
+# $$\log \left ( \frac{a}{b} \right ) = \log(a) - \log(b)$$
 #
 # gives a simplification when we compute the log softmax, which was previously defined as `(x.exp()/(x.exp().sum(-1))).log()`:
 
@@ -480,7 +480,7 @@ class Learner:
         for self.num,self.batch in enumerate(progress_bar(dl, leave=False)):
             self.one_batch()
         self('after_epoch')
-    
+
     def fit(self, n_epochs):
         self('before_fit')
         self.opt = self.opt_func(self.model.parameters(), self.lr)
@@ -491,7 +491,7 @@ class Learner:
                 self.one_epoch(False)
         except CancelFitException: pass
         self('after_fit')
-        
+
     def __call__(self,name):
         for cb in self.cbs: getattr(cb,name,noop)()
 
@@ -541,12 +541,12 @@ class SetupLearnerCB(Callback):
 
 class TrackResults(Callback):
     def before_epoch(self): self.accs,self.losses,self.ns = [],[],[]
-        
+
     def after_epoch(self):
         n = sum(self.ns)
         print(self.epoch, self.model.training,
               sum(self.losses).item()/n, sum(self.accs).item()/n)
-        
+
     def after_batch(self):
         xb,yb = self.batch
         acc = (self.preds.argmax(dim=1)==yb).float().sum()
@@ -573,7 +573,7 @@ class LRFinder(Callback):
     def before_fit(self):
         self.losses,self.lrs = [],[]
         self.learner.lr = 1e-6
-        
+
     def before_batch(self):
         if not self.model.training: return
         self.opt.lr *= 1.2
@@ -686,7 +686,5 @@ plt.plot(onecyc.lrs);
 # 1. Pick a few features that you're interested in from fastai (or any other library) and implement them in this chapter.
 # 1. Pick a research paper that's not yet implemented in fastai or PyTorch and implement it in this chapter.
 #   - Port it over to fastai.
-#   - Submit a pull request to fastai, or create your own extension module and release it. 
+#   - Submit a pull request to fastai, or create your own extension module and release it.
 #   - Hint: you may find it helpful to use [`nbdev`](https://nbdev.fast.ai/) to create and deploy your package.
-
-
