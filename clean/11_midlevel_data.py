@@ -16,7 +16,6 @@
 # ---
 
 #hide
-# !pip install -Uqq fastbook
 import fastbook
 fastbook.setup_book()
 
@@ -110,7 +109,7 @@ tls.show(t)
 
 cut = int(len(files)*0.8)
 splits = [list(range(cut)), list(range(cut,len(files)))]
-tls = TfmdLists(files, [Tokenizer.from_folder(path), Numericalize], 
+tls = TfmdLists(files, [Tokenizer.from_folder(path), Numericalize],
                 splits=splits)
 
 tls.valid[0][:20]
@@ -166,7 +165,7 @@ files = get_image_files(path/"images")
 
 
 class SiameseImage(fastuple):
-    def show(self, ctx=None, **kwargs): 
+    def show(self, ctx=None, **kwargs):
         img1,img2,same_breed = self
         if not isinstance(img1, Tensor):
             if img2.size != img1.size: img2 = img2.resize(img1.size)
@@ -174,7 +173,7 @@ class SiameseImage(fastuple):
             t1,t2 = t1.permute(2,0,1),t2.permute(2,0,1)
         else: t1,t2 = img1,img2
         line = t1.new_zeros(t1.shape[0], t1.shape[1], 10)
-        return show_image(torch.cat([t1,line,t2], dim=2), 
+        return show_image(torch.cat([t1,line,t2], dim=2),
                           title=same_breed, ctx=ctx)
 
 
@@ -197,21 +196,21 @@ def label_func(fname):
 class SiameseTransform(Transform):
     def __init__(self, files, label_func, splits):
         self.labels = files.map(label_func).unique()
-        self.lbl2files = {l: L(f for f in files if label_func(f) == l) 
+        self.lbl2files = {l: L(f for f in files if label_func(f) == l)
                           for l in self.labels}
         self.label_func = label_func
         self.valid = {f: self._draw(f) for f in files[splits[1]]}
-        
+
     def encodes(self, f):
         f2,t = self.valid.get(f, self._draw(f))
         img1,img2 = PILImage.create(f),PILImage.create(f2)
         return SiameseImage(img1, img2, t)
-    
+
     def _draw(self, f):
         same = random.random() < 0.5
         cls = self.label_func(f)
-        if not same: 
-            cls = random.choice(L(l for l in self.labels if l != cls)) 
+        if not same:
+            cls = random.choice(L(l for l in self.labels if l != cls))
         return random.choice(self.lbl2files[cls]),same
 
 
@@ -222,7 +221,7 @@ tfm(files[0]).show();
 tls = TfmdLists(files, tfm, splits=splits)
 show_at(tls.valid, 0);
 
-dls = tls.dataloaders(after_item=[Resize(224), ToTensor], 
+dls = tls.dataloaders(after_item=[Resize(224), ToTensor],
     after_batch=[IntToFloatTensor, Normalize.from_stats(*imagenet_stats)])
 
 # ## Conclusion
@@ -237,7 +236,7 @@ dls = tls.dataloaders(after_item=[Resize(224), ToTensor],
 # 1. Write a `Normalize` transform that fully normalizes items (subtract the mean and divide by the standard deviation of the dataset), and that can decode that behavior. Try not to peek!
 # 1. Write a `Transform` that does the numericalization of tokenized texts (it should set its vocab automatically from the dataset seen and have a `decode` method). Look at the source code of fastai if you need help.
 # 1. What is a `Pipeline`?
-# 1. What is a `TfmdLists`? 
+# 1. What is a `TfmdLists`?
 # 1. What is a `Datasets`? How is it different from a `TfmdLists`?
 # 1. Why are `TfmdLists` and `Datasets` named with an "s"?
 # 1. How can you build a `DataLoaders` from a `TfmdLists` or a `Datasets`?
@@ -257,5 +256,3 @@ dls = tls.dataloaders(after_item=[Resize(224), ToTensor],
 # The knowledge you already have is enough to create full working prototypes of many types of neural network applications. More importantly, it will help you understand the capabilities and limitations of deep learning models, and how to design a system that's well adapted to them.
 #
 # In the rest of this book we will be pulling apart those applications, piece by piece, to understand the foundations they are built on. This is important knowledge for a deep learning practitioner, because it is what allows you to inspect and debug models that you build and create new applications that are customized for your particular projects.
-
-
