@@ -16,7 +16,6 @@
 # ---
 
 #hide
-# !pip install -Uqq fastbook
 import fastbook
 fastbook.setup_book()
 
@@ -138,7 +137,7 @@ dls_lm.show_batch(max_n=2)
 # ### Fine-Tuning the Language Model
 
 learn = language_model_learner(
-    dls_lm, AWD_LSTM, drop_mult=0.3, 
+    dls_lm, AWD_LSTM, drop_mult=0.3,
     metrics=[accuracy, Perplexity()]).to_fp16()
 
 learn.fit_one_cycle(1, 2e-2)
@@ -159,7 +158,7 @@ learn.save_encoder('finetuned')
 TEXT = "I liked this movie because"
 N_WORDS = 40
 N_SENTENCES = 2
-preds = [learn.predict(TEXT, N_WORDS, temperature=0.75) 
+preds = [learn.predict(TEXT, N_WORDS, temperature=0.75)
          for _ in range(N_SENTENCES)]
 
 print("\n".join(preds))
@@ -179,7 +178,7 @@ nums_samp = toks200[:10].map(num)
 
 nums_samp.map(len)
 
-learn = text_classifier_learner(dls_clas, AWD_LSTM, drop_mult=0.5, 
+learn = text_classifier_learner(dls_clas, AWD_LSTM, drop_mult=0.5,
                                 metrics=accuracy).to_fp16()
 
 learn = learn.load_encoder('finetuned')
@@ -230,5 +229,3 @@ learn.fit_one_cycle(2, slice(1e-3/(2.6**4),1e-3))
 
 # 1. See what you can learn about language models and disinformation. What are the best language models today? Take a look at some of their outputs. Do you find them convincing? How could a bad actor best use such a model to create conflict and uncertainty?
 # 1. Given the limitation that models are unlikely to be able to consistently recognize machine-generated texts, what other approaches may be needed to handle large-scale disinformation campaigns that leverage deep learning?
-
-
