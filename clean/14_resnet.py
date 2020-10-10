@@ -16,7 +16,6 @@
 # ---
 
 #hide
-# !pip install -Uqq fastbook
 import fastbook
 fastbook.setup_book()
 
@@ -31,7 +30,7 @@ from fastbook import *
 def get_data(url, presize, resize):
     path = untar_data(url)
     return DataBlock(
-        blocks=(ImageBlock, CategoryBlock), get_items=get_image_files, 
+        blocks=(ImageBlock, CategoryBlock), get_items=get_image_files,
         splitter=GrandparentSplitter(valid_name='val'),
         get_y=parent_label, item_tfms=Resize(presize),
         batch_tfms=[*aug_transforms(min_scale=0.5, size=resize),
@@ -82,7 +81,7 @@ class ResBlock(Module):
         self.convs = nn.Sequential(
             ConvLayer(ni,nf),
             ConvLayer(nf,nf, norm_type=NormType.BatchZero))
-        
+
     def forward(self, x): return x + self.convs(x)
 
 
@@ -137,7 +136,7 @@ class ResNet(nn.Sequential):
         super().__init__(*stem, *blocks,
                          nn.AdaptiveAvgPool2d(1), Flatten(),
                          nn.Linear(self.block_szs[-1], n_out))
-    
+
     def _make_layer(self, idx, n_layers):
         stride = 1 if idx==0 else 2
         ch_in,ch_out = self.block_szs[idx:idx+2]
@@ -158,7 +157,7 @@ learn.fit_one_cycle(5, 3e-3)
 def _conv_block(ni,nf,stride):
     return nn.Sequential(
         ConvLayer(ni, nf//4, 1),
-        ConvLayer(nf//4, nf//4, stride=stride), 
+        ConvLayer(nf//4, nf//4, stride=stride),
         ConvLayer(nf//4, nf, 1, act_cls=None, norm_type=NormType.BatchZero))
 
 
@@ -202,5 +201,3 @@ learn.fit_one_cycle(20, 3e-3)
 # 1. In <<chapter_foundations>> we introduce *Einstein summation notation*. Skip ahead to see how this works, and then write an implementation of the 1×1 convolution operation using `torch.einsum`. Compare it to the same operation using `torch.conv2d`.
 # 1. Write a "top-5 accuracy" function using plain PyTorch or plain Python.
 # 1. Train a model on Imagenette for more epochs, with and without label smoothing. Take a look at the Imagenette leaderboards and see how close you can get to the best results shown. Read the linked pages describing the leading approaches.
-
-
