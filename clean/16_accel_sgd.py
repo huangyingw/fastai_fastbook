@@ -16,7 +16,6 @@
 # ---
 
 #hide
-# !pip install -Uqq fastbook
 import fastbook
 fastbook.setup_book()
 
@@ -31,7 +30,7 @@ from fastbook import *
 def get_data(url, presize, resize):
     path = untar_data(url)
     return DataBlock(
-        blocks=(ImageBlock, CategoryBlock), get_items=get_image_files, 
+        blocks=(ImageBlock, CategoryBlock), get_items=get_image_files,
         splitter=GrandparentSplitter(valid_name='val'),
         get_y=parent_label, item_tfms=Resize(presize),
         batch_tfms=[*aug_transforms(min_scale=0.5, size=resize),
@@ -219,5 +218,3 @@ class TerminateOnNaNCallback(Callback):
 # Since you understand the foundations of fastai's applications now, be sure to spend some time digging through the source notebooks and running and experimenting with parts of them. This will give you a better idea of how everything in fastai is developed.
 #
 # In the next section, we will be looking even further under the covers: we'll explore how the actual forward and backward passes of a neural network are done, and we will see what tools are at our disposal to get better performance. We will then continue with a project that brings together all the material in the book, which we will use to build a tool for interpreting convolutional neural networks. Last but not least, we'll finish by building fastai's `Learner` class from scratch.
-
-
