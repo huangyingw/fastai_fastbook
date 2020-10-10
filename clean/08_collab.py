@@ -15,42 +15,41 @@
 #     name: python3
 # ---
 
-#hide
-# !pip install -Uqq fastbook
+# hide
+from fastai.tabular.all import *
+from fastai.collab import *
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-#hide
-from fastbook import *
+# hide
 
 # # Collaborative Filtering Deep Dive
 
 # ## A First Look at the Data
 
-from fastai.collab import *
-from fastai.tabular.all import *
 path = untar_data(URLs.ML_100k)
 
-ratings = pd.read_csv(path/'u.data', delimiter='\t', header=None,
-                      names=['user','movie','rating','timestamp'])
+ratings = pd.read_csv(path / 'u.data', delimiter='\t', header=None,
+                      names=['user', 'movie', 'rating', 'timestamp'])
 ratings.head()
 
-last_skywalker = np.array([0.98,0.9,-0.9])
+last_skywalker = np.array([0.98, 0.9, -0.9])
 
-user1 = np.array([0.9,0.8,-0.6])
+user1 = np.array([0.9, 0.8, -0.6])
 
-(user1*last_skywalker).sum()
+(user1 * last_skywalker).sum()
 
-casablanca = np.array([-0.99,-0.3,0.8])
+casablanca = np.array([-0.99, -0.3, 0.8])
 
-(user1*casablanca).sum()
+(user1 * casablanca).sum()
 
 # ## Learning the Latent Factors
 
 # ## Creating the DataLoaders
 
-movies = pd.read_csv(path/'u.item',  delimiter='|', encoding='latin-1',
-                     usecols=(0,1), names=('movie','title'), header=None)
+movies = pd.read_csv(path / 'u.item', delimiter='|', encoding='latin-1',
+                     usecols=(0, 1), names=('movie', 'title'), header=None)
 movies.head()
 
 ratings = ratings.merge(movies)
@@ -62,7 +61,7 @@ dls.show_batch()
 dls.classes
 
 # +
-n_users  = len(dls.classes['user'])
+n_users = len(dls.classes['user'])
 n_movies = len(dls.classes['title'])
 n_factors = 5
 
@@ -81,7 +80,7 @@ user_factors[3]
 
 class Example:
     def __init__(self, a): self.a = a
-    def say(self,x): return f'Hello {self.a}, {x}.'
+    def say(self, x): return f'Hello {self.a}, {x}.'
 
 
 ex = Example('Sylvain')
@@ -92,14 +91,14 @@ class DotProduct(Module):
     def __init__(self, n_users, n_movies, n_factors):
         self.user_factors = Embedding(n_users, n_factors)
         self.movie_factors = Embedding(n_movies, n_factors)
-        
+
     def forward(self, x):
-        users = self.user_factors(x[:,0])
-        movies = self.movie_factors(x[:,1])
+        users = self.user_factors(x[:, 0])
+        movies = self.movie_factors(x[:, 1])
         return (users * movies).sum(dim=1)
 
 
-x,y = dls.one_batch()
+x, y = dls.one_batch()
 x.shape
 
 model = DotProduct(n_users, n_movies, 50)
@@ -109,14 +108,14 @@ learn.fit_one_cycle(5, 5e-3)
 
 
 class DotProduct(Module):
-    def __init__(self, n_users, n_movies, n_factors, y_range=(0,5.5)):
+    def __init__(self, n_users, n_movies, n_factors, y_range=(0, 5.5)):
         self.user_factors = Embedding(n_users, n_factors)
         self.movie_factors = Embedding(n_movies, n_factors)
         self.y_range = y_range
-        
+
     def forward(self, x):
-        users = self.user_factors(x[:,0])
-        movies = self.movie_factors(x[:,1])
+        users = self.user_factors(x[:, 0])
+        movies = self.movie_factors(x[:, 1])
         return sigmoid_range((users * movies).sum(dim=1), *self.y_range)
 
 
@@ -126,18 +125,18 @@ learn.fit_one_cycle(5, 5e-3)
 
 
 class DotProductBias(Module):
-    def __init__(self, n_users, n_movies, n_factors, y_range=(0,5.5)):
+    def __init__(self, n_users, n_movies, n_factors, y_range=(0, 5.5)):
         self.user_factors = Embedding(n_users, n_factors)
         self.user_bias = Embedding(n_users, 1)
         self.movie_factors = Embedding(n_movies, n_factors)
         self.movie_bias = Embedding(n_movies, 1)
         self.y_range = y_range
-        
+
     def forward(self, x):
-        users = self.user_factors(x[:,0])
-        movies = self.movie_factors(x[:,1])
+        users = self.user_factors(x[:, 0])
+        movies = self.movie_factors(x[:, 1])
         res = (users * movies).sum(dim=1, keepdim=True)
-        res += self.user_bias(x[:,0]) + self.movie_bias(x[:,1])
+        res += self.user_bias(x[:, 0]) + self.movie_bias(x[:, 1])
         return sigmoid_range(res, *self.y_range)
 
 
@@ -147,13 +146,14 @@ learn.fit_one_cycle(5, 5e-3)
 
 # ### Weight Decay
 
-x = np.linspace(-2,2,100)
-a_s = [1,2,5,10,50] 
+x = np.linspace(-2, 2, 100)
+a_s = [1, 2, 5, 10, 50]
 ys = [a * x**2 for a in a_s]
-_,ax = plt.subplots(figsize=(8,6))
-for a,y in zip(a_s,ys): ax.plot(x,y, label=f'a={a}')
-ax.set_ylim([0,5])
-ax.legend();
+_, ax = plt.subplots(figsize=(8, 6))
+for a, y in zip(a_s, ys):
+    ax.plot(x, y, label=f'a={a}')
+ax.set_ylim([0, 5])
+ax.legend()
 
 model = DotProductBias(n_users, n_movies, 50)
 learn = Learner(dls, model, loss_func=MSELossFlat())
@@ -192,18 +192,18 @@ def create_params(size):
 
 
 class DotProductBias(Module):
-    def __init__(self, n_users, n_movies, n_factors, y_range=(0,5.5)):
+    def __init__(self, n_users, n_movies, n_factors, y_range=(0, 5.5)):
         self.user_factors = create_params([n_users, n_factors])
         self.user_bias = create_params([n_users])
         self.movie_factors = create_params([n_movies, n_factors])
         self.movie_bias = create_params([n_movies])
         self.y_range = y_range
-        
+
     def forward(self, x):
-        users = self.user_factors[x[:,0]]
-        movies = self.movie_factors[x[:,1]]
-        res = (users*movies).sum(dim=1)
-        res += self.user_bias[x[:,0]] + self.movie_bias[x[:,1]]
+        users = self.user_factors[x[:, 0]]
+        movies = self.movie_factors[x[:, 1]]
+        res = (users * movies).sum(dim=1)
+        res += self.user_bias[x[:, 0]] + self.movie_bias[x[:, 1]]
         return sigmoid_range(res, *self.y_range)
 
 
@@ -225,15 +225,15 @@ top_movies = g.sort_values(ascending=False).index.values[:1000]
 top_idxs = tensor([learn.dls.classes['title'].o2i[m] for m in top_movies])
 movie_w = learn.model.movie_factors[top_idxs].cpu().detach()
 movie_pca = movie_w.pca(3)
-fac0,fac1,fac2 = movie_pca.t()
+fac0, fac1, fac2 = movie_pca.t()
 idxs = np.random.choice(len(top_movies), 50, replace=False)
 idxs = list(range(50))
 X = fac0[idxs]
 Y = fac2[idxs]
-plt.figure(figsize=(12,12))
+plt.figure(figsize=(12, 12))
 plt.scatter(X, Y)
 for i, x, y in zip(top_movies[idxs], X, Y):
-    plt.text(x,y,i, color=np.random.rand(3)*0.7, fontsize=11)
+    plt.text(x, y, i, color=np.random.rand(3) * 0.7, fontsize=11)
 plt.show()
 
 # ### Using fastai.collab
@@ -265,17 +265,17 @@ embs
 
 
 class CollabNN(Module):
-    def __init__(self, user_sz, item_sz, y_range=(0,5.5), n_act=100):
+    def __init__(self, user_sz, item_sz, y_range=(0, 5.5), n_act=100):
         self.user_factors = Embedding(*user_sz)
         self.item_factors = Embedding(*item_sz)
         self.layers = nn.Sequential(
-            nn.Linear(user_sz[1]+item_sz[1], n_act),
+            nn.Linear(user_sz[1] + item_sz[1], n_act),
             nn.ReLU(),
             nn.Linear(n_act, 1))
         self.y_range = y_range
-        
+
     def forward(self, x):
-        embs = self.user_factors(x[:,0]),self.item_factors(x[:,1])
+        embs = self.user_factors(x[:, 0]), self.item_factors(x[:, 1])
         x = self.layers(torch.cat(embs, dim=1))
         return sigmoid_range(x, *self.y_range)
 
@@ -285,7 +285,7 @@ model = CollabNN(*embs)
 learn = Learner(dls, model, loss_func=MSELossFlat())
 learn.fit_one_cycle(5, 5e-3, wd=0.01)
 
-learn = collab_learner(dls, use_nn=True, y_range=(0, 5.5), layers=[100,50])
+learn = collab_learner(dls, use_nn=True, y_range=(0, 5.5), layers=[100, 50])
 learn.fit_one_cycle(5, 5e-3, wd=0.1)
 
 
@@ -317,7 +317,7 @@ class EmbeddingNN(TabularModel):
 # 1. Create a class (without peeking, if possible!) and use it.
 # 1. What does `x[:,0]` return?
 # 1. Rewrite the `DotProduct` class (without peeking, if possible!) and train a model with it.
-# 1. What is a good loss function to use for MovieLens? Why? 
+# 1. What is a good loss function to use for MovieLens? Why?
 # 1. What would happen if we used cross-entropy loss with MovieLens? How would we need to change the model?
 # 1. What is the use of bias in a dot product model?
 # 1. What is another name for weight decay?
@@ -340,5 +340,3 @@ class EmbeddingNN(TabularModel):
 # 1. Find three other areas where collaborative filtering is being used, and find out what the pros and cons of this approach are in those areas.
 # 1. Complete this notebook using the full MovieLens dataset, and compare your results to online benchmarks. See if you can improve your accuracy. Look on the book's website and the fast.ai forum for ideas. Note that there are more columns in the full dataset—see if you can use those too (the next chapter might give you ideas).
 # 1. Create a model for MovieLens that works with cross-entropy loss, and compare it to the model in this chapter.
-
-
