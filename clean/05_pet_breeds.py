@@ -15,7 +15,6 @@
 # ---
 
 # hide
-# !pip install -Uqq fastbook
 from fastai.callback.fp16 import *
 from IPython.display import HTML
 from fastai.vision.all import *
