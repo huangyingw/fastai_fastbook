@@ -15,13 +15,16 @@
 #     name: python3
 # ---
 
-#hide
-# !pip install -Uqq fastbook
+# hide
+from fastai.collab import *
+from fastai.tabular.all import *
+from fastai.text.all import *
+from fastai.vision.all import *
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-#hide
-from fastbook import *
+# hide
 
 # # Your Deep Learning Journey
 
@@ -45,8 +48,7 @@ from fastbook import *
 
 # +
 # CLICK ME
-from fastai.vision.all import *
-path = untar_data(URLs.PETS)/'images'
+path = untar_data(URLs.PETS) / 'images'
 
 def is_cat(x): return x[0].isupper()
 dls = ImageDataLoaders.from_name_func(
@@ -59,7 +61,7 @@ learn.fine_tune(1)
 
 # ### Sidebar: This Book Was Written in Jupyter Notebooks
 
-1+1
+1 + 1
 
 img = PILImage.create(image_cat())
 img.to_thumb(192)
@@ -70,13 +72,13 @@ uploader = widgets.FileUpload()
 uploader
 
 # +
-#hide
+# hide
 # For the book, we can't actually click an upload button, so we fake it
 # uploader = SimpleNamespace(data = ['images/chapter1_cat_example.jpg'])
 # -
 
 img = PILImage.create(uploader.data[0])
-is_cat,_,probs = learn.predict(img)
+is_cat, _, probs = learn.predict(img)
 print(f"Is this a cat?: {is_cat}.")
 print(f"Probability it's a cat: {probs[1].item():.6f}")
 
@@ -131,19 +133,18 @@ loss->parameters[constraint=false label=update]''')
 # +
 path = untar_data(URLs.CAMVID_TINY)
 dls = SegmentationDataLoaders.from_label_func(
-    path, bs=8, fnames = get_image_files(path/"images"),
-    label_func = lambda o: path/'labels'/f'{o.stem}_P{o.suffix}',
-    codes = np.loadtxt(path/'codes.txt', dtype=str)
+    path, bs=8, fnames=get_image_files(path / "images"),
+    label_func=lambda o: path / 'labels' / f'{o.stem}_P{o.suffix}',
+    codes=np.loadtxt(path / 'codes.txt', dtype=str)
 )
 
 learn = unet_learner(dls, resnet34)
 learn.fine_tune(8)
 # -
 
-learn.show_results(max_n=6, figsize=(7,8))
+learn.show_results(max_n=6, figsize=(7, 8))
 
 # +
-from fastai.text.all import *
 
 dls = TextDataLoaders.from_folder(untar_data(URLs.IMDB), valid='test')
 learn = text_classifier_learner(dls, AWD_LSTM, drop_mult=0.5, metrics=accuracy)
@@ -169,24 +170,22 @@ learn.predict("I really liked that movie!")
 # ### End sidebar
 
 # +
-from fastai.tabular.all import *
 path = untar_data(URLs.ADULT_SAMPLE)
 
-dls = TabularDataLoaders.from_csv(path/'adult.csv', path=path, y_names="salary",
-    cat_names = ['workclass', 'education', 'marital-status', 'occupation',
-                 'relationship', 'race'],
-    cont_names = ['age', 'fnlwgt', 'education-num'],
-    procs = [Categorify, FillMissing, Normalize])
+dls = TabularDataLoaders.from_csv(path / 'adult.csv', path=path, y_names="salary",
+                                  cat_names=['workclass', 'education', 'marital-status', 'occupation',
+                                             'relationship', 'race'],
+                                  cont_names=['age', 'fnlwgt', 'education-num'],
+                                  procs=[Categorify, FillMissing, Normalize])
 
 learn = tabular_learner(dls, metrics=accuracy)
 # -
 
 learn.fit_one_cycle(3)
 
-from fastai.collab import *
 path = untar_data(URLs.ML_SAMPLE)
-dls = CollabDataLoaders.from_csv(path/'ratings.csv')
-learn = collab_learner(dls, y_range=(0.5,5.5))
+dls = CollabDataLoaders.from_csv(path / 'ratings.csv')
+learn = collab_learner(dls, y_range=(0.5, 5.5))
 learn.fine_tune(10)
 
 learn.show_results()
@@ -211,7 +210,7 @@ learn.show_results()
 #    - Lots of data T / F
 #    - Lots of expensive computers T / F
 #    - A PhD T / F
-#    
+#
 # 1. Name five areas where deep learning is now the best in the world.
 # 1. What was the name of the first device that was based on the principle of the artificial neuron?
 # 1. Based on the book of the same name, what are the requirements for parallel distributed processing (PDP)?
@@ -251,5 +250,3 @@ learn.show_results()
 
 # 1. Why is a GPU useful for deep learning? How is a CPU different, and why is it less effective for deep learning?
 # 1. Try to think of three areas where feedback loops might impact the use of machine learning. See if you can find documented examples of that happening in practice.
-
-
