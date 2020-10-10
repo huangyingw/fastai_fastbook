@@ -16,7 +16,6 @@
 # ---
 
 #hide
-# !pip install -Uqq fastbook
 import fastbook
 fastbook.setup_book()
 
@@ -120,10 +119,10 @@ tns*1.5
 
 # ## Computing Metrics Using Broadcasting
 
-valid_3_tens = torch.stack([tensor(Image.open(o)) 
+valid_3_tens = torch.stack([tensor(Image.open(o))
                             for o in (path/'valid'/'3').ls()])
 valid_3_tens = valid_3_tens.float()/255
-valid_7_tens = torch.stack([tensor(Image.open(o)) 
+valid_7_tens = torch.stack([tensor(Image.open(o))
                             for o in (path/'valid'/'7').ls()])
 valid_7_tens = valid_7_tens.float()/255
 valid_3_tens.shape,valid_7_tens.shape
@@ -248,7 +247,7 @@ params.grad * 1e-5
 
 params
 
-# #### Step 5: Step the weights. 
+# #### Step 5: Step the weights.
 
 lr = 1e-5
 params.data -= lr * params.grad.data
@@ -270,7 +269,7 @@ def apply_step(params, prn=True):
     return preds
 
 
-# #### Step 6: Repeat the process 
+# #### Step 6: Repeat the process
 
 for i in range(10): apply_step(params)
 
@@ -499,7 +498,7 @@ learn.fit(10, lr=lr)
 
 # ## Adding a Nonlinearity
 
-def simple_net(xb): 
+def simple_net(xb):
     res = xb@w1 + b1
     res = res.max(tensor(0.0))
     res = res@w2 + b2
@@ -581,5 +580,3 @@ learn.fit_one_cycle(1, 0.1)
 
 # 1. Create your own implementation of `Learner` from scratch, based on the training loop shown in this chapter.
 # 1. Complete all the steps in this chapter using the full MNIST datasets (that is, for all digits, not just 3s and 7s). This is a significant project and will take you quite a bit of time to complete! You'll need to do some of your own research to figure out how to overcome some obstacles you'll meet on the way.
-
-
