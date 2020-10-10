@@ -173,8 +173,8 @@ Path.BASE_PATH = path
 # +
 if not path.exists():
     path.mkdir()
-    api.competition_download_cli('bluebook-for-bulldozers', path=path)
-    file_extract(path/'bluebook-for-bulldozers.zip')
+api.competition_download_cli('bluebook-for-bulldozers', path=path)
+file_extract(path/'bluebook-for-bulldozers.zip')
 
 path.ls(file_type='text')
 # -
@@ -616,7 +616,7 @@ len(xs.columns), len(xs_imp.columns)
 
 plot_fi(rf_feat_importance(m, xs_imp));
 
-# One thing that makes this harder to interpret is that there seem to be some variables with very similar meanings: for example, `ProductGroup` and `ProductGroupDesc`. Let's try to remove any redundent features. 
+# One thing that makes this harder to interpret is that there seem to be some variables with very similar meanings: for example, `ProductGroup` and `ProductGroupDesc`. Let's try to remove any redundent features.
 
 # ### Removing Redundant Features
 
@@ -696,7 +696,7 @@ ax = valid_xs_final['YearMade'].hist()
 #
 # To answer this question, we can't just take the average sale price for each `YearMade`. The problem with that approach is that many other things vary from year to year as well, such as which products are sold, how many products have air-conditioning, inflation, and so forth. So, merely averaging over all the auctions that have the same `YearMade` would also capture the effect of how every other field also changed along with `YearMade` and how that overall change affected price.
 #
-# Instead, what we do is replace every single value in the `YearMade` column with 1950, and then calculate the predicted sale price for every auction, and take the average over all auctions. Then we do the same for 1951, 1952, and so forth until our final year of 2011. This isolates the effect of only `YearMade` (even if it does so by averaging over some imagined records where we assign a `YearMade` value that might never actually exist alongside some other values). 
+# Instead, what we do is replace every single value in the `YearMade` column with 1950, and then calculate the predicted sale price for every auction, and take the average over all auctions. Then we do the same for 1951, 1952, and so forth until our final year of 2011. This isolates the effect of only `YearMade` (even if it does so by averaging over some imagined records where we assign a `YearMade` value that might never actually exist alongside some other values).
 #
 # > A: If you are philosophically minded it is somewhat dizzying to contemplate the different kinds of hypotheticality that we are juggling to make this calculation. First, there's the fact that _every_ prediction is hypothetical, because we are not noting empirical data. Second, there's the point that we're _not_ merely interested in asking how sale price would change if we changed `YearMade` and everything else along with it. Rather, we're very specifically asking, how sale price would change in a hypothetical world where only `YearMade` changed. Phew! It is impressive that we can ask such questions. I recommend Judea Pearl and Dana Mackenzie's recent book on causality, _The Book of Why_ (Basic Books), if you're interested in more deeply exploring formalisms for analyzing these subtleties.
 #
@@ -716,7 +716,7 @@ plot_partial_dependence(m, valid_xs_final, ['YearMade','ProductSize'],
 
 # ### Data Leakage
 
-# In  the paper ["Leakage in Data Mining: Formulation, Detection, and Avoidance"](https://dl.acm.org/doi/10.1145/2020408.2020496), Shachar Kaufman, Saharon Rosset, and Claudia Perlich describe leakage as: 
+# In  the paper ["Leakage in Data Mining: Formulation, Detection, and Avoidance"](https://dl.acm.org/doi/10.1145/2020408.2020496), Shachar Kaufman, Saharon Rosset, and Claudia Perlich describe leakage as:
 #
 # > : The introduction of information about the target of a data mining problem, which should not be legitimately available to mine from. A trivial example of leakage would be a model that uses the target itself as an input, thus concluding for example that 'it rains on rainy days'. In practice, the introduction of this illegitimate information is unintentional, and facilitated by the data collection, aggregation and preparation process.
 #
@@ -790,7 +790,7 @@ prediction[0], bias[0], contributions[0].sum()
 
 # The clearest way to display the contributions is with a *waterfall plot*. This shows how the positive and negative contributions from all the independent variables sum up to create the final prediction, which is the righthand column labeled "net" here:
 
-waterfall(valid_xs_final.columns, contributions[0], threshold=0.08, 
+waterfall(valid_xs_final.columns, contributions[0], threshold=0.08,
           rotation_value=45,formatting='{:,.3f}');
 
 # This kind of information is most useful in production, rather than during model development. You can use it to provide useful information to users of your data product about the underlying reasoning behind the predictions.
@@ -1096,5 +1096,3 @@ r_mse(ens_preds,valid_y)
 # 1. Implement the decision tree algorithm in this chapter from scratch yourself, and try it on the datase you used in the first exercise.
 # 1. Use the embeddings from the neural net in this chapter in a random forest, and see if you can improve on the random forest results we saw.
 # 1. Explain what each line of the source of `TabularModel` does (with the exception of the `BatchNorm1d` and `Dropout` layers).
-
-
