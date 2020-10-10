@@ -15,7 +15,6 @@
 # ---
 
 # hide
-# !pip install -Uqq fastbook
 from waterfall_chart import plot as waterfall
 from treeinterpreter import treeinterpreter
 import warnings
@@ -305,11 +304,9 @@ plot_partial_dependence(m, valid_xs_final, ['YearMade', 'ProductSize'],
 
 # ### Tree Interpreter
 
-# +
 # hide
 warnings.simplefilter('ignore', FutureWarning)
 
-# -
 
 row = valid_xs_final.iloc[:5]
 
