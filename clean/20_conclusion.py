@@ -15,10 +15,7 @@
 # ---
 
 #hide
-# !pip install -Uqq fastbook
 import fastbook
 fastbook.setup_book()
 
 # # Concluding Thoughts
-
-
