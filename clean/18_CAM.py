@@ -15,7 +15,6 @@
 # ---
 
 #hide
-# !pip install -Uqq fastbook
 import fastbook
 fastbook.setup_book()
 
@@ -69,7 +68,7 @@ hook.remove()
 
 class Hook():
     def __init__(self, m):
-        self.hook = m.register_forward_hook(self.hook_func)   
+        self.hook = m.register_forward_hook(self.hook_func)
     def hook_func(self, m, i, o): self.stored = o.detach().clone()
     def __enter__(self, *args): return self
     def __exit__(self, *args): self.hook.remove()
@@ -84,7 +83,7 @@ with Hook(learn.model[0]) as hook:
 
 class HookBwd():
     def __init__(self, m):
-        self.hook = m.register_backward_hook(self.hook_func)   
+        self.hook = m.register_backward_hook(self.hook_func)
     def hook_func(self, m, gi, go): self.stored = go[0].detach().clone()
     def __enter__(self, *args): return self
     def __exit__(self, *args): self.hook.remove()
@@ -143,5 +142,3 @@ ax.imshow(cam_map.detach().cpu(), alpha=0.6, extent=(0,224,224,0),
 
 # 1. Try removing `keepdim` and see what happens. Look up this parameter in the PyTorch docs. Why do we need it in this notebook?
 # 1. Create a notebook like this one, but for NLP, and use it to find which words in a movie review are most significant in assessing the sentiment of a particular movie review.
-
-
