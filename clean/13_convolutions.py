@@ -16,7 +16,6 @@
 # ---
 
 #hide
-# !pip install -Uqq fastbook
 import fastbook
 fastbook.setup_book()
 
@@ -97,8 +96,8 @@ edge_kernels = torch.stack([left_edge, top_edge, diag1_edge, diag2_edge])
 edge_kernels.shape
 
 # +
-mnist = DataBlock((ImageBlock(cls=PILImageBW), CategoryBlock), 
-                  get_items=get_image_files, 
+mnist = DataBlock((ImageBlock(cls=PILImageBW), CategoryBlock),
+                  get_items=get_image_files,
                   splitter=GrandparentSplitter(),
                   get_y=parent_label)
 
@@ -203,8 +202,8 @@ path.ls()
 # +
 def get_dls(bs=64):
     return DataBlock(
-        blocks=(ImageBlock(cls=PILImageBW), CategoryBlock), 
-        get_items=get_image_files, 
+        blocks=(ImageBlock(cls=PILImageBW), CategoryBlock),
+        get_items=get_image_files,
         splitter=GrandparentSplitter('training','testing'),
         get_y=parent_label,
         batch_tfms=Normalize()
@@ -347,5 +346,3 @@ learn = fit(5, lr=0.1)
 # 1. What features other than edge detectors have been used in computer vision (especially before deep learning became popular)?
 # 1. There are other normalization layers available in PyTorch. Try them out and see what works best. Learn about why other normalization layers have been developed, and how they differ from batch normalization.
 # 1. Try moving the activation function after the batch normalization layer in `conv`. Does it make a difference? See what you can find out about what order is recommended, and why.
-
-
