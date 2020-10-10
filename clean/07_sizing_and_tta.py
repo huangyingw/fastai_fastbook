@@ -15,7 +15,6 @@
 # ---
 
 #hide
-# !pip install -Uqq fastbook
 import fastbook
 fastbook.setup_book()
 
@@ -68,7 +67,7 @@ learn.fit_one_cycle(5, 3e-3)
 # ## Progressive Resizing
 
 dls = get_dls(128, 128)
-learn = Learner(dls, xresnet50(), loss_func=CrossEntropyLossFlat(), 
+learn = Learner(dls, xresnet50(), loss_func=CrossEntropyLossFlat(),
                 metrics=accuracy)
 learn.fit_one_cycle(4, 3e-3)
 
@@ -131,5 +130,3 @@ show_image((0.3*tchurch + 0.7*tgas), ax=axs[2]);
 # 1. Find the Mixup paper on arXiv and read it. Pick one or two more recent articles introducing variants of Mixup and read them, then try to implement them on your problem.
 # 1. Find the script training Imagenette using Mixup and use it as an example to build a script for a long training on your own project. Execute it and see if it helps.
 # 1. Read the sidebar "Label Smoothing, the Paper", look at the relevant section of the original paper and see if you can follow it. Don't be afraid to ask for help!
-
-
