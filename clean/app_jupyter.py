@@ -14,7 +14,6 @@
 # ---
 
 #hide
-# # !pip install -Uqq fastbook
 import fastbook
 fastbook.setup_book()
 
@@ -46,7 +45,7 @@ from fastbook import *
 # ## Code Capabilities
 
 # Import necessary libraries
-from fastai.vision.all import * 
+from fastai.vision.all import *
 import matplotlib.pyplot as plt
 
 from PIL import Image
