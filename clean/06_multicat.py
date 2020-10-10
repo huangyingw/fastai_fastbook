@@ -15,7 +15,6 @@
 # ---
 
 # hide
-# !pip install -Uqq fastbook
 from fastai.vision.all import *
 from fastbook import *
 import fastbook
