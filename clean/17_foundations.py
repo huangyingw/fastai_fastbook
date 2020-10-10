@@ -16,7 +16,6 @@
 # ---
 
 #hide
-# !pip install -Uqq fastbook
 import fastbook
 fastbook.setup_book()
 
@@ -254,7 +253,7 @@ loss = mse(out, y)
 
 # ### Gradients and the Backward Pass
 
-def mse_grad(inp, targ): 
+def mse_grad(inp, targ):
     # grad of loss with respect to output of previous layer
     inp.g = 2. * (inp.squeeze() - targ).unsqueeze(-1) / inp.shape[0]
 
@@ -287,7 +286,7 @@ def forward_and_backward(inp, targ):
     out = l2 @ w2 + b2
     # we don't actually need the loss in backward!
     loss = mse(out, targ)
-    
+
     # backward pass:
     mse_grad(out, targ)
     lin_grad(l2, out, w2, b2)
@@ -302,18 +301,18 @@ class Relu():
         self.inp = inp
         self.out = inp.clamp_min(0.)
         return self.out
-    
+
     def backward(self): self.inp.g = (self.inp>0).float() * self.out.g
 
 
 class Lin():
     def __init__(self, w, b): self.w,self.b = w,b
-        
+
     def __call__(self, inp):
         self.inp = inp
         self.out = inp@self.w + self.b
         return self.out
-    
+
     def backward(self):
         self.inp.g = self.out.g @ self.w.t()
         self.w.g = self.inp.t() @ self.out.g
@@ -326,7 +325,7 @@ class Mse():
         self.targ = targ
         self.out = (inp.squeeze() - targ).pow(2).mean()
         return self.out
-    
+
     def backward(self):
         x = (self.inp.squeeze()-self.targ).unsqueeze(-1)
         self.inp.g = 2.*x/self.targ.shape[0]
@@ -336,11 +335,11 @@ class Model():
     def __init__(self, w1, b1, w2, b2):
         self.layers = [Lin(w1,b1), Relu(), Lin(w2,b2)]
         self.loss = Mse()
-        
+
     def __call__(self, x, targ):
         for l in self.layers: x = l(x)
         return self.loss(x, targ)
-    
+
     def backward(self):
         self.loss.backward()
         for l in reversed(self.layers): l.backward()
@@ -360,7 +359,7 @@ class LayerFunction():
         self.args = args
         self.out = self.forward(*args)
         return self.out
-    
+
     def forward(self):  raise Exception('not implemented')
     def bwd(self):      raise Exception('not implemented')
     def backward(self): self.bwd(self.out, *self.args)
@@ -373,9 +372,9 @@ class Relu(LayerFunction):
 
 class Lin(LayerFunction):
     def __init__(self, w, b): self.w,self.b = w,b
-        
+
     def forward(self, inp): return inp@self.w + self.b
-    
+
     def bwd(self, out, inp):
         inp.g = out.g @ self.w.t()
         self.w.g = self.inp.t() @ self.out.g
@@ -384,7 +383,7 @@ class Lin(LayerFunction):
 
 class Mse(LayerFunction):
     def forward (self, inp, targ): return (inp.squeeze() - targ).pow(2).mean()
-    def bwd(self, out, inp, targ): 
+    def bwd(self, out, inp, targ):
         inp.g = 2*(inp.squeeze()-targ).unsqueeze(-1) / targ.shape[0]
 
 
@@ -397,7 +396,7 @@ class MyRelu(Function):
         result = i.clamp_min(0.)
         ctx.save_for_backward(i)
         return result
-    
+
     @staticmethod
     def backward(ctx, grad_output):
         i, = ctx.saved_tensors
@@ -412,7 +411,7 @@ class LinearLayer(nn.Module):
         super().__init__()
         self.weight = nn.Parameter(torch.randn(n_out, n_in) * sqrt(2/n_in))
         self.bias = nn.Parameter(torch.zeros(n_out))
-    
+
     def forward(self, x): return x @ self.weight.t() + self.bias
 
 
@@ -429,7 +428,7 @@ class Model(nn.Module):
         self.layers = nn.Sequential(
             nn.Linear(n_in,nh), nn.ReLU(), nn.Linear(nh,n_out))
         self.loss = mse
-        
+
     def forward(self, x, targ): return self.loss(self.layers(x).squeeze(), targ)
 
 
@@ -438,7 +437,7 @@ class Model(Module):
         self.layers = nn.Sequential(
             nn.Linear(n_in,nh), nn.ReLU(), nn.Linear(nh,n_out))
         self.loss = mse
-        
+
     def forward(self, x, targ): return self.loss(self.layers(x).squeeze(), targ)
 
 # ## Conclusion
@@ -491,6 +490,4 @@ class Model(Module):
 # 1. Implement ReLU as a `torch.autograd.Function` and train a model with it.
 # 1. If you are mathematically inclined, find out what the gradients of a linear layer are in mathematical notation. Map that to the implementation we saw in this chapter.
 # 1. Learn about the `unfold` method in PyTorch, and use it along with matrix multiplication to implement your own 2D convolution function. Then train a CNN that uses it.
-# 1. Implement everything in this chapter using NumPy instead of PyTorch. 
-
-
+# 1. Implement everything in this chapter using NumPy instead of PyTorch.
