@@ -15,7 +15,6 @@
 # ---
 
 #hide
-# !pip install -Uqq fastbook
 import fastbook
 fastbook.setup_book()
 
@@ -68,10 +67,10 @@ dls = DataLoaders.from_dsets(seqs[:cut], seqs[cut:], bs=64, shuffle=False)
 
 class LMModel1(Module):
     def __init__(self, vocab_sz, n_hidden):
-        self.i_h = nn.Embedding(vocab_sz, n_hidden)  
-        self.h_h = nn.Linear(n_hidden, n_hidden)     
+        self.i_h = nn.Embedding(vocab_sz, n_hidden)
+        self.h_h = nn.Linear(n_hidden, n_hidden)
         self.h_o = nn.Linear(n_hidden,vocab_sz)
-        
+
     def forward(self, x):
         h = F.relu(self.h_h(self.i_h(x[:,0])))
         h = h + self.i_h(x[:,1])
@@ -81,7 +80,7 @@ class LMModel1(Module):
         return self.h_o(h)
 
 
-learn = Learner(dls, LMModel1(len(vocab), 64), loss_func=F.cross_entropy, 
+learn = Learner(dls, LMModel1(len(vocab), 64), loss_func=F.cross_entropy,
                 metrics=accuracy)
 learn.fit_one_cycle(4, 1e-3)
 
@@ -97,10 +96,10 @@ idx, vocab[idx.item()], counts[idx].item()/n
 
 class LMModel2(Module):
     def __init__(self, vocab_sz, n_hidden):
-        self.i_h = nn.Embedding(vocab_sz, n_hidden)  
-        self.h_h = nn.Linear(n_hidden, n_hidden)     
+        self.i_h = nn.Embedding(vocab_sz, n_hidden)
+        self.h_h = nn.Linear(n_hidden, n_hidden)
         self.h_o = nn.Linear(n_hidden,vocab_sz)
-        
+
     def forward(self, x):
         h = 0
         for i in range(3):
@@ -109,7 +108,7 @@ class LMModel2(Module):
         return self.h_o(h)
 
 
-learn = Learner(dls, LMModel2(len(vocab), 64), loss_func=F.cross_entropy, 
+learn = Learner(dls, LMModel2(len(vocab), 64), loss_func=F.cross_entropy,
                 metrics=accuracy)
 learn.fit_one_cycle(4, 1e-3)
 
@@ -120,11 +119,11 @@ learn.fit_one_cycle(4, 1e-3)
 
 class LMModel3(Module):
     def __init__(self, vocab_sz, n_hidden):
-        self.i_h = nn.Embedding(vocab_sz, n_hidden)  
-        self.h_h = nn.Linear(n_hidden, n_hidden)     
+        self.i_h = nn.Embedding(vocab_sz, n_hidden)
+        self.h_h = nn.Linear(n_hidden, n_hidden)
         self.h_o = nn.Linear(n_hidden,vocab_sz)
         self.h = 0
-        
+
     def forward(self, x):
         for i in range(3):
             self.h = self.h + self.i_h(x[:,i])
@@ -132,7 +131,7 @@ class LMModel3(Module):
         out = self.h_o(self.h)
         self.h = self.h.detach()
         return out
-    
+
     def reset(self): self.h = 0
 
 
@@ -149,8 +148,8 @@ def group_chunks(ds, bs):
 
 cut = int(len(seqs) * 0.8)
 dls = DataLoaders.from_dsets(
-    group_chunks(seqs[:cut], bs), 
-    group_chunks(seqs[cut:], bs), 
+    group_chunks(seqs[:cut], bs),
+    group_chunks(seqs[cut:], bs),
     bs=bs, drop_last=True, shuffle=False)
 
 learn = Learner(dls, LMModel3(len(vocab), 64), loss_func=F.cross_entropy,
@@ -172,11 +171,11 @@ dls = DataLoaders.from_dsets(group_chunks(seqs[:cut], bs),
 
 class LMModel4(Module):
     def __init__(self, vocab_sz, n_hidden):
-        self.i_h = nn.Embedding(vocab_sz, n_hidden)  
-        self.h_h = nn.Linear(n_hidden, n_hidden)     
+        self.i_h = nn.Embedding(vocab_sz, n_hidden)
+        self.h_h = nn.Linear(n_hidden, n_hidden)
         self.h_o = nn.Linear(n_hidden,vocab_sz)
         self.h = 0
-        
+
     def forward(self, x):
         outs = []
         for i in range(sl):
@@ -185,7 +184,7 @@ class LMModel4(Module):
             outs.append(self.h_o(self.h))
         self.h = self.h.detach()
         return torch.stack(outs, dim=1)
-    
+
     def reset(self): self.h = 0
 
 
@@ -208,17 +207,17 @@ class LMModel5(Module):
         self.rnn = nn.RNN(n_hidden, n_hidden, n_layers, batch_first=True)
         self.h_o = nn.Linear(n_hidden, vocab_sz)
         self.h = torch.zeros(n_layers, bs, n_hidden)
-        
+
     def forward(self, x):
         res,h = self.rnn(self.i_h(x), self.h)
         self.h = h.detach()
         return self.h_o(res)
-    
+
     def reset(self): self.h.zero_()
 
 
-learn = Learner(dls, LMModel5(len(vocab), 64, 2), 
-                loss_func=CrossEntropyLossFlat(), 
+learn = Learner(dls, LMModel5(len(vocab), 64, 2),
+                loss_func=CrossEntropyLossFlat(),
                 metrics=accuracy, cbs=ModelResetter)
 learn.fit_one_cycle(15, 3e-3)
 
@@ -279,18 +278,18 @@ class LMModel6(Module):
         self.rnn = nn.LSTM(n_hidden, n_hidden, n_layers, batch_first=True)
         self.h_o = nn.Linear(n_hidden, vocab_sz)
         self.h = [torch.zeros(n_layers, bs, n_hidden) for _ in range(2)]
-        
+
     def forward(self, x):
         res,h = self.rnn(self.i_h(x), self.h)
         self.h = [h_.detach() for h_ in h]
         return self.h_o(res)
-    
-    def reset(self): 
+
+    def reset(self):
         for h in self.h: h.zero_()
 
 
-learn = Learner(dls, LMModel6(len(vocab), 64, 2), 
-                loss_func=CrossEntropyLossFlat(), 
+learn = Learner(dls, LMModel6(len(vocab), 64, 2),
+                loss_func=CrossEntropyLossFlat(),
                 metrics=accuracy, cbs=ModelResetter)
 learn.fit_one_cycle(15, 1e-2)
 
@@ -319,14 +318,14 @@ class LMModel7(Module):
         self.h_o = nn.Linear(n_hidden, vocab_sz)
         self.h_o.weight = self.i_h.weight
         self.h = [torch.zeros(n_layers, bs, n_hidden) for _ in range(2)]
-        
+
     def forward(self, x):
         raw,h = self.rnn(self.i_h(x), self.h)
         out = self.drop(raw)
         self.h = [h_.detach() for h_ in h]
         return self.h_o(out),raw,out
-    
-    def reset(self): 
+
+    def reset(self):
         for h in self.h: h.zero_()
 
 
@@ -389,5 +388,3 @@ learn.fit_one_cycle(15, 1e-2, wd=0.1)
 # 1. Write the code for an LSTM from scratch (you may refer to <<lstm>>).
 # 1. Search the internet for the GRU architecture and implement it from scratch, and try training a model. See if you can get results similar to those we saw in this chapter. Compare you results to the results of PyTorch's built in `GRU` module.
 # 1. Take a look at the source code for AWD-LSTM in fastai, and try to map each of the lines of code to the concepts shown in this chapter.
-
-
