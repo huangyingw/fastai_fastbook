@@ -16,7 +16,6 @@
 # ---
 
 #hide
-# !pip install -Uqq fastbook
 import fastbook
 fastbook.setup_book()
 
@@ -127,5 +126,3 @@ fastbook.setup_book()
 # - Think about how you can use deep learning to help you with your own projects, including what kinds of data you could use, what kinds of problems may come up, and how you might be able to mitigate these issues in practice.
 #
 # In the next section of the book you will learn about how and why deep learning works, instead of just seeing how you can use it in practice. Understanding the how and why is important for both practitioners and researchers, because in this fairly new field nearly every project requires some level of customization and debugging. The better you understand the foundations of deep learning, the better your models will be. These foundations are less important for executives, product managers, and so forth (although still useful, so feel free to keep reading!), but they are critical for anybody who is actually training and deploying models themselves.
-
-
