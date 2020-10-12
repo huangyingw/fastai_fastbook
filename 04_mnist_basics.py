@@ -162,7 +162,7 @@ stacked_threes.ndim
 mean3 = stacked_threes.mean(0)
 show_image(mean3);
 
-# According to this dataset, this is the ideal number 3! (You may not like it, but this is what peak number 3 performance looks like.) You can see how it's very dark where all the images agree it should be dark, but it becomes wispy and blurry where the images disagree. 
+# According to this dataset, this is the ideal number 3! (You may not like it, but this is what peak number 3 performance looks like.) You can see how it's very dark where all the images agree it should be dark, but it becomes wispy and blurry where the images disagree.
 #
 # Let's do the same thing for the 7s, but put all the steps together at once to save some time:
 
@@ -279,10 +279,10 @@ tns*1.5
 #
 # So to start with, let's create tensors for our 3s and 7s from that directory. These are the tensors we will use to calculate a metric measuring the quality of our first-try model, which measures distance from an ideal image:
 
-valid_3_tens = torch.stack([tensor(Image.open(o)) 
+valid_3_tens = torch.stack([tensor(Image.open(o))
                             for o in (path/'valid'/'3').ls()])
 valid_3_tens = valid_3_tens.float()/255
-valid_7_tens = torch.stack([tensor(Image.open(o)) 
+valid_7_tens = torch.stack([tensor(Image.open(o))
                             for o in (path/'valid'/'7').ls()])
 valid_7_tens = valid_7_tens.float()/255
 valid_3_tens.shape,valid_7_tens.shape
@@ -378,7 +378,7 @@ accuracy_3s,accuracy_7s,(accuracy_3s+accuracy_7s)/2
 
 # Here we are assuming that `x` is the image, represented as a vector—in other words, with all of the rows stacked up end to end into a single long line. And we are assuming that the weights are a vector `w`. If we have this function, then we just need some way to update the weights to make them a little bit better. With such an approach, we can repeat that step a number of times, making the weights better and better, until they are as good as we can make them.
 #
-# We want to find the specific values for the vector `w` that causes the result of our function to be high for those images that are actually 8s, and low for those images that are not. Searching for the best vector `w` is a way to search for the best function for recognising 8s. (Because we are not yet using a deep neural network, we are limited by what our function can actually do—we are going to fix that constraint later in this chapter.) 
+# We want to find the specific values for the vector `w` that causes the result of our function to be high for those images that are actually 8s, and low for those images that are not. Searching for the best vector `w` is a way to search for the best function for recognising 8s. (Because we are not yet using a deep neural network, we are limited by what our function can actually do—we are going to fix that constraint later in this chapter.)
 #
 # To be more specific, here are the steps that we are going to require, to turn this function into a machine learning classifier:
 #
@@ -532,7 +532,7 @@ plt.scatter(time,speed);
 
 # We've added a bit of random noise, since measuring things manually isn't precise. This means it's not that easy to answer the question: what was the roller coaster's speed? Using SGD we can try to find a function that matches our observations. We can't consider every possible function, so let's use a guess that it will be quadratic; i.e., a function of the form `a*(time**2)+(b*time)+c`.
 #
-# We want to distinguish clearly between the function's input (the time when we are measuring the coaster's speed) and its parameters (the values that define *which* quadratic we're trying). So, let's collect the parameters in one argument and thus separate the input, `t`, and the parameters, `params`, in the function's signature: 
+# We want to distinguish clearly between the function's input (the time when we are measuring the coaster's speed) and its parameters (the values that define *which* quadratic we're trying). So, let's collect the parameters in one argument and thus separate the input, `t`, and the parameters, `params`, in the function's signature:
 
 def f(t, params):
     a,b,c = params
@@ -601,7 +601,7 @@ params.grad * 1e-5
 
 params
 
-# #### Step 5: Step the weights. 
+# #### Step 5: Step the weights.
 
 # Now we need to update the parameters based on the gradients we just calculated:
 
@@ -633,7 +633,7 @@ def apply_step(params, prn=True):
     return preds
 
 
-# #### Step 6: Repeat the process 
+# #### Step 6: Repeat the process
 
 # Now we iterate. By looping and performing many improvements, we hope to reach a good result:
 
@@ -671,7 +671,7 @@ step->predict[label=repeat]
 #
 # To find how to change the weights to make the loss a bit better, we use calculus to calculate the *gradients*. (Actually, we let PyTorch do it for us!) Let's consider an analogy. Imagine you are lost in the mountains with your car parked at the lowest point. To find your way back to it, you might wander in a random direction, but that probably wouldn't help much. Since you know your vehicle is at the lowest point, you would be better off going downhill. By always taking a step in the direction of the steepest downward slope, you should eventually arrive at your destination. We use the magnitude of the gradient (i.e., the steepness of the slope) to tell us how big a step to take; specifically, we multiply the gradient by a number we choose called the *learning rate* to decide on the step size. We then *iterate* until we have reached the lowest point, which will be our parking lot, then we can *stop*.
 #
-# All of that we just saw can be transposed directly to the MNIST dataset, except for the loss function. Let's now see how we can define a good training objective. 
+# All of that we just saw can be transposed directly to the MNIST dataset, except for the loss function. Let's now see how we can define a good training objective.
 
 # ## The MNIST Loss Function
 
@@ -806,7 +806,7 @@ def sigmoid(x): return 1/(1+torch.exp(-x))
 plot_function(torch.sigmoid, title='Sigmoid', min=-4, max=4)
 
 
-# As you can see, it takes any input value, positive or negative, and smooshes it onto an output value between 0 and 1. It's also a smooth curve that only goes up, which makes it easier for SGD to find meaningful gradients. 
+# As you can see, it takes any input value, positive or negative, and smooshes it onto an output value between 0 and 1. It's also a smooth curve that only goes up, which makes it easier for SGD to find meaningful gradients.
 #
 # Let's update `mnist_loss` to first apply `sigmoid` to the inputs:
 
@@ -1062,7 +1062,7 @@ learn.fit(10, lr=lr)
 #
 # Here is the entire definition of a basic neural network:
 
-def simple_net(xb): 
+def simple_net(xb):
     res = xb@w1 + b1
     res = res.max(tensor(0.0))
     res = res@w2 + b2
@@ -1104,7 +1104,7 @@ simple_net = nn.Sequential(
 
 # `nn.Sequential` creates a module that will call each of the listed layers or functions in turn.
 #
-# `nn.ReLU` is a PyTorch module that does exactly the same thing as the `F.relu` function. Most functions that can appear in a model also have identical forms that are modules. Generally, it's just a case of replacing `F` with `nn` and changing the capitalization. When using `nn.Sequential`, PyTorch requires us to use the module version. Since modules are classes, we have to instantiate them, which is why you see `nn.ReLU()` in this example. 
+# `nn.ReLU` is a PyTorch module that does exactly the same thing as the `F.relu` function. Most functions that can appear in a model also have identical forms that are modules. Generally, it's just a case of replacing `F` with `nn` and changing the capitalization. When using `nn.Sequential`, PyTorch requires us to use the module version. Since modules are classes, we have to instantiate them, which is why you see `nn.ReLU()` in this example.
 #
 # Because `nn.Sequential` is a module, we can get its parameters, which will return a list of all the parameters of all the modules it contains. Let's try it out! As this is a deeper model, we'll use a lower learning rate and a few more epochs.
 
@@ -1232,5 +1232,3 @@ learn.fit_one_cycle(1, 0.1)
 
 # 1. Create your own implementation of `Learner` from scratch, based on the training loop shown in this chapter.
 # 1. Complete all the steps in this chapter using the full MNIST datasets (that is, for all digits, not just 3s and 7s). This is a significant project and will take you quite a bit of time to complete! You'll need to do some of your own research to figure out how to overcome some obstacles you'll meet on the way.
-
-
