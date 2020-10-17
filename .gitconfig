@@ -43,6 +43,8 @@
     ignore = app_jupyter.py
     ignore = clean/*.py
     ignore = fastai
+    ignore = pytorch
+    ignore = vision
 [deploy]
 	host = localhost
 	path = ~/myproject/git/AI/fastai/fastbook
