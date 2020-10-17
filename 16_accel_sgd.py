@@ -15,14 +15,13 @@
 #     name: python3
 # ---
 
-#hide
-# !pip install -Uqq fastbook
+# hide
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
 # + hide_input=false
-#hide
-from fastbook import *
+# hide
 
 
 # + active=""
@@ -47,11 +46,11 @@ from fastbook import *
 
 # First, we'll create a baseline, using plain SGD, and compare it to fastai's default optimizer. We'll start by grabbing Imagenette with the same `get_data` we used in <<chapter_resnet>>:
 
-#hide_input
+# hide_input
 def get_data(url, presize, resize):
     path = untar_data(url)
     return DataBlock(
-        blocks=(ImageBlock, CategoryBlock), get_items=get_image_files, 
+        blocks=(ImageBlock, CategoryBlock), get_items=get_image_files,
         splitter=GrandparentSplitter(valid_name='val'),
         get_y=parent_label, item_tfms=Resize(presize),
         batch_tfms=[*aug_transforms(min_scale=0.5, size=resize),
@@ -66,7 +65,7 @@ dls = get_data(URLs.IMAGENETTE_160, 160, 128)
 
 def get_learner(**kwargs):
     return cnn_learner(dls, resnet34, pretrained=False,
-                    metrics=accuracy, **kwargs).to_fp16()
+                       metrics=accuracy, **kwargs).to_fp16()
 
 
 # Here's the default fastai optimizer, with the usual 3e-3 learning rate:
@@ -84,7 +83,7 @@ learn.lr_find()
 
 # It looks like we'll need to use a higher learning rate than we normally use:
 
-learn.fit_one_cycle(3, 0.03, moms=(0,0,0))
+learn.fit_one_cycle(3, 0.03, moms=(0, 0, 0))
 
 
 # Because accelerating SGD with momentum is such a good idea, fastai does this by default in `fit_one_cycle`, so we turn it off with `moms=(0,0,0)`. We'll be discussing momentum shortly.)
@@ -112,7 +111,7 @@ learn.fit_one_cycle(3, 0.03, moms=(0,0,0))
 
 # The more interesting method is `step`, which loops through the callbacks (`cbs`) and calls them to update the parameters (the `_update` function just calls `state.update` if there's anything returned by `cb`). As you can see, `Optimizer` doesn't actually do any SGD steps itself. Let's see how we can add SGD to `Optimizer`.
 #
-# Here's an optimizer callback that does a single SGD step, by multiplying `-lr` by the gradients and adding that to the parameter (when `Tensor.add_` in PyTorch is passed two parameters, they are multiplied together before the addition): 
+# Here's an optimizer callback that does a single SGD step, by multiplying `-lr` by the gradients and adding that to the parameter (when `Tensor.add_` in PyTorch is passed two parameters, they are multiplied together before the addition):
 
 def sgd_cb(p, lr, **kwargs): p.data.add_(-lr, p.grad.data)
 
@@ -146,21 +145,21 @@ learn.fit(3, 0.03)
 # <<img_momentum>> shows an example of noisy data for a single parameter, with the momentum curve plotted in red, and the gradients of the parameter plotted in blue. The gradients increase, then decrease, and the momentum does a good job of following the general trend without getting too influenced by noise.
 
 # + hide_input=true
-#hide_input
-#id img_momentum
-#caption An example of momentum
-#alt Graph showing an example of momentum
+# hide_input
+# id img_momentum
+# caption An example of momentum
+# alt Graph showing an example of momentum
 x = np.linspace(-4, 4, 100)
-y = 1 - (x/3) ** 2
+y = 1 - (x / 3) ** 2
 x1 = x + np.random.randn(100) * 0.1
 y1 = y + np.random.randn(100) * 0.1
-plt.scatter(x1,y1)
+plt.scatter(x1, y1)
 idx = x1.argsort()
-beta,avg,res = 0.7,0,[]
+beta, avg, res = 0.7, 0, []
 for i in idx:
-    avg = beta * avg + (1-beta) * y1[i]
-    res.append(avg/(1-beta**(i+1)))
-plt.plot(x1[idx],np.array(res), color='red');
+    avg = beta * avg + (1 - beta) * y1[i]
+    res.append(avg / (1 - beta**(i + 1)))
+plt.plot(x1[idx], np.array(res), color='red')
 # -
 
 # It works particularly well if the loss function has narrow canyons we need to navigate: vanilla SGD would send us bouncing from one side to the other, while SGD with momentum will average those to roll smoothly down the side. The parameter `beta` determines the strength of the momentum we are using: with a small `beta` we stay closer to the actual gradient values, whereas with a high `beta` we will mostly go in the direction of the average of the gradients and it will take a while before any change in the gradients makes that trend move.
@@ -168,24 +167,24 @@ plt.plot(x1[idx],np.array(res), color='red');
 # With a large `beta`, we might miss that the gradients have changed directions and roll over a small local minima. This is a desired side effect: intuitively, when we show a new input to our model, it will look like something in the training set but won't be *exactly* like it. That means it will correspond to a point in the loss function that is close to the minimum we ended up with at the end of training, but not exactly *at* that minimum. So, we would rather end up training in a wide minimum, where nearby points have approximately the same loss (or if you prefer, a point where the loss is as flat as possible). <<img_betas>> shows how the chart in <<img_momentum>> varies as we change `beta`.
 
 # + hide_input=true
-#hide_input
-#id img_betas
-#caption Momentum with different beta values
-#alt Graph showing how the beta value influences momentum
+# hide_input
+# id img_betas
+# caption Momentum with different beta values
+# alt Graph showing how the beta value influences momentum
 x = np.linspace(-4, 4, 100)
-y = 1 - (x/3) ** 2
+y = 1 - (x / 3) ** 2
 x1 = x + np.random.randn(100) * 0.1
 y1 = y + np.random.randn(100) * 0.1
-_,axs = plt.subplots(2,2, figsize=(12,8))
-betas = [0.5,0.7,0.9,0.99]
+_, axs = plt.subplots(2, 2, figsize=(12, 8))
+betas = [0.5, 0.7, 0.9, 0.99]
 idx = x1.argsort()
-for beta,ax in zip(betas, axs.flatten()):
-    ax.scatter(x1,y1)
-    avg,res = 0,[]
+for beta, ax in zip(betas, axs.flatten()):
+    ax.scatter(x1, y1)
+    avg, res = 0, []
     for i in idx:
-        avg = beta * avg + (1-beta) * y1[i]
-        res.append(avg)#/(1-beta**(i+1)))
-    ax.plot(x1[idx],np.array(res), color='red');
+        avg = beta * avg + (1 - beta) * y1[i]
+        res.append(avg)  # /(1-beta**(i+1)))
+    ax.plot(x1[idx], np.array(res), color='red')
     ax.set_title(f'beta={beta}')
 
 
@@ -198,8 +197,9 @@ for beta,ax in zip(betas, axs.flatten()):
 # In order to add momentum to our optimizer, we'll first need to keep track of the moving average gradient, which we can do with another callback. When an optimizer callback returns a `dict`, it is used to update the state of the optimizer and is passed back to the optimizer on the next step. So this callback will keep track of the gradient averages in a parameter called `grad_avg`:
 
 def average_grad(p, mom, grad_avg=None, **kwargs):
-    if grad_avg is None: grad_avg = torch.zeros_like(p.grad.data)
-    return {'grad_avg': grad_avg*mom + p.grad.data}
+    if grad_avg is None:
+        grad_avg = torch.zeros_like(p.grad.data)
+    return {'grad_avg': grad_avg * mom + p.grad.data}
 
 
 # To use it, we just have to replace `p.grad.data` with `grad_avg` in our step function:
@@ -207,7 +207,7 @@ def average_grad(p, mom, grad_avg=None, **kwargs):
 def momentum_step(p, lr, grad_avg, **kwargs): p.data.add_(-lr, grad_avg)
 
 
-opt_func = partial(Optimizer, cbs=[average_grad,momentum_step], mom=0.9)
+opt_func = partial(Optimizer, cbs=[average_grad, momentum_step], mom=0.9)
 
 # `Learner` will automatically schedule `mom` and `lr`, so `fit_one_cycle` will even work with our custom `Optimizer`:
 
@@ -237,8 +237,9 @@ learn.recorder.plot_sched()
 # We can add this to `Optimizer` by doing much the same thing we did for `avg_grad`, but with an extra `**2`:
 
 def average_sqr_grad(p, sqr_mom, sqr_avg=None, **kwargs):
-    if sqr_avg is None: sqr_avg = torch.zeros_like(p.grad.data)
-    return {'sqr_avg': sqr_avg*sqr_mom + p.grad.data**2}
+    if sqr_avg is None:
+        sqr_avg = torch.zeros_like(p.grad.data)
+    return {'sqr_avg': sqr_avg * sqr_mom + p.grad.data**2}
 
 
 # And we can define our step function and optimizer as before:
@@ -248,7 +249,7 @@ def rms_prop_step(p, lr, sqr_avg, eps, grad_avg=None, **kwargs):
     denom = sqr_avg.sqrt().add_(eps)
     p.data.addcdiv_(-lr, p.grad, denom)
 
-opt_func = partial(Optimizer, cbs=[average_sqr_grad,rms_prop_step],
+opt_func = partial(Optimizer, cbs=[average_sqr_grad, rms_prop_step],
                    sqr_mom=0.99, eps=1e-7)
 # -
 
@@ -281,9 +282,9 @@ learn.fit_one_cycle(3, 0.003)
 # new_w = w - lr * unbias_avg / sqrt(w.sqr_avg + eps)
 # ```
 #
-# Like for RMSProp, `eps` is usually set to 1e-8, and the default for `(beta1,beta2)` suggested by the literature is `(0.9,0.999)`. 
+# Like for RMSProp, `eps` is usually set to 1e-8, and the default for `(beta1,beta2)` suggested by the literature is `(0.9,0.999)`.
 #
-# In fastai, Adam is the default optimizer we use since it allows faster training, but we've found that `beta2=0.99` is better suited to the type of schedule we are using. `beta1` is the momentum parameter, which we specify with the argument `moms` in our call to `fit_one_cycle`. As for `eps`, fastai uses a default of 1e-5. `eps` is not just useful for numerical stability. A higher `eps` limits the maximum value of the adjusted learning rate. To take an extreme example, if `eps` is 1, then the adjusted learning will never be higher than the base learning rate. 
+# In fastai, Adam is the default optimizer we use since it allows faster training, but we've found that `beta2=0.99` is better suited to the type of schedule we are using. `beta1` is the momentum parameter, which we specify with the argument `moms` in our call to `fit_one_cycle`. As for `eps`, fastai uses a default of 1e-5. `eps` is not just useful for numerical stability. A higher `eps` limits the maximum value of the adjusted learning rate. To take an extreme example, if `eps` is 1, then the adjusted learning will never be higher than the base learning rate.
 #
 # Rather than show all the code for this in the book, we'll let you look at the optimizer notebook in [fastai's GitHub repository](https://github.com/fastai/fastai) (browse the *nbs* folder and search for the notebook called optimizer). You'll see all the code we've shown so far, along with Adam and other optimizers, and lots of examples and tests.
 #
@@ -298,7 +299,7 @@ learn.fit_one_cycle(3, 0.003)
 # new_weight = weight - lr*weight.grad - lr*wd*weight
 # ```
 #
-# The last part of this formula explains the name of this technique: each weight is decayed by a factor `lr * wd`. 
+# The last part of this formula explains the name of this technique: each weight is decayed by a factor `lr * wd`.
 #
 # The other name of weight decay is L2 regularization, which consists in adding the sum of all squared weights to the loss (multiplied by the weight decay). As we have seen in <<chapter_collab>>, this can be directly expressed on the gradients with:
 #
@@ -306,13 +307,13 @@ learn.fit_one_cycle(3, 0.003)
 # weight.grad += wd*weight
 # ```
 #
-# For SGD, those two formulas are equivalent. However, this equivalence only holds for standard SGD, because we have seen that with momentum, RMSProp or in Adam, the update has some additional formulas around the gradient. 
+# For SGD, those two formulas are equivalent. However, this equivalence only holds for standard SGD, because we have seen that with momentum, RMSProp or in Adam, the update has some additional formulas around the gradient.
 #
 # Most libraries use the second formulation, but it was pointed out in ["Decoupled Weight Decay Regularization"](https://arxiv.org/pdf/1711.05101.pdf) by Ilya Loshchilov and Frank Hutter, that the first one is the only correct approach with the Adam optimizer or momentum, which is why fastai makes it its default.
 #
 # Now you know everything that is hidden behind the line `learn.fit_one_cycle`!
 #
-# Optimizers are only one part of the training process, however when you need to change the training loop with fastai, you can't directly change the code inside the library. Instead, we have designed a system of callbacks to let you write any tweaks you like in independent blocks that you can then mix and match. 
+# Optimizers are only one part of the training process, however when you need to change the training loop with fastai, you can't directly change the code inside the library. Instead, we have designed a system of callbacks to let you write any tweaks you like in independent blocks that you can then mix and match.
 
 # ## Callbacks
 
@@ -393,7 +394,7 @@ learn.fit_one_cycle(3, 0.003)
 # Let's take a look at an example. Do you recall how in <<chapter_nlp_dive>> we needed to ensure that our special `reset` method was called at the start of training and validation for each epoch? We used the `ModelResetter` callback provided by fastai to do this for us. But how does it owrk? Here's the full source code for that class:
 
 class ModelResetter(Callback):
-    def begin_train(self):    self.model.reset()
+    def begin_train(self): self.model.reset()
     def begin_validate(self): self.model.reset()
 
 
@@ -402,26 +403,27 @@ class ModelResetter(Callback):
 # Callbacks are often "short and sweet" like this one. In fact, let's look at one more. Here's the fastai source for the callback that adds RNN regularization (AR and TAR):
 
 class RNNRegularizer(Callback):
-    def __init__(self, alpha=0., beta=0.): self.alpha,self.beta = alpha,beta
+    def __init__(self, alpha=0., beta=0.): self.alpha, self.beta = alpha, beta
 
     def after_pred(self):
-        self.raw_out,self.out = self.pred[1],self.pred[2]
+        self.raw_out, self.out = self.pred[1], self.pred[2]
         self.learn.pred = self.pred[0]
 
     def after_loss(self):
-        if not self.training: return
+        if not self.training:
+            return
         if self.alpha != 0.:
             self.learn.loss += self.alpha * self.out[-1].float().pow(2).mean()
         if self.beta != 0.:
             h = self.raw_out[-1]
-            if len(h)>1:
-                self.learn.loss += self.beta * (h[:,1:] - h[:,:-1]
-                                               ).float().pow(2).mean()
+            if len(h) > 1:
+                self.learn.loss += self.beta * (h[:, 1:] - h[:, :-1]
+                                                ).float().pow(2).mean()
 
 
 # > note: Code It Yourself: Go back and reread "Activation Regularization and Temporal Activation Regularization" in <<chapter_nlp_dive>> then take another look at the code here. Make sure you understand what it's doing, and why.
 
-# In both of these examples, notice how we can access attributes of the training loop by directly checking `self.model` or `self.pred`. That's because a `Callback` will always try to get an attribute it doesn't have inside the `Learner` associated with it. These are shortcuts for `self.learn.model` or `self.learn.pred`. Note that they work for reading attributes, but not for writing them, which is why when `RNNRegularizer` changes the loss or the predictions you see `self.learn.loss = ` or `self.learn.pred = `. 
+# In both of these examples, notice how we can access attributes of the training loop by directly checking `self.model` or `self.pred`. That's because a `Callback` will always try to get an attribute it doesn't have inside the `Learner` associated with it. These are shortcuts for `self.learn.model` or `self.learn.pred`. Note that they work for reading attributes, but not for writing them, which is why when `RNNRegularizer` changes the loss or the predictions you see `self.learn.loss = ` or `self.learn.pred = `.
 
 # When writing a callback, the following attributes of `Learner` are available:
 #
@@ -458,7 +460,7 @@ class RNNRegularizer(Callback):
 # Sometimes, callbacks need to be able to tell fastai to skip over a batch, or an epoch, or stop training altogether. For instance, consider `TerminateOnNaNCallback`. This handy callback will automatically stop training any time the loss becomes infinite or `NaN` (*not a number*). Here's the fastai source for this callback:
 
 class TerminateOnNaNCallback(Callback):
-    run_before=Recorder
+    run_before = Recorder
     def after_batch(self):
         if torch.isinf(self.loss) or torch.isnan(self.loss):
             raise CancelFitException
@@ -531,5 +533,3 @@ class TerminateOnNaNCallback(Callback):
 # Since you understand the foundations of fastai's applications now, be sure to spend some time digging through the source notebooks and running and experimenting with parts of them. This will give you a better idea of how everything in fastai is developed.
 #
 # In the next section, we will be looking even further under the covers: we'll explore how the actual forward and backward passes of a neural network are done, and we will see what tools are at our disposal to get better performance. We will then continue with a project that brings together all the material in the book, which we will use to build a tool for interpreting convolutional neural networks. Last but not least, we'll finish by building fastai's `Learner` class from scratch.
-
-
