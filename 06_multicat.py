@@ -15,13 +15,13 @@
 #     name: python3
 # ---
 
-#hide
-# !pip install -Uqq fastbook
+# hide
+from fastai.vision.all import *
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-#hide
-from fastbook import *
+# hide
 
 # + active=""
 # [[chapter_multicat]]
@@ -51,12 +51,11 @@ from fastbook import *
 #
 # We begin by downloading and extracting the dataset as per usual:
 
-from fastai.vision.all import *
 path = untar_data(URLs.PASCAL_2007)
 
 # This dataset is different from the ones we have seen before, in that it is not structured by filename or folder but instead comes with a CSV (comma-separated values) file telling us what labels to use for each image. We can inspect the CSV file by reading it into a Pandas DataFrame:
 
-df = pd.read_csv(path/'train.csv')
+df = pd.read_csv(path / 'train.csv')
 df.head()
 
 # As you can see, the list of categories in each image is shown as a space-delimited string.
@@ -67,9 +66,9 @@ df.head()
 #
 # You can access rows and columns of a DataFrame with the `iloc` property, as if it were a matrix:
 
-df.iloc[:,0]
+df.iloc[:, 0]
 
-df.iloc[0,:]
+df.iloc[0, :]
 # Trailing :s are always optional (in numpy, pytorch, pandas, etc.),
 #   so this is equivalent:
 df.iloc[0]
@@ -80,10 +79,10 @@ df['fname']
 
 # You can create new columns and do calculations using columns:
 
-tmp_df = pd.DataFrame({'a':[1,2], 'b':[3,4]})
+tmp_df = pd.DataFrame({'a': [1, 2], 'b': [3, 4]})
 tmp_df
 
-tmp_df['c'] = tmp_df['a']+tmp_df['b']
+tmp_df['c'] = tmp_df['a'] + tmp_df['b']
 tmp_df
 
 # Pandas is a fast and flexible library, and an important part of every data scientist’s Python toolbox. Unfortunately, its API can be rather confusing and surprising, so it takes a while to get familiar with it. If you haven’t used Pandas before, we’d suggest going through a tutorial; we are particularly fond of the book [*Python for Data Analysis*](http://shop.oreilly.com/product/0636920023784.do) by Wes McKinney, the creator of Pandas (O'Reilly). It also covers other important libraries like `matplotlib` and `numpy`. We will try to briefly describe Pandas functionality we use as we come across it, but will not go into the level of detail of McKinney’s book.
@@ -120,16 +119,16 @@ dsets = dblock.datasets(df)
 
 # This contains a `train` and a `valid` dataset, which we can index into:
 
-len(dsets.train),len(dsets.valid)
+len(dsets.train), len(dsets.valid)
 
-x,y = dsets.train[0]
-x,y
+x, y = dsets.train[0]
+x, y
 
 # As you can see, this simply returns a row of the DataFrame, twice. This is because by default, the data block assumes we have two things: input and target. We are going to need to grab the appropriate fields from the DataFrame, which we can do by passing `get_x` and `get_y` functions:
 
 x['fname']
 
-dblock = DataBlock(get_x = lambda r: r['fname'], get_y = lambda r: r['labels'])
+dblock = DataBlock(get_x=lambda r: r['fname'], get_y=lambda r: r['labels'])
 dsets = dblock.datasets(df)
 dsets.train[0]
 
@@ -138,7 +137,7 @@ dsets.train[0]
 
 def get_x(r): return r['fname']
 def get_y(r): return r['labels']
-dblock = DataBlock(get_x = get_x, get_y = get_y)
+dblock = DataBlock(get_x=get_x, get_y=get_y)
 dsets = dblock.datasets(df)
 dsets.train[0]
 
@@ -147,16 +146,16 @@ dsets.train[0]
 
 # We can see that the independent variable will need to be converted into a complete path, so that we can open it as an image, and the dependent variable will need to be split on the space character (which is the default for Python’s `split` function) so that it becomes a list:
 
-def get_x(r): return path/'train'/r['fname']
+def get_x(r): return path / 'train' / r['fname']
 def get_y(r): return r['labels'].split(' ')
-dblock = DataBlock(get_x = get_x, get_y = get_y)
+dblock = DataBlock(get_x=get_x, get_y=get_y)
 dsets = dblock.datasets(df)
 dsets.train[0]
 
 # To actually open the image and do the conversion to tensors, we will need to use a set of transforms; block types will provide us with those. We can use the same block types that we have used previously, with one exception: the `ImageBlock` will work fine again, because we have a path that points to a valid image, but the `CategoryBlock` is not going to work. The problem is that block returns a single integer, but we need to be able to have multiple labels for each item. To solve this, we use a `MultiCategoryBlock`. This type of block expects to receive a list of strings, as we have in this case, so let’s test it out:
 
 dblock = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
-                   get_x = get_x, get_y = get_y)
+                   get_x=get_x, get_y=get_y)
 dsets = dblock.datasets(df)
 dsets.train[0]
 
@@ -166,7 +165,7 @@ dsets.train[0]
 
 # Let’s check what the categories represent for this example (we are using the convenient `torch.where` function, which tells us all of the indices where our condition is true or false):
 
-idxs = torch.where(dsets.train[0][1]==1.)[0]
+idxs = torch.where(dsets.train[0][1] == 1.)[0]
 dsets.train.vocab[idxs]
 
 
@@ -178,26 +177,26 @@ dsets.train.vocab[idxs]
 def splitter(df):
     train = df.index[~df['is_valid']].tolist()
     valid = df.index[df['is_valid']].tolist()
-    return train,valid
+    return train, valid
 
 dblock = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
                    splitter=splitter,
-                   get_x=get_x, 
+                   get_x=get_x,
                    get_y=get_y)
 
 dsets = dblock.datasets(df)
 dsets.train[0]
 # -
 
-# As we have discussed, a `DataLoader` collates the items from a `Dataset` into a mini-batch. This is a tuple of tensors, where each tensor simply stacks the items from that location in the `Dataset` item. 
+# As we have discussed, a `DataLoader` collates the items from a `Dataset` into a mini-batch. This is a tuple of tensors, where each tensor simply stacks the items from that location in the `Dataset` item.
 #
 # Now that we have confirmed that the individual items look okay, there's one more step we need to ensure we can create our `DataLoaders`, which is to ensure that every item is of the same size. To do this, we can use `RandomResizedCrop`:
 
 dblock = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
                    splitter=splitter,
-                   get_x=get_x, 
+                   get_x=get_x,
                    get_y=get_y,
-                   item_tfms = RandomResizedCrop(128, min_scale=0.35))
+                   item_tfms=RandomResizedCrop(128, min_scale=0.35))
 dls = dblock.dataloaders(df)
 
 # And now we can display a sample of our data:
@@ -216,7 +215,7 @@ learn = cnn_learner(dls, resnet18)
 
 # We also saw that the model in a `Learner` is generally an object of a class inheriting from `nn.Module`, and that we can call it using parentheses and it will return the activations of a model. You should pass it your independent variable, as a mini-batch. We can try it out by grabbing a mini batch from our `DataLoader` and then passing it to the model:
 
-x,y = to_cpu(dls.train.one_batch())
+x, y = to_cpu(dls.train.one_batch())
 activs = learn.model(x)
 activs.shape
 
@@ -231,7 +230,7 @@ activs[0]
 
 def binary_cross_entropy(inputs, targets):
     inputs = inputs.sigmoid()
-    return -torch.where(targets==1, inputs, 1-inputs).log().mean()
+    return -torch.where(targets == 1, inputs, 1 - inputs).log().mean()
 
 
 # Note that because we have a one-hot-encoded dependent variable, we can't directly use `nll_loss` or `softmax` (and therefore we can't use `cross_entropy`):
@@ -279,12 +278,12 @@ loss
 # If we pass `accuracy_multi` directly as a metric, it will use the default value for `threshold`, which is 0.5. We might want to adjust that default and create a new version of `accuracy_multi` that has a different default. To help with this, there is a function in Python called `partial`. It allows us to *bind* a function with some arguments or keyword arguments, making a new version of that function that, whenever it is called, always includes those arguments. For instance, here is a simple function taking two arguments:
 
 def say_hello(name, say_what="Hello"): return f"{say_what} {name}."
-say_hello('Jeremy'),say_hello('Jeremy', 'Ahoy!')
+say_hello('Jeremy'), say_hello('Jeremy', 'Ahoy!')
 
 # We can switch to a French version of that function by using `partial`:
 
 f = partial(say_hello, say_what="Bonjour")
-f("Jeremy"),f("Sylvain")
+f("Jeremy"), f("Sylvain")
 
 # We can now train our model. Let's try setting the accuracy threshold to 0.2 for our metric:
 
@@ -303,7 +302,7 @@ learn.validate()
 
 # We can find the best threshold by trying a few levels and seeing what works best. This is much faster if we just grab the predictions once:
 
-preds,targs = learn.get_preds()
+preds, targs = learn.get_preds()
 
 # Then we can call the metric directly. Note that by default `get_preds` applies the output activation function (sigmoid, in this case) for us, so we'll need to tell `accuracy_multi` to not apply it:
 
@@ -311,9 +310,9 @@ accuracy_multi(preds, targs, thresh=0.9, sigmoid=False)
 
 # We can now use this approach to find the best threshold level:
 
-xs = torch.linspace(0.05,0.95,29)
+xs = torch.linspace(0.05, 0.95, 29)
 accs = [accuracy_multi(preds, targs, thresh=i, sigmoid=False) for i in xs]
-plt.plot(xs,accs);
+plt.plot(xs, accs)
 
 # In this case, we're using the validation set to pick a hyperparameter (the threshold), which is the purpose of the validation set. Sometimes students have expressed their concern that we might be *overfitting* to the validation set, since we're trying lots of values to see which is the best. However, as you see in the plot, changing the threshold in this case results in a smooth curve, so we're clearly not picking some inappropriate outlier. This is a good example of where you have to be careful of the difference between theory (don't try lots of hyperparameter values or you might overfit the validation set) versus practice (if the relationship is smooth, then it's fine to do this).
 #
@@ -327,7 +326,7 @@ plt.plot(xs,accs);
 #
 # To be able to move beyond fixed applications, to crafting your own novel solutions to novel problems, it helps to really understand the data block API (and maybe also the mid-tier API, which we'll see later in the book). As an example, let's consider the problem of *image regression*. This refers to learning from a dataset where the independent variable is an image, and the dependent variable is one or more floats. Often we see people treat image regression as a whole separate application—but as you'll see here, we can treat it as just another CNN on top of the data block API.
 #
-# We're going to jump straight to a somewhat tricky variant of image regression, because we know you're ready for it! We're going to do a key point model. A *key point* refers to a specific location represented in an image—in this case, we'll use images of people and we'll be looking for the center of the person's face in each image. That means we'll actually be predicting *two* values for each image: the row and column of the face center. 
+# We're going to jump straight to a somewhat tricky variant of image regression, because we know you're ready for it! We're going to do a key point model. A *key point* refers to a specific location represented in an image—in this case, we'll use images of people and we'll be looking for the center of the person's face in each image. That means we'll actually be predicting *two* values for each image: the row and column of the face center.
 
 # ### Assemble the Data
 
@@ -335,7 +334,7 @@ plt.plot(xs,accs);
 
 path = untar_data(URLs.BIWI_HEAD_POSE)
 
-#hide
+# hide
 Path.BASE_PATH = path
 
 # Let's see what we've got!
@@ -344,7 +343,7 @@ path.ls().sorted()
 
 # There are 24 directories numbered from 01 to 24 (they correspond to the different people photographed), and a corresponding *.obj* file for each (we won't need them here). Let's take a look inside one of these directories:
 
-(path/'01').ls().sorted()
+(path / '01').ls().sorted()
 
 # Inside the subdirectories, we have different frames, each of them come with an image (*\_rgb.jpg*) and a pose file (*\_pose.txt*). We can easily get all the image files recursively with `get_image_files`, then write a function that converts an image filename to its associated pose file:
 
@@ -361,12 +360,12 @@ im.to_thumb(160)
 
 # The Biwi dataset website used to explain the format of the pose text file associated with each image, which shows the location of the center of the head. The details of this aren't important for our purposes, so we'll just show the function we use to extract the head center point:
 
-cal = np.genfromtxt(path/'01'/'rgb.cal', skip_footer=6)
+cal = np.genfromtxt(path / '01' / 'rgb.cal', skip_footer=6)
 def get_ctr(f):
     ctr = np.genfromtxt(img2pose(f), skip_header=3)
-    c1 = ctr[0] * cal[0][0]/ctr[2] + cal[0][2]
-    c2 = ctr[1] * cal[1][1]/ctr[2] + cal[1][2]
-    return tensor([c1,c2])
+    c1 = ctr[0] * cal[0][0] / ctr[2] + cal[0][2]
+    c2 = ctr[1] * cal[1][1] / ctr[2] + cal[1][2]
+    return tensor([c1, c2])
 
 
 # This function returns the coordinates as a tensor of two items:
@@ -383,8 +382,8 @@ biwi = DataBlock(
     blocks=(ImageBlock, PointBlock),
     get_items=get_image_files,
     get_y=get_ctr,
-    splitter=FuncSplitter(lambda o: o.parent.name=='13'),
-    batch_tfms=[*aug_transforms(size=(240,320)), 
+    splitter=FuncSplitter(lambda o: o.parent.name == '13'),
+    batch_tfms=[*aug_transforms(size=(240, 320)),
                 Normalize.from_stats(*imagenet_stats)]
 )
 
@@ -393,12 +392,12 @@ biwi = DataBlock(
 # Before doing any modeling, we should look at our data to confirm it seems okay:
 
 dls = biwi.dataloaders(path)
-dls.show_batch(max_n=9, figsize=(8,6))
+dls.show_batch(max_n=9, figsize=(8, 6))
 
 # That's looking good! As well as looking at the batch visually, it's a good idea to also look at the underlying tensors (especially as a student; it will help clarify your understanding of what your model is really seeing):
 
-xb,yb = dls.one_batch()
-xb.shape,yb.shape
+xb, yb = dls.one_batch()
+xb.shape, yb.shape
 
 # Make sure that you understand *why* these are the shapes for our mini-batches.
 
@@ -414,19 +413,19 @@ yb[0]
 
 # As usual, we can use `cnn_learner` to create our `Learner`. Remember way back in <<chapter_intro>> how we used `y_range` to tell fastai the range of our targets? We'll do the same here (coordinates in fastai and PyTorch are always rescaled between -1 and +1):
 
-learn = cnn_learner(dls, resnet18, y_range=(-1,1))
+learn = cnn_learner(dls, resnet18, y_range=(-1, 1))
 
 
 # `y_range` is implemented in fastai using `sigmoid_range`, which is defined as:
 
-def sigmoid_range(x, lo, hi): return torch.sigmoid(x) * (hi-lo) + lo
+def sigmoid_range(x, lo, hi): return torch.sigmoid(x) * (hi - lo) + lo
 
 
 # This is set as the final layer of the model, if `y_range` is defined. Take a moment to think about what this function does, and why it forces the model to output activations in the range `(lo,hi)`.
 #
 # Here's what it looks like:
 
-plot_function(partial(sigmoid_range,lo=-1,hi=1), min=-4, max=4)
+plot_function(partial(sigmoid_range, lo=-1, hi=1), min=-4, max=4)
 
 # We didn't specify a loss function, which means we're getting whatever fastai chooses as the default. Let's see what it picked for us:
 
@@ -434,7 +433,7 @@ dls.loss_func
 
 # This makes sense, since when coordinates are used as the dependent variable, most of the time we're likely to be trying to predict something as close as possible; that's basically what `MSELoss` (mean squared error loss) does. If you want to use a different loss function, you can pass it to `cnn_learner` using the `loss_func` parameter.
 #
-# Note also that we didn't specify any metrics. That's because the MSE is already a useful metric for this task (although it's probably more interpretable after we take the square root). 
+# Note also that we didn't specify any metrics. That's because the MSE is already a useful metric for this task (although it's probably more interpretable after we take the square root).
 #
 # We can pick a good learning rate with the learning rate finder:
 
@@ -451,7 +450,7 @@ math.sqrt(0.0001)
 
 # This sounds very accurate! But it's important to take a look at our results with `Learner.show_results`. The left side are the actual (*ground truth*) coordinates and the right side are our model's predictions:
 
-learn.show_results(ds_idx=1, nrows=3, figsize=(6,8))
+learn.show_results(ds_idx=1, nrows=3, figsize=(6, 8))
 
 # It's quite amazing that with just a few minutes of computation we've created such an accurate key points model, and without any special domain-specific application. This is the power of building on flexible APIs, and using transfer learning! It's particularly striking that we've been able to use transfer learning so effectively even between totally different tasks; our pretrained model was trained to do image classification, and we fine-tuned for image regression.
 
@@ -489,5 +488,3 @@ learn.show_results(ds_idx=1, nrows=3, figsize=(6,8))
 
 # 1. Read a tutorial about Pandas DataFrames and experiment with a few methods that look interesting to you. See the book's website for recommended tutorials.
 # 1. Retrain the bear classifier using multi-label classification. See if you can make it work effectively with images that don't contain any bears, including showing that information in the web application. Try an image with two different kinds of bears. Check whether the accuracy on the single-label dataset is impacted using multi-label classification.
-
-
