@@ -15,14 +15,15 @@
 #     name: python3
 # ---
 
-#hide
-# !pip install -Uqq fastbook
+# hide
+from IPython.display import display, HTML
+from fastai.vision.all import *
+from fastai.text.all import *
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-#hide
-from fastbook import *
-from IPython.display import display,HTML
+# hide
 
 # + active=""
 # [[chapter_midlevel_data]]
@@ -37,7 +38,6 @@ from IPython.display import display,HTML
 # The fastai library is built on a *layered API*. In the very top layer there are *applications* that allow us to train a model in five lines of codes, as we saw in <<chapter_intro>>. In the case of creating `DataLoaders` for a text classifier, for instance, we used the line:
 
 # +
-from fastai.text.all import *
 
 dls = TextDataLoaders.from_folder(untar_data(URLs.IMDB), valid='test')
 # -
@@ -46,8 +46,8 @@ dls = TextDataLoaders.from_folder(untar_data(URLs.IMDB), valid='test')
 
 path = untar_data(URLs.IMDB)
 dls = DataBlock(
-    blocks=(TextBlock.from_folder(path),CategoryBlock),
-    get_y = parent_label,
+    blocks=(TextBlock.from_folder(path), CategoryBlock),
+    get_y=parent_label,
     get_items=partial(get_text_files, folders=['train', 'test']),
     splitter=GrandparentSplitter(valid_name='test')
 ).dataloaders(path)
@@ -60,7 +60,7 @@ dls = DataBlock(
 
 # When we studied tokenization and numericalization in the last chapter, we started by grabbing a bunch of texts:
 
-files = get_text_files(path, folders = ['train', 'test'])
+files = get_text_files(path, folders=['train', 'test'])
 txts = L(o.open().read() for o in files[:2000])
 
 # We then showed how to tokenize them with a `Tokenizer`:
@@ -79,7 +79,8 @@ nums[0][:10]
 
 # The classes also have a `decode` method. For instance, `Numericalize.decode` gives us back the string tokens:
 
-nums_dec = num.decode(nums[0][:10]); nums_dec
+nums_dec = num.decode(nums[0][:10])
+nums_dec
 
 # and `Tokenizer.decode` turns this back into a single string (it may not, however, be exactly the same as the original string; this depends on whether the tokenizer is *reversible*, which the default word tokenizer is not at the time we're writing this book):
 
@@ -104,9 +105,9 @@ tok((txts[0], txts[1]))
 
 # If you want to write a custom transform to apply to your data, the easiest way is to write a function. As you can see in this example, a `Transform` will only be applied to a matching type, if a type is provided (otherwise it will always be applied). In the following code, the `:int` in the function signature means that `f` only gets applied to `int`s. That's why `tfm(2.0)` returns `2.0`, but `tfm(2)` returns `3` here:
 
-def f(x:int): return x+1
+def f(x: int): return x + 1
 tfm = Transform(f)
-tfm(2),tfm(2.0)
+tfm(2), tfm(2.0)
 
 
 # Here, `f` is converted to a `Transform` with no `setup` and no `decode` method.
@@ -114,26 +115,26 @@ tfm(2),tfm(2.0)
 # Python has a special syntax for passing a function (like `f`) to another function (or something that behaves like a function, known as a *callable* in Python), called a *decorator*. A decorator is used by prepending a callable with `@` and placing it before a function definition (there are lots of good online tutorials about Python decorators, so take a look at one if this is a new concept for you). The following is identical to the previous code:
 
 @Transform
-def f(x:int): return x+1
-f(2),f(2.0)
+def f(x: int): return x + 1
+f(2), f(2.0)
 
 
 # If you need either `setup` or `decode`, you will need to subclass `Transform` to implement the actual encoding behavior in `encodes`, then (optionally), the setup behavior in `setups` and the decoding behavior in `decodes`:
 
 class NormalizeMean(Transform):
-    def setups(self, items): self.mean = sum(items)/len(items)
-    def encodes(self, x): return x-self.mean
-    def decodes(self, x): return x+self.mean
+    def setups(self, items): self.mean = sum(items) / len(items)
+    def encodes(self, x): return x - self.mean
+    def decodes(self, x): return x + self.mean
 
 
 # Here, `NormalizeMean` will initialize some state during the setup (the mean of all elements passed), then the transformation is to subtract that mean. For decoding purposes, we implement the reverse of that transformation by adding the mean. Here is an example of `NormalizeMean` in action:
 
 tfm = NormalizeMean()
-tfm.setup([1,2,3,4,5])
+tfm.setup([1, 2, 3, 4, 5])
 start = 2
 y = tfm(start)
 z = tfm.decode(y)
-tfm.mean,y,z
+tfm.mean, y, z
 
 # Note that the method called and the method implemented are different, for each of these methods:
 #
@@ -155,7 +156,8 @@ tfm.mean,y,z
 # To compose several transforms together, fastai provides the `Pipeline` class. We define a `Pipeline` by passing it a list of `Transform`s; it will then compose the transforms inside it. When you call `Pipeline` on an object, it will automatically call the transforms inside, in order:
 
 tfms = Pipeline([tok, num])
-t = tfms(txts[0]); t[:20]
+t = tfms(txts[0])
+t[:20]
 
 # And you can call `decode` on the result of your encoding, to get back something you can display and analyze:
 
@@ -175,7 +177,8 @@ tls = TfmdLists(files, [Tokenizer.from_folder(path), Numericalize])
 
 # At initialization, the `TfmdLists` will automatically call the `setup` method of each `Transform` in order, providing them not with the raw items but the items transformed by all the previous `Transform`s in order. We can get the result of our `Pipeline` on any raw element just by indexing into the `TfmdLists`:
 
-t = tls[0]; t[:20]
+t = tls[0]
+t[:20]
 
 # And the `TfmdLists` knows how to decode for show purposes:
 
@@ -187,9 +190,9 @@ tls.show(t)
 
 # The `TfmdLists` is named with an "s" because it can handle a training and a validation set with a `splits` argument. You just need to pass the indices of which elements are in the training set, and which are in the validation set:
 
-cut = int(len(files)*0.8)
-splits = [list(range(cut)), list(range(cut,len(files)))]
-tls = TfmdLists(files, [Tokenizer.from_folder(path), Numericalize], 
+cut = int(len(files) * 0.8)
+splits = [list(range(cut)), list(range(cut, len(files)))]
+tls = TfmdLists(files, [Tokenizer.from_folder(path), Numericalize],
                 splits=splits)
 
 # You can then access them through the `train` and `valid` attributes:
@@ -198,7 +201,7 @@ tls.valid[0][:20]
 
 # If you have manually written a `Transform` that performs all of your preprocessing at once, turning raw items into a tuple with inputs and targets, then `TfmdLists` is the class you need. You can directly convert it to a `DataLoaders` object with the `dataloaders` method. This is what we will do in our Siamese example later in this chapter.
 #
-# In general, though, you will have two (or more) parallel pipelines of transforms: one for processing your raw items into inputs and one to process your raw items into targets. For instance, here, the pipeline we defined only processes the raw text into inputs. If we want to do text classification, we also have to process the labels into targets. 
+# In general, though, you will have two (or more) parallel pipelines of transforms: one for processing your raw items into inputs and one to process your raw items into targets. For instance, here, the pipeline we defined only processes the raw text into inputs. If we want to do text classification, we also have to process the labels into targets.
 #
 # For this we need to do two things. First we take the label name from the parent folder. There is a function, `parent_label`, for this:
 
@@ -225,23 +228,23 @@ tls_y[0]
 x_tfms = [Tokenizer.from_folder(path), Numericalize]
 y_tfms = [parent_label, Categorize()]
 dsets = Datasets(files, [x_tfms, y_tfms])
-x,y = dsets[0]
-x[:20],y
+x, y = dsets[0]
+x[:20], y
 
 # Like a `TfmdLists`, we can pass along `splits` to a `Datasets` to split our data between training and validation sets:
 
 x_tfms = [Tokenizer.from_folder(path), Numericalize]
 y_tfms = [parent_label, Categorize()]
 dsets = Datasets(files, [x_tfms, y_tfms], splits=splits)
-x,y = dsets.valid[0]
-x[:20],y
+x, y = dsets.valid[0]
+x[:20], y
 
 # It can also decode any processed tuple or show it directly:
 
 t = dsets.valid[0]
 dsets.decode(t)
 
-# The last step is to convert our `Datasets` object to a `DataLoaders`, which can be done with the `dataloaders` method. Here we need to pass along a special argument to take care of the padding problem (as we saw in the last chapter). This needs to happen just before we batch the elements, so we pass it to `before_batch`: 
+# The last step is to convert our `Datasets` object to a `DataLoaders`, which can be done with the `dataloaders` method. Here we need to pass along a special argument to take care of the padding problem (as we saw in the last chapter). This needs to happen just before we batch the elements, so we pass it to `before_batch`:
 
 dls = dsets.dataloaders(bs=64, before_batch=pad_input)
 
@@ -254,7 +257,7 @@ dls = dsets.dataloaders(bs=64, before_batch=pad_input)
 # As a conclusion, here is the full code necessary to prepare the data for text classification:
 
 tfms = [[Tokenizer.from_folder(path), Numericalize], [parent_label, Categorize]]
-files = get_text_files(path, folders = ['train', 'test'])
+files = get_text_files(path, folders=['train', 'test'])
 splits = GrandparentSplitter(valid_name='test')(files)
 dsets = Datasets(files, tfms, splits=splits)
 dls = dsets.dataloaders(dl_type=SortedDL, before_batch=pad_input)
@@ -265,8 +268,8 @@ dls = dsets.dataloaders(dl_type=SortedDL, before_batch=pad_input)
 
 path = untar_data(URLs.IMDB)
 dls = DataBlock(
-    blocks=(TextBlock.from_folder(path),CategoryBlock),
-    get_y = parent_label,
+    blocks=(TextBlock.from_folder(path), CategoryBlock),
+    get_y=parent_label,
     get_items=partial(get_text_files, folders=['train', 'test']),
     splitter=GrandparentSplitter(valid_name='test')
 ).dataloaders(path)
@@ -281,9 +284,8 @@ dls = DataBlock(
 #
 # First things first, let's get the images in our dataset:
 
-from fastai.vision.all import *
 path = untar_data(URLs.PETS)
-files = get_image_files(path/"images")
+files = get_image_files(path / "images")
 
 
 # If we didn't care about showing our objects at all, we could directly create one transform to completely preprocess that list of files. We will want to look at those images though, so we need to create a custom type. When you call the `show` method on a `TfmdLists` or a `Datasets` object, it will decode items until it reaches a type that contains a `show` method and use it to show the object. That `show` method gets passed a `ctx`, which could be a `matplotlib` axis for images, or a row of a DataFrame for texts.
@@ -291,15 +293,17 @@ files = get_image_files(path/"images")
 # Here we create a `SiameseImage` object that subclasses `fastuple` and is intended to contain three things: two images, and a Boolean that's `True` if the images are of the same breed. We also implement the special `show` method, such that it concatenates the two images with a black line in the middle. Don't worry too much about the part that is in the `if` test (which is to show the `SiameseImage` when the images are Python images, not tensors); the important part is in the last three lines:
 
 class SiameseImage(fastuple):
-    def show(self, ctx=None, **kwargs): 
-        img1,img2,same_breed = self
+    def show(self, ctx=None, **kwargs):
+        img1, img2, same_breed = self
         if not isinstance(img1, Tensor):
-            if img2.size != img1.size: img2 = img2.resize(img1.size)
-            t1,t2 = tensor(img1),tensor(img2)
-            t1,t2 = t1.permute(2,0,1),t2.permute(2,0,1)
-        else: t1,t2 = img1,img2
+            if img2.size != img1.size:
+                img2 = img2.resize(img1.size)
+            t1, t2 = tensor(img1), tensor(img2)
+            t1, t2 = t1.permute(2, 0, 1), t2.permute(2, 0, 1)
+        else:
+            t1, t2 = img1, img2
         line = t1.new_zeros(t1.shape[0], t1.shape[1], 10)
-        return show_image(torch.cat([t1,line,t2], dim=2), 
+        return show_image(torch.cat([t1, line, t2], dim=2),
                           title=same_breed, ctx=ctx)
 
 
@@ -307,18 +311,18 @@ class SiameseImage(fastuple):
 
 img = PILImage.create(files[0])
 s = SiameseImage(img, img, True)
-s.show();
+s.show()
 
 # We can also try with a second image that's not from the same class:
 
 img1 = PILImage.create(files[1])
 s1 = SiameseImage(img, img1, False)
-s1.show();
+s1.show()
 
 # The important thing with transforms that we saw before is that they dispatch over tuples or their subclasses. That's precisely why we chose to subclass `fastuple` in this instance—this way we can apply any transform that works on images to our `SiameseImage` and it will be applied on each image in the tuple:
 
 s2 = Resize(224)(s1)
-s2.show();
+s2.show()
 
 
 # Here the `Resize` transform is applied to each of the two images, but not the Boolean flag. Even if we have a custom type, we can thus benefit from all the data augmentation transforms inside the library.
@@ -334,39 +338,39 @@ def label_func(fname):
 class SiameseTransform(Transform):
     def __init__(self, files, label_func, splits):
         self.labels = files.map(label_func).unique()
-        self.lbl2files = {l: L(f for f in files if label_func(f) == l) 
+        self.lbl2files = {l: L(f for f in files if label_func(f) == l)
                           for l in self.labels}
         self.label_func = label_func
         self.valid = {f: self._draw(f) for f in files[splits[1]]}
-        
+
     def encodes(self, f):
-        f2,t = self.valid.get(f, self._draw(f))
-        img1,img2 = PILImage.create(f),PILImage.create(f2)
+        f2, t = self.valid.get(f, self._draw(f))
+        img1, img2 = PILImage.create(f), PILImage.create(f2)
         return SiameseImage(img1, img2, t)
-    
+
     def _draw(self, f):
         same = random.random() < 0.5
         cls = self.label_func(f)
-        if not same: 
-            cls = random.choice(L(l for l in self.labels if l != cls)) 
-        return random.choice(self.lbl2files[cls]),same
+        if not same:
+            cls = random.choice(L(l for l in self.labels if l != cls))
+        return random.choice(self.lbl2files[cls]), same
 
 
 # We can then create our main transform:
 
 splits = RandomSplitter()(files)
 tfm = SiameseTransform(files, label_func, splits)
-tfm(files[0]).show();
+tfm(files[0]).show()
 
 # In the mid-level API for data collection we have two objects that can help us apply transforms on a set of items, `TfmdLists` and `Datasets`. If you remember what we have just seen, one applies a `Pipeline` of transforms and the other applies several `Pipeline` of transforms in parallel, to build tuples. Here, our main transform already builds the tuples, so we use `TfmdLists`:
 
 tls = TfmdLists(files, tfm, splits=splits)
-show_at(tls.valid, 0);
+show_at(tls.valid, 0)
 
 # And we can finally get our data in `DataLoaders` by calling the `dataloaders` method. One thing to be careful of here is that this method does not take `item_tfms` and `batch_tfms` like a `DataBlock`. The fastai `DataLoader` has several hooks that are named after events; here what we apply on the items after they are grabbed is called `after_item`, and what we apply on the batch once it's built is called `after_batch`:
 
-dls = tls.dataloaders(after_item=[Resize(224), ToTensor], 
-    after_batch=[IntToFloatTensor, Normalize.from_stats(*imagenet_stats)])
+dls = tls.dataloaders(after_item=[Resize(224), ToTensor],
+                      after_batch=[IntToFloatTensor, Normalize.from_stats(*imagenet_stats)])
 
 # Note that we need to pass more transforms than usual—that's because the data block API usually adds them automatically:
 #
@@ -389,7 +393,7 @@ dls = tls.dataloaders(after_item=[Resize(224), ToTensor],
 # 1. Write a `Normalize` transform that fully normalizes items (subtract the mean and divide by the standard deviation of the dataset), and that can decode that behavior. Try not to peek!
 # 1. Write a `Transform` that does the numericalization of tokenized texts (it should set its vocab automatically from the dataset seen and have a `decode` method). Look at the source code of fastai if you need help.
 # 1. What is a `Pipeline`?
-# 1. What is a `TfmdLists`? 
+# 1. What is a `TfmdLists`?
 # 1. What is a `Datasets`? How is it different from a `TfmdLists`?
 # 1. Why are `TfmdLists` and `Datasets` named with an "s"?
 # 1. How can you build a `DataLoaders` from a `TfmdLists` or a `Datasets`?
@@ -409,5 +413,3 @@ dls = tls.dataloaders(after_item=[Resize(224), ToTensor],
 # The knowledge you already have is enough to create full working prototypes of many types of neural network applications. More importantly, it will help you understand the capabilities and limitations of deep learning models, and how to design a system that's well adapted to them.
 #
 # In the rest of this book we will be pulling apart those applications, piece by piece, to understand the foundations they are built on. This is important knowledge for a deep learning practitioner, because it is what allows you to inspect and debug models that you build and create new applications that are customized for your particular projects.
-
-
