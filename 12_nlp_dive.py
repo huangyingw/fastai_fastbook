@@ -15,13 +15,13 @@
 #     name: python3
 # ---
 
-#hide
-# !pip install -Uqq fastbook
+# hide
+from fastai.text.all import *
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-#hide
-from fastbook import *
+# hide
 
 # + active=""
 # [[chapter_nlp_dive]]
@@ -31,7 +31,7 @@ from fastbook import *
 
 # We're now ready to go deep... deep into deep learning! You already learned how to train a basic neural network, but how do you go from there to creating state-of-the-art models? In this part of the book we're going to uncover all of the mysteries, starting with language models.
 #
-# You saw in <<chapter_nlp>> how to fine-tune a pretrained language model to build a text classifier. In this chapter, we will explain to you what exactly is inside that model, and what an RNN is. First, let's gather some data that will allow us to quickly prototype our various models. 
+# You saw in <<chapter_nlp>> how to fine-tune a pretrained language model to build a text classifier. In this chapter, we will explain to you what exactly is inside that model, and what an RNN is. First, let's gather some data that will allow us to quickly prototype our various models.
 
 # ## The Data
 
@@ -41,10 +41,9 @@ from fastbook import *
 
 # We can download, extract, and take a look at our dataset in the usual way:
 
-from fastai.text.all import *
 path = untar_data(URLs.HUMAN_NUMBERS)
 
-#hide
+# hide
 Path.BASE_PATH = path
 
 path.ls()
@@ -52,8 +51,10 @@ path.ls()
 # Let's open those two files and see what's inside. At first we'll join all of the texts together and ignore the train/valid split given by the dataset (we'll come back to that later):
 
 lines = L()
-with open(path/'train.txt') as f: lines += L(*f.readlines())
-with open(path/'valid.txt') as f: lines += L(*f.readlines())
+with open(path / 'train.txt') as f:
+    lines += L(*f.readlines())
+with open(path / 'valid.txt') as f:
+    lines += L(*f.readlines())
 lines
 
 # We take all those lines and concatenate them in one big stream. To mark when we go from one number to the next, we use a `.` as a separator:
@@ -73,7 +74,7 @@ vocab
 
 # Then we can convert our tokens into numbers by looking up the index of each in the vocab:
 
-word2idx = {w:i for i,w in enumerate(vocab)}
+word2idx = {w: i for i, w in enumerate(vocab)}
 nums = L(word2idx[i] for i in tokens)
 nums
 
@@ -81,15 +82,15 @@ nums
 
 # ## Our First Language Model from Scratch
 
-# One simple way to turn this into a neural network would be to specify that we are going to predict each word based on the previous three words. We could create a list of every sequence of three words as our independent variables, and the next word after each sequence as the dependent variable. 
+# One simple way to turn this into a neural network would be to specify that we are going to predict each word based on the previous three words. We could create a list of every sequence of three words as our independent variables, and the next word after each sequence as the dependent variable.
 #
 # We can do that with plain Python. Let's do it first with tokens just to confirm what it looks like:
 
-L((tokens[i:i+3], tokens[i+3]) for i in range(0,len(tokens)-4,3))
+L((tokens[i:i + 3], tokens[i + 3]) for i in range(0, len(tokens) - 4, 3))
 
 # Now we will do it with tensors of the numericalized values, which is what the model will actually use:
 
-seqs = L((tensor(nums[i:i+3]), nums[i+3]) for i in range(0,len(nums)-4,3))
+seqs = L((tensor(nums[i:i + 3]), nums[i + 3]) for i in range(0, len(nums) - 4, 3))
 seqs
 
 # We can batch those easily using the `DataLoader` class. For now we will split the sequences randomly:
@@ -101,7 +102,7 @@ dls = DataLoaders.from_dsets(seqs[:cut], seqs[cut:], bs=64, shuffle=False)
 
 # We can now create a neural network architecture that takes three words as input, and returns a prediction of the probability of each possible next word in the vocab. We will use three standard linear layers, but with two tweaks.
 #
-# The first tweak is that the first linear layer will use only the first word's embedding as activations, the second layer will use the second word's embedding plus the first layer's output activations, and the third layer will use the third word's embedding plus the second layer's output activations. The key effect of this is that every word is interpreted in the information context of any words preceding it. 
+# The first tweak is that the first linear layer will use only the first word's embedding as activations, the second layer will use the second word's embedding plus the first layer's output activations, and the third layer will use the third word's embedding plus the second layer's output activations. The key effect of this is that every word is interpreted in the information context of any words preceding it.
 #
 # The second tweak is that each of these three layers will use the same weight matrix. The way that one word impacts the activations from previous words should not change depending on the position of a word. In other words, activation values will change as data moves through the layers, but the layer weights themselves will not change from layer to layer. So, a layer does not learn one sequence position; it must learn to handle all positions.
 #
@@ -113,15 +114,15 @@ dls = DataLoaders.from_dsets(seqs[:cut], seqs[cut:], bs=64, shuffle=False)
 
 class LMModel1(Module):
     def __init__(self, vocab_sz, n_hidden):
-        self.i_h = nn.Embedding(vocab_sz, n_hidden)  
-        self.h_h = nn.Linear(n_hidden, n_hidden)     
-        self.h_o = nn.Linear(n_hidden,vocab_sz)
-        
+        self.i_h = nn.Embedding(vocab_sz, n_hidden)
+        self.h_h = nn.Linear(n_hidden, n_hidden)
+        self.h_o = nn.Linear(n_hidden, vocab_sz)
+
     def forward(self, x):
-        h = F.relu(self.h_h(self.i_h(x[:,0])))
-        h = h + self.i_h(x[:,1])
+        h = F.relu(self.h_h(self.i_h(x[:, 0])))
+        h = h + self.i_h(x[:, 1])
         h = F.relu(self.h_h(h))
-        h = h + self.i_h(x[:,2])
+        h = h + self.i_h(x[:, 2])
         h = F.relu(self.h_h(h))
         return self.h_o(h)
 
@@ -148,18 +149,19 @@ class LMModel1(Module):
 #
 # Let's try training this model and see how it goes:
 
-learn = Learner(dls, LMModel1(len(vocab), 64), loss_func=F.cross_entropy, 
+learn = Learner(dls, LMModel1(len(vocab), 64), loss_func=F.cross_entropy,
                 metrics=accuracy)
 learn.fit_one_cycle(4, 1e-3)
 
 # To see if this is any good, let's check what a very simple model would give us. In this case we could always predict the most common token, so let's find out which token is most often the target in our validation set:
 
-n,counts = 0,torch.zeros(len(vocab))
-for x,y in dls.valid:
+n, counts = 0, torch.zeros(len(vocab))
+for x, y in dls.valid:
     n += y.shape[0]
-    for i in range_of(vocab): counts[i] += (y==i).long().sum()
+    for i in range_of(vocab):
+        counts[i] += (y == i).long().sum()
 idx = torch.argmax(counts)
-idx, vocab[idx.item()], counts[idx].item()/n
+idx, vocab[idx.item()], counts[idx].item() / n
 
 
 # The most common token has the index 29, which corresponds to the token `thousand`. Always predicting this token would give us an accuracy of roughly 15\%, so we are faring way better!
@@ -174,21 +176,21 @@ idx, vocab[idx.item()], counts[idx].item()/n
 
 class LMModel2(Module):
     def __init__(self, vocab_sz, n_hidden):
-        self.i_h = nn.Embedding(vocab_sz, n_hidden)  
-        self.h_h = nn.Linear(n_hidden, n_hidden)     
-        self.h_o = nn.Linear(n_hidden,vocab_sz)
-        
+        self.i_h = nn.Embedding(vocab_sz, n_hidden)
+        self.h_h = nn.Linear(n_hidden, n_hidden)
+        self.h_o = nn.Linear(n_hidden, vocab_sz)
+
     def forward(self, x):
         h = 0
         for i in range(3):
-            h = h + self.i_h(x[:,i])
+            h = h + self.i_h(x[:, i])
             h = F.relu(self.h_h(h))
         return self.h_o(h)
 
 
 # Let's check that we get the same results using this refactoring:
 
-learn = Learner(dls, LMModel2(len(vocab), 64), loss_func=F.cross_entropy, 
+learn = Learner(dls, LMModel2(len(vocab), 64), loss_func=F.cross_entropy,
                 metrics=accuracy)
 learn.fit_one_cycle(4, 1e-3)
 
@@ -209,9 +211,9 @@ learn.fit_one_cycle(4, 1e-3)
 
 # ## Improving the RNN
 
-# Looking at the code for our RNN, one thing that seems problematic is that we are initializing our hidden state to zero for every new input sequence. Why is that a problem? We made our sample sequences short so they would fit easily into batches. But if we order the samples correctly, those sample sequences will be read in order by the model, exposing the model to long stretches of the original sequence. 
+# Looking at the code for our RNN, one thing that seems problematic is that we are initializing our hidden state to zero for every new input sequence. Why is that a problem? We made our sample sequences short so they would fit easily into batches. But if we order the samples correctly, those sample sequences will be read in order by the model, exposing the model to long stretches of the original sequence.
 #
-# Another thing we can look at is having more signal: why only predict the fourth word when we could use the intermediate predictions to also predict the second and third words? 
+# Another thing we can look at is having more signal: why only predict the fourth word when we could use the intermediate predictions to also predict the second and third words?
 #
 # Let's see how we can implement those changes, starting with adding some state.
 
@@ -231,19 +233,19 @@ learn.fit_one_cycle(4, 1e-3)
 
 class LMModel3(Module):
     def __init__(self, vocab_sz, n_hidden):
-        self.i_h = nn.Embedding(vocab_sz, n_hidden)  
-        self.h_h = nn.Linear(n_hidden, n_hidden)     
-        self.h_o = nn.Linear(n_hidden,vocab_sz)
+        self.i_h = nn.Embedding(vocab_sz, n_hidden)
+        self.h_h = nn.Linear(n_hidden, n_hidden)
+        self.h_o = nn.Linear(n_hidden, vocab_sz)
         self.h = 0
-        
+
     def forward(self, x):
         for i in range(3):
-            self.h = self.h + self.i_h(x[:,i])
+            self.h = self.h + self.i_h(x[:, i])
             self.h = F.relu(self.h_h(self.h))
         out = self.h_o(self.h)
         self.h = self.h.detach()
         return out
-    
+
     def reset(self): self.h = 0
 
 
@@ -257,15 +259,15 @@ class LMModel3(Module):
 #
 # To do this, we are going to rearrange our dataset. First we divide the samples into `m = len(dset) // bs` groups (this is the equivalent of splitting the whole concatenated dataset into, for example, 64 equally sized pieces, since we're using `bs=64` here). `m` is the length of each of these pieces. For instance, if we're using our whole dataset (although we'll actually split it into train versus valid in a moment), that will be:
 
-m = len(seqs)//bs
-m,bs,len(seqs)
+m = len(seqs) // bs
+m, bs, len(seqs)
 
 
 # The first batch will be composed of the samples:
 #
 #     (0, m, 2*m, ..., (bs-1)*m)
 #
-# the second batch of the samples: 
+# the second batch of the samples:
 #
 #     (1, m+1, 2*m+1, ..., (bs-1)*m+1)
 #
@@ -276,7 +278,8 @@ m,bs,len(seqs)
 def group_chunks(ds, bs):
     m = len(ds) // bs
     new_ds = L()
-    for i in range(m): new_ds += L(ds[i + m*j] for j in range(bs))
+    for i in range(m):
+        new_ds += L(ds[i + m * j] for j in range(bs))
     return new_ds
 
 
@@ -284,8 +287,8 @@ def group_chunks(ds, bs):
 
 cut = int(len(seqs) * 0.8)
 dls = DataLoaders.from_dsets(
-    group_chunks(seqs[:cut], bs), 
-    group_chunks(seqs[cut:], bs), 
+    group_chunks(seqs[:cut], bs),
+    group_chunks(seqs[cut:], bs),
     bs=bs, drop_last=True, shuffle=False)
 
 # The last thing we add is a little tweak of the training loop via a `Callback`. We will talk more about callbacks in <<chapter_accel_sgd>>; this one will call the `reset` method of our model at the beginning of each epoch and before each validation phase. Since we implemented that method to zero the hidden state of the model, this will make sure we start with a clean state before reading those continuous chunks of text. We can also start training a bit longer:
@@ -305,8 +308,8 @@ learn.fit_one_cycle(10, 3e-3)
 # This is easy enough to add. We need to first change our data so that the dependent variable has each of the three next words after each of our three input words. Instead of `3`, we use an attribute, `sl` (for sequence length), and make it a bit bigger:
 
 sl = 16
-seqs = L((tensor(nums[i:i+sl]), tensor(nums[i+1:i+sl+1]))
-         for i in range(0,len(nums)-sl-1,sl))
+seqs = L((tensor(nums[i:i + sl]), tensor(nums[i + 1:i + sl + 1]))
+         for i in range(0, len(nums) - sl - 1, sl))
 cut = int(len(seqs) * 0.8)
 dls = DataLoaders.from_dsets(group_chunks(seqs[:cut], bs),
                              group_chunks(seqs[cut:], bs),
@@ -321,20 +324,20 @@ dls = DataLoaders.from_dsets(group_chunks(seqs[:cut], bs),
 
 class LMModel4(Module):
     def __init__(self, vocab_sz, n_hidden):
-        self.i_h = nn.Embedding(vocab_sz, n_hidden)  
-        self.h_h = nn.Linear(n_hidden, n_hidden)     
-        self.h_o = nn.Linear(n_hidden,vocab_sz)
+        self.i_h = nn.Embedding(vocab_sz, n_hidden)
+        self.h_h = nn.Linear(n_hidden, n_hidden)
+        self.h_o = nn.Linear(n_hidden, vocab_sz)
         self.h = 0
-        
+
     def forward(self, x):
         outs = []
         for i in range(sl):
-            self.h = self.h + self.i_h(x[:,i])
+            self.h = self.h + self.i_h(x[:, i])
             self.h = F.relu(self.h_h(self.h))
             outs.append(self.h_o(self.h))
         self.h = self.h.detach()
         return torch.stack(outs, dim=1)
-    
+
     def reset(self): self.h = 0
 
 
@@ -377,17 +380,17 @@ class LMModel5(Module):
         self.rnn = nn.RNN(n_hidden, n_hidden, n_layers, batch_first=True)
         self.h_o = nn.Linear(n_hidden, vocab_sz)
         self.h = torch.zeros(n_layers, bs, n_hidden)
-        
+
     def forward(self, x):
-        res,h = self.rnn(self.i_h(x), self.h)
+        res, h = self.rnn(self.i_h(x), self.h)
         self.h = h.detach()
         return self.h_o(res)
-    
+
     def reset(self): self.h.zero_()
 
 
-learn = Learner(dls, LMModel5(len(vocab), 64, 2), 
-                loss_func=CrossEntropyLossFlat(), 
+learn = Learner(dls, LMModel5(len(vocab), 64, 2),
+                loss_func=CrossEntropyLossFlat(),
                 metrics=accuracy, cbs=ModelResetter)
 learn.fit_one_cycle(15, 3e-3)
 
@@ -419,14 +422,14 @@ learn.fit_one_cycle(15, 3e-3)
 # - Having the right information for the output layer to predict the correct next token
 # - Retaining memory of everything that happened in the sentence
 #
-# Consider, for example, the sentences "Henry has a dog and he likes his dog very much" and "Sophie has a dog and she likes her dog very much." It's very clear that the RNN needs to remember the name at the beginning of the sentence to be able to predict *he/she* or *his/her*. 
+# Consider, for example, the sentences "Henry has a dog and he likes his dog very much" and "Sophie has a dog and she likes her dog very much." It's very clear that the RNN needs to remember the name at the beginning of the sentence to be able to predict *he/she* or *his/her*.
 #
 # In practice, RNNs are really bad at retaining memory of what happened much earlier in the sentence, which is the motivation to have another hidden state (called *cell state*) in the LSTM. The cell state will be responsible for keeping *long short-term memory*, while the hidden state will focus on the next token to predict. Let's take a closer look and how this is achieved and build an LSTM from scratch.
 
 # ### Building an LSTM from Scratch
 
 # In order to build an LSTM, we first have to understand its architecture. <<lstm>> shows its inner structure.
-#     
+#
 # <img src="images/LSTM.png" id="lstm" caption="Architecture of an LSTM" alt="A graph showing the inner architecture of an LSTM" width="700">
 
 # In this picture, our input $x_{t}$ enters on the left with the previous hidden state ($h_{t-1}$) and cell state ($c_{t-1}$). The four orange boxes represent four layers (our neural nets) with the activation being either sigmoid ($\sigma$) or tanh. tanh is just a sigmoid function rescaled to the range -1 to 1. Its mathematical expression can be written like this:
@@ -450,12 +453,12 @@ learn.fit_one_cycle(15, 3e-3)
 class LSTMCell(Module):
     def __init__(self, ni, nh):
         self.forget_gate = nn.Linear(ni + nh, nh)
-        self.input_gate  = nn.Linear(ni + nh, nh)
-        self.cell_gate   = nn.Linear(ni + nh, nh)
+        self.input_gate = nn.Linear(ni + nh, nh)
+        self.cell_gate = nn.Linear(ni + nh, nh)
         self.output_gate = nn.Linear(ni + nh, nh)
 
     def forward(self, input, state):
-        h,c = state
+        h, c = state
         h = torch.stack([h, input], dim=1)
         forget = torch.sigmoid(self.forget_gate(h))
         c = c * forget
@@ -464,31 +467,32 @@ class LSTMCell(Module):
         c = c + inp * cell
         out = torch.sigmoid(self.output_gate(h))
         h = outgate * torch.tanh(c)
-        return h, (h,c)
+        return h, (h, c)
 
 
 # In practice, we can then refactor the code. Also, in terms of performance, it's better to do one big matrix multiplication than four smaller ones (that's because we only launch the special fast kernel on the GPU once, and it gives the GPU more work to do in parallel). The stacking takes a bit of time (since we have to move one of the tensors around on the GPU to have it all in a contiguous array), so we use two separate layers for the input and the hidden state. The optimized and refactored code then looks like this:
 
 class LSTMCell(Module):
     def __init__(self, ni, nh):
-        self.ih = nn.Linear(ni,4*nh)
-        self.hh = nn.Linear(nh,4*nh)
+        self.ih = nn.Linear(ni, 4 * nh)
+        self.hh = nn.Linear(nh, 4 * nh)
 
     def forward(self, input, state):
-        h,c = state
+        h, c = state
         # One big multiplication for all the gates is better than 4 smaller ones
         gates = (self.ih(input) + self.hh(h)).chunk(4, 1)
-        ingate,forgetgate,outgate = map(torch.sigmoid, gates[:3])
+        ingate, forgetgate, outgate = map(torch.sigmoid, gates[:3])
         cellgate = gates[3].tanh()
 
-        c = (forgetgate*c) + (ingate*cellgate)
+        c = (forgetgate * c) + (ingate * cellgate)
         h = outgate * c.tanh()
-        return h, (h,c)
+        return h, (h, c)
 
 
 # Here we use the PyTorch `chunk` method to split our tensor into four pieces. It works like this:
 
-t = torch.arange(0,10); t
+t = torch.arange(0, 10)
+t
 
 t.chunk(2)
 
@@ -505,18 +509,19 @@ class LMModel6(Module):
         self.rnn = nn.LSTM(n_hidden, n_hidden, n_layers, batch_first=True)
         self.h_o = nn.Linear(n_hidden, vocab_sz)
         self.h = [torch.zeros(n_layers, bs, n_hidden) for _ in range(2)]
-        
+
     def forward(self, x):
-        res,h = self.rnn(self.i_h(x), self.h)
+        res, h = self.rnn(self.i_h(x), self.h)
         self.h = [h_.detach() for h_ in h]
         return self.h_o(res)
-    
-    def reset(self): 
-        for h in self.h: h.zero_()
+
+    def reset(self):
+        for h in self.h:
+            h.zero_()
 
 
-learn = Learner(dls, LMModel6(len(vocab), 64, 2), 
-                loss_func=CrossEntropyLossFlat(), 
+learn = Learner(dls, LMModel6(len(vocab), 64, 2),
+                loss_func=CrossEntropyLossFlat(),
                 metrics=accuracy, cbs=ModelResetter)
 learn.fit_one_cycle(15, 1e-2)
 
@@ -554,9 +559,10 @@ learn.fit_one_cycle(15, 1e-2)
 class Dropout(Module):
     def __init__(self, p): self.p = p
     def forward(self, x):
-        if not self.training: return x
-        mask = x.new(*x.shape).bernoulli_(1-p)
-        return x * mask.div_(1-p)
+        if not self.training:
+            return x
+        mask = x.new(*x.shape).bernoulli_(1 - p)
+        return x * mask.div_(1 - p)
 
 
 # The `bernoulli_` method is creating a tensor of random zeros (with probability `p`) and ones (with probability `1-p`), which is then multiplied with our input before dividing by `1-p`. Note the use of the `training` attribute, which is available in any PyTorch `nn.Module`, and tells us if we are doing training or inference.
@@ -603,15 +609,16 @@ class LMModel7(Module):
         self.h_o = nn.Linear(n_hidden, vocab_sz)
         self.h_o.weight = self.i_h.weight
         self.h = [torch.zeros(n_layers, bs, n_hidden) for _ in range(2)]
-        
+
     def forward(self, x):
-        raw,h = self.rnn(self.i_h(x), self.h)
+        raw, h = self.rnn(self.i_h(x), self.h)
         out = self.drop(raw)
         self.h = [h_.detach() for h_ in h]
-        return self.h_o(out),raw,out
-    
-    def reset(self): 
-        for h in self.h: h.zero_()
+        return self.h_o(out), raw, out
+
+    def reset(self):
+        for h in self.h:
+            h.zero_()
 
 
 # We can create a regularized `Learner` using the `RNNRegularizer` callback:
@@ -692,5 +699,3 @@ learn.fit_one_cycle(15, 1e-2, wd=0.1)
 # 1. Write the code for an LSTM from scratch (you may refer to <<lstm>>).
 # 1. Search the internet for the GRU architecture and implement it from scratch, and try training a model. See if you can get results similar to those we saw in this chapter. Compare you results to the results of PyTorch's built in `GRU` module.
 # 1. Take a look at the source code for AWD-LSTM in fastai, and try to map each of the lines of code to the concepts shown in this chapter.
-
-
