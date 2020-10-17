@@ -15,13 +15,15 @@
 #     name: python3
 # ---
 
-#hide
-# !pip install -Uqq fastbook
+# hide
+from fastai.callback.fp16 import *
+from IPython.display import HTML
+from fastai.vision.all import *
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-#hide
-from fastbook import *
+# hide
 
 # + active=""
 # [[chapter_pet_breeds]]
@@ -48,7 +50,6 @@ from fastbook import *
 #
 # We already downloaded the Pet dataset, and we can get a path to this dataset using the same code as in <<chapter_intro>>:
 
-from fastai.vision.all import *
 path = untar_data(URLs.PETS)
 
 # Now if we are going to understand how to extract the breed of each pet from each image we're going to need to understand how this data is laid out. Such details of data layout are a vital piece of the deep learning puzzle. Data is usually provided in one of these two ways:
@@ -60,22 +61,22 @@ path = untar_data(URLs.PETS)
 #
 # To see what is in our dataset we can use the `ls` method:
 
-#hide
+# hide
 Path.BASE_PATH = path
 
 path.ls()
 
 # We can see that this dataset provides us with *images* and *annotations* directories. The [website](https://www.robots.ox.ac.uk/~vgg/data/pets/) for the dataset tells us that the *annotations* directory contains information about where the pets are rather than what they are. In this chapter, we will be doing classification, not localization, which is to say that we care about what the pets are, not where they are. Therefore, we will ignore the *annotations* directory for now. So, let's have a look inside the *images* directory:
 
-(path/"images").ls()
+(path / "images").ls()
 
 # Most functions and methods in fastai that return a collection use a class called `L`. `L` can be thought of as an enhanced version of the ordinary Python `list` type, with added conveniences for common operations. For instance, when we display an object of this class in a notebook it appears in the format shown there. The first thing that is shown is the number of items in the collection, prefixed with a `#`. You'll also see in the preceding output that the list is suffixed with an ellipsis. This means that only the first few items are displayed—which is a good thing, because we would not want more than 7,000 filenames on our screen!
 #
 # By examining these filenames, we can see how they appear to be structured. Each filename contains the pet breed, and then an underscore (`_`), a number, and finally the file extension. We need to create a piece of code that extracts the breed from a single `Path`. Jupyter notebooks make this easy, because we can gradually build up something that works, and then use it for the entire dataset. We do have to be careful to not make too many assumptions at this point. For instance, if you look carefully you may notice that some of the pet breeds contain multiple words, so we cannot simply break at the first `_` character that we find. To allow us to test our code, let's pick out one of these filenames:
 
-fname = (path/"images").ls()[0]
+fname = (path / "images").ls()[0]
 
-# The most powerful and flexible way to extract information from strings like this is to use a *regular expression*, also known as a *regex*. A regular expression is a special string, written in the regular expression language, which specifies a general rule for deciding if another string passes a test (i.e., "matches" the regular expression), and also possibly for plucking a particular part or parts out of that other string. 
+# The most powerful and flexible way to extract information from strings like this is to use a *regular expression*, also known as a *regex*. A regular expression is a special string, written in the regular expression language, which specifies a general rule for deciding if another string passes a test (i.e., "matches" the regular expression), and also possibly for plucking a particular part or parts out of that other string.
 #
 # In this case, we need a regular expression that extracts the pet breed from the filename.
 #
@@ -91,13 +92,13 @@ re.findall(r'(.+)_\d+.jpg$', fname.name)
 #
 # Now that we confirmed the regular expression works for the example, let's use it to label the whole dataset. fastai comes with many classes to help with labeling. For labeling with regular expressions, we can use the `RegexLabeller` class. In this example we use the data block API we saw in <<chapter_production>> (in fact, we nearly always use the data block API—it's so much more flexible than the simple factory methods we saw in <<chapter_intro>>):
 
-pets = DataBlock(blocks = (ImageBlock, CategoryBlock),
-                 get_items=get_image_files, 
+pets = DataBlock(blocks=(ImageBlock, CategoryBlock),
+                 get_items=get_image_files,
                  splitter=RandomSplitter(seed=42),
                  get_y=using_attr(RegexLabeller(r'(.+)_\d+.jpg$'), 'name'),
                  item_tfms=Resize(460),
                  batch_tfms=aug_transforms(size=224, min_scale=0.75))
-dls = pets.dataloaders(path/"images")
+dls = pets.dataloaders(path / "images")
 
 # One important piece of this `DataBlock` call that we haven't seen before is in these two lines:
 #
@@ -116,7 +117,7 @@ dls = pets.dataloaders(path/"images")
 #
 # To work around these challenges, presizing adopts two strategies that are shown in <<presizing>>:
 #
-# 1. Resize images to relatively "large" dimensions—that is, dimensions significantly larger than the target training dimensions. 
+# 1. Resize images to relatively "large" dimensions—that is, dimensions significantly larger than the target training dimensions.
 # 1. Compose all of the common augmentation operations (including a resize to the final target size) into one, and perform the combined operation on the GPU only once at the end of processing, rather than performing the operations individually and interpolating multiple times.
 #
 # The first step, the resize, creates images large enough that they have spare margin to allow further augmentation transforms on their inner regions without creating empty zones. This transformation works by resizing to a square, using a large crop size. On the training set, the crop area is chosen randomly, and the size of the crop is selected to cover the entire width or height of the image, whichever is smaller.
@@ -135,16 +136,16 @@ dls = pets.dataloaders(path/"images")
 # <<interpolations>> shows the difference between an image that has been zoomed, interpolated, rotated, and then interpolated again (which is the approach used by all other deep learning libraries), shown here on the right, and an image that has been zoomed and rotated as one operation and then interpolated just once on the left (the fastai approach), shown here on the left.
 
 # + hide_input=false
-#hide_input
-#id interpolations
-#caption A comparison of fastai's data augmentation strategy (left) and the traditional approach (right).
+# hide_input
+# id interpolations
+# caption A comparison of fastai's data augmentation strategy (left) and the traditional approach (right).
 dblock1 = DataBlock(blocks=(ImageBlock(), CategoryBlock()),
-                   get_y=parent_label,
-                   item_tfms=Resize(460))
-dls1 = dblock1.dataloaders([(Path.cwd()/'images'/'grizzly.jpg')]*100, bs=8)
+                    get_y=parent_label,
+                    item_tfms=Resize(460))
+dls1 = dblock1.dataloaders([(Path.cwd() / 'images' / 'grizzly.jpg')] * 100, bs=8)
 dls1.train.get_idxs = lambda: Inf.ones
-x,y = dls1.valid.one_batch()
-_,axs = subplots(1, 2)
+x, y = dls1.valid.one_batch()
+_, axs = subplots(1, 2)
 
 x1 = TensorImage(x.clone())
 x1 = x1.affine_coord(sz=224)
@@ -157,7 +158,7 @@ tfms = setup_aug_tfms([Rotate(draw=30, p=1, size=224), Zoom(draw=1.2, p=1., size
 x = Pipeline(tfms)(x)
 #x.affine_coord(coord_tfm=coord_tfm, sz=size, mode=mode, pad_mode=pad_mode)
 TensorImage(x[0]).show(ctx=axs[0])
-TensorImage(x1[0]).show(ctx=axs[1]);
+TensorImage(x1[0]).show(ctx=axs[1])
 # -
 
 # You can see that the image on the right is less well defined and has reflection padding artifacts in the bottom-left corner; also, the grass iat the top left has disappeared entirely. We find that in practice using presizing significantly improves the accuracy of models, and often results in speedups too.
@@ -174,12 +175,12 @@ dls.show_batch(nrows=1, ncols=3)
 #
 # If you made a mistake while building your `DataBlock`, it is very likely you won't see it before this step. To debug this, we encourage you to use the `summary` method. It will attempt to create a batch from the source you give it, with a lot of details. Also, if it fails, you will see exactly at which point the error happens, and the library will try to give you some help. For instance, one common mistake is to forget to use a `Resize` transform, so you end up with pictures of different sizes and are not able to batch them. Here is what the summary would look like in that case (note that the exact text may have changed since the time of writing, but it will give you an idea):
 
-#hide_output
-pets1 = DataBlock(blocks = (ImageBlock, CategoryBlock),
-                 get_items=get_image_files, 
-                 splitter=RandomSplitter(seed=42),
-                 get_y=using_attr(RegexLabeller(r'(.+)_\d+.jpg$'), 'name'))
-pets1.summary(path/"images")
+# hide_output
+pets1 = DataBlock(blocks=(ImageBlock, CategoryBlock),
+                  get_items=get_image_files,
+                  splitter=RandomSplitter(seed=42),
+                  get_y=using_attr(RegexLabeller(r'(.+)_\d+.jpg$'), 'name'))
+pets1.summary(path / "images")
 
 # ```
 # Setting-up type transforms pipelines
@@ -206,7 +207,7 @@ pets1.summary(path/"images")
 # Final sample: (PILImage mode=RGB size=375x500, TensorCategory(12))
 #
 # Setting up after_item: Pipeline: ToTensor
-# Setting up before_batch: Pipeline: 
+# Setting up before_batch: Pipeline:
 # Setting up after_batch: Pipeline: IntToFloatTensor
 #
 # Building one batch
@@ -223,13 +224,13 @@ pets1.summary(path/"images")
 #
 # Collating items in a batch
 # Error! It's not possible to collate your items in a batch
-# Could not collate the 0-th members of your tuples because got the following 
+# Could not collate the 0-th members of your tuples because got the following
 # shapes:
 # torch.Size([3, 500, 375]),torch.Size([3, 375, 500]),torch.Size([3, 333, 500]),
 # torch.Size([3, 375, 500])
 # ```
 
-# You can see exactly how we gathered the data and split it, how we went from a filename to a *sample* (the tuple (image, category)), then what item transforms were applied and how it failed to collate those samples in a batch (because of the different shapes). 
+# You can see exactly how we gathered the data and split it, how we went from a filename to a *sample* (the tuple (image, category)), then what item transforms were applied and how it failed to collate those samples in a batch (because of the different shapes).
 #
 # Once you think your data looks right, we generally recommend the next step should be using to train a simple model. We often see people put off the training of an actual model for far too long. As a result, they don't actually find out what their baseline results look like. Perhaps your probem doesn't need lots of fancy domain-specific engineering. Or perhaps the data doesn't seem to train the model all. These are things that you want to know as soon as possible. For this initial test, we'll use the same simple model that we used in <<chapter_intro>>:
 
@@ -253,7 +254,7 @@ learn.fine_tune(2)
 
 # Let's take a look at the activations of our model. To actually get a batch of real data from our `DataLoaders`, we can use the `one_batch` method:
 
-x,y = dls.one_batch()
+x, y = dls.one_batch()
 
 # As you see, this returns the dependent and independent variables, as a mini-batch. Let's see what is actually contained in our dependent variable:
 
@@ -261,12 +262,12 @@ y
 
 # Our batch size is 64, so we have 64 rows in this tensor. Each row is a single integer between 0 and 36, representing our 37 possible pet breeds. We can view the predictions (that is, the activations of the final layer of our neural network) using `Learner.get_preds`. This function either takes a dataset index (0 for train and 1 for valid) or an iterator of batches. Thus, we can pass it a simple list with our batch to get our predictions. It returns predictions and targets by default, but since we already have the targets, we can effectively ignore them by assigning to the special variable `_`:
 
-preds,_ = learn.get_preds(dl=[(x,y)])
+preds, _ = learn.get_preds(dl=[(x, y)])
 preds[0]
 
 # The actual predictions are 37 probabilities between 0 and 1, which add up to 1 in total:
 
-len(preds[0]),preds[0].sum()
+len(preds[0]), preds[0].sum()
 
 # To transform the activations of our model into predictions like this, we used something called the *softmax* activation function.
 
@@ -276,16 +277,16 @@ len(preds[0]),preds[0].sum()
 #
 # Softmax is similar to the sigmoid function, which we saw earlier. As a reminder sigmoid looks like this:
 
-plot_function(torch.sigmoid, min=-4,max=4)
+plot_function(torch.sigmoid, min=-4, max=4)
 
 # We can apply this function to a single column of activations from a neural network, and get back a column of numbers between 0 and 1, so it's a very useful activation function for our final layer.
 #
 # Now think about what happens if we want to have more categories in our target (such as our 37 pet breeds). That means we'll need more activations than just a single column: we need an activation *per category*. We can create, for instance, a neural net that predicts 3s and 7s that returns two activations, one for each class—this will be a good first step toward creating the more general approach. Let's just use some random numbers with a standard deviation of 2 (so we multiply `randn` by 2) for this example, assuming we have 6 images and 2 possible categories (where the first column represents 3s and the second is 7s):
 
-#hide
-torch.random.manual_seed(42);
+# hide
+torch.random.manual_seed(42)
 
-acts = torch.randn((6,2))*2
+acts = torch.randn((6, 2)) * 2
 acts
 
 # We can't just take the sigmoid of this directly, since we don't get rows that add to 1 (i.e., we want the probability of being a 3 plus the probability of being a 7 to add up to 1):
@@ -298,7 +299,7 @@ acts.sigmoid()
 #
 # We would expect that since this is just another way of representing the same problem, that we would be able to use `sigmoid` directly on the two-activation version of our neural net. And indeed we can! We can just take the *difference* between the neural net activations, because that reflects how much more sure we are of the input being a 3 than a 7, and then take the sigmoid of that:
 
-(acts[:,0]-acts[:,1]).sigmoid()
+(acts[:, 0] - acts[:, 1]).sigmoid()
 
 # The second column (the probability of it being a 7) will then just be that value subtracted from 1. Now, we need a way to do all this that also works for more than two columns. It turns out that this function, called `softmax`, is exactly that:
 #
@@ -319,11 +320,11 @@ sm_acts
 
 # <img alt="Bear softmax example" width="280" id="bear_softmax" caption="Example of softmax on the bear classifier" src="images/att_00062.png">
 
-# What does this function do in practice? Taking the exponential ensures all our numbers are positive, and then dividing by the sum ensures we are going to have a bunch of numbers that add up to 1. The exponential also has a nice property: if one of the numbers in our activations `x` is slightly bigger than the others, the exponential will amplify this (since it grows, well... exponentially), which means that in the softmax, that number will be closer to 1. 
+# What does this function do in practice? Taking the exponential ensures all our numbers are positive, and then dividing by the sum ensures we are going to have a bunch of numbers that add up to 1. The exponential also has a nice property: if one of the numbers in our activations `x` is slightly bigger than the others, the exponential will amplify this (since it grows, well... exponentially), which means that in the softmax, that number will be closer to 1.
 #
 # Intuitively, the softmax function *really* wants to pick one class among the others, so it's ideal for training a classifier when we know each picture has a definite label. (Note that it may be less ideal during inference, as you might want your model to sometimes tell you it doesn't recognize any of the classes that it has seen during training, and not pick a class because it has a slightly bigger activation score. In this case, it might be better to train a model using multiple binary output columns, each using a sigmoid activation.)
 #
-# Softmax is the first part of the cross-entropy loss—the second part is log likeklihood. 
+# Softmax is the first part of the cross-entropy loss—the second part is log likelihood.
 
 # ### Log Likelihood
 
@@ -339,7 +340,7 @@ sm_acts
 #
 # In the binary case, we used `torch.where` to select between `inputs` and `1-inputs`. When we treat a binary classification as a general classification problem with two categories, it actually becomes even easier, because (as we saw in the previous section) we now have two columns, containing the equivalent of `inputs` and `1-inputs`. So, all we need to do is select from the appropriate column. Let's try to implement this in PyTorch. For our synthetic 3s and 7s example, let's say these are our labels:
 
-targ = tensor([0,1,0,1,1,0])
+targ = tensor([0, 1, 0, 1, 1, 0])
 
 # and these are the softmax activations:
 
@@ -352,14 +353,13 @@ sm_acts[idx, targ]
 
 # To see exactly what's happening here, let's put all the columns together in a table. Here, the first two columns are our activations, then we have the targets, the row index, and finally the result shown immediately above:
 
-#hide_input
-from IPython.display import HTML
-df = pd.DataFrame(sm_acts, columns=["3","7"])
+# hide_input
+df = pd.DataFrame(sm_acts, columns=["3", "7"])
 df['targ'] = targ
 df['idx'] = idx
 df['loss'] = sm_acts[range(6), targ]
 t = df.style.hide_index()
-#To have html code compatible with our script
+# To have html code compatible with our script
 html = t._repr_html_().split('</style>')[1]
 html = re.sub(r'<table id="([^"]+)"\s*>', r'<table >', html)
 display(HTML(html))
@@ -382,7 +382,7 @@ F.nll_loss(sm_acts, targ, reduction='none')
 
 # The function we saw in the previous section works quite well as a loss function, but we can make it a bit better. The problem is that we are using probabilities, and probabilities cannot be smaller than 0 or greater than 1. That means that our model will not care whether it predicts 0.99 or 0.999. Indeed, those numbers are so close together—but in another sense, 0.999 is 10 times more confident than 0.99. So, we want to transform our numbers between 0 and 1 to instead be between negative infinity and infinity. There is a mathematical function that does exactly this: the *logarithm* (available as `torch.log`). It is not defined for numbers less than 0, and looks like this:
 
-plot_function(torch.log, min=0,max=4)
+plot_function(torch.log, min=0, max=4)
 
 # Does "logarithm" ring a bell? The logarithm function has this identity:
 #
@@ -403,7 +403,7 @@ plot_function(torch.log, min=0,max=4)
 
 # Taking the mean of the positive or negative log of our probabilities (depending on whether it's the correct or incorrect class) gives us the *negative log likelihood* loss. In PyTorch, `nll_loss` assumes that you already took the log of the softmax, so it doesn't actually do the logarithm for you.
 
-# > warning: Confusing Name, Beware: The nll in `nll_loss` stands for "negative log likelihood," but it doesn't actually take the log at all! It assumes you have _already_ taken the log. PyTorch has a function called `log_softmax` that combines `log` and `softmax` in a fast and accurate way. `nll_loss` is deigned to be used after `log_softmax`.
+# > warning: Confusing Name, Beware: The nll in `nll_loss` stands for "negative log likelihood," but it doesn't actually take the log at all! It assumes you have _already_ taken the log. PyTorch has a function called `log_softmax` that combines `log` and `softmax` in a fast and accurate way. `nll_loss` is designed to be used after `log_softmax`.
 
 # When we first take the softmax, and then the log likelihood of that, that combination is called *cross-entropy loss*. In PyTorch, this is available as `nn.CrossEntropyLoss` (which, in practice, actually does `log_softmax` and then `nll_loss`):
 
@@ -433,9 +433,9 @@ nn.CrossEntropyLoss(reduction='none')(acts, targ)
 #
 # We saw in <<chapter_intro>> that we can use a confusion matrix to see where our model is doing well, and where it's doing badly:
 
-#width 600
+# width 600
 interp = ClassificationInterpretation.from_learner(learn)
-interp.plot_confusion_matrix(figsize=(12,12), dpi=60)
+interp.plot_confusion_matrix(figsize=(12, 12), dpi=60)
 
 # Oh dear—in this case, a confusion matrix is very hard to read. We have 37 different breeds of pet, which means we have 37×37 entries in this giant matrix! Instead, we can use the `most_confused` method, which just shows us the cells of the confusion matrix with the most incorrect predictions (here, with at least 5 or more):
 
@@ -465,12 +465,12 @@ learn.fine_tune(1, base_lr=0.1)
 # What do we do to find the perfect learning rate—not too high, and not too low? In 2015 the researcher Leslie Smith came up with a brilliant idea, called the *learning rate finder*. His idea was to start with a very, very small learning rate, something so small that we would never expect it to be too big to handle. We use that for one mini-batch, find what the losses are afterwards, and then increase the learning rate by some percentage (e.g., doubling it each time). Then we do another mini-batch, track the loss, and double the learning rate again. We keep doing this until the loss gets worse, instead of better. This is the point where we know we have gone too far. We then select a learning rate a bit lower than this point. Our advice is to pick either:
 #
 # - One order of magnitude less than where the minimum loss was achieved (i.e., the minimum divided by 10)
-# - The last point where the loss was clearly decreasing 
+# - The last point where the loss was clearly decreasing
 #
 # The learning rate finder computes those points on the curve to help you. Both these rules usually give around the same value. In the first chapter, we didn't specify a learning rate, using the default value from the fastai library (which is 1e-3):
 
 learn = cnn_learner(dls, resnet34, metrics=error_rate)
-lr_min,lr_steep = learn.lr_find()
+lr_min, lr_steep = learn.lr_find()
 
 print(f"Minimum/10: {lr_min:.2e}, steepest point: {lr_steep:.2e}")
 
@@ -550,7 +550,7 @@ learn.fit_one_cycle(6, lr_max=1e-5)
 learn = cnn_learner(dls, resnet34, metrics=error_rate)
 learn.fit_one_cycle(3, 3e-3)
 learn.unfreeze()
-learn.fit_one_cycle(12, lr_max=slice(1e-6,1e-4))
+learn.fit_one_cycle(12, lr_max=slice(1e-6, 1e-4))
 
 # Now the fine-tuning is working great!
 #
@@ -592,7 +592,6 @@ learn.recorder.plot_loss()
 #
 # You can't really know ahead of time what the best architecture for your particular problem is—you need to try training some. So let's try a ResNet-50 now with mixed precision:
 
-from fastai.callback.fp16 import *
 learn = cnn_learner(dls, resnet50, metrics=error_rate).to_fp16()
 learn.fine_tune(6, freeze_epochs=3)
 
@@ -615,7 +614,7 @@ learn.fine_tune(6, freeze_epochs=3)
 # 1. Why do we first resize to a large size on the CPU, and then to a smaller size on the GPU?
 # 1. If you are not familiar with regular expressions, find a regular expression tutorial, and some problem sets, and complete them. Have a look on the book's website for suggestions.
 # 1. What are the two ways in which data is most commonly provided, for most deep learning datasets?
-# 1. Look up the documentation for `L` and try using a few of the new methods is that it adds.
+# 1. Look up the documentation for `L` and try using a few of the new methods that it adds.
 # 1. Look up the documentation for the Python `pathlib` module and try using a few methods of the `Path` class.
 # 1. Give two examples of ways that image transformations can degrade the quality of the data.
 # 1. What method does fastai provide to view the data in a `DataLoaders`?
@@ -640,5 +639,3 @@ learn.fine_tune(6, freeze_epochs=3)
 
 # 1. Find the paper by Leslie Smith that introduced the learning rate finder, and read it.
 # 1. See if you can improve the accuracy of the classifier in this chapter. What's the best accuracy you can achieve? Look on the forums and the book's website to see what other students have achieved with this dataset, and how they did it.
-
-
