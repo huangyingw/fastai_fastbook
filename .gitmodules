@@ -1,6 +1,3 @@
-[submodule "fastai"]
-	path = fastai
-	url = git@github.com:fastai/fastai.git
 [submodule "pytorch"]
 	path = pytorch
 	url = git@github.com:pytorch/pytorch.git
