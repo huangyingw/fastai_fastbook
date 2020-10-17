@@ -15,13 +15,13 @@
 #     name: python3
 # ---
 
-#hide
-# !pip install -Uqq fastbook
+# hide
+from fastai.vision.all import *
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-#hide
-from fastbook import *
+# hide
 
 # + active=""
 # [[chapter_sizing_and_tta]]
@@ -53,7 +53,6 @@ from fastbook import *
 #
 # Let's get started with this dataset:
 
-from fastai.vision.all import *
 path = untar_data(URLs.IMAGENETTE)
 
 # First we'll get our dataset into a `DataLoaders` object, using the *presizing* trick introduced in <<chapter_pet_breeds>>:
@@ -79,8 +78,8 @@ learn.fit_one_cycle(5, 3e-3)
 #
 # Let's grab a batch of our data and look at those values, by averaging over all axes except for the channel axis, which is axis 1:
 
-x,y = dls.one_batch()
-x.mean(dim=[0,2,3]),x.std(dim=[0,2,3])
+x, y = dls.one_batch()
+x.mean(dim=[0, 2, 3]), x.std(dim=[0, 2, 3])
 
 
 # As we expected, the mean and standard deviation are not very close to the desired values. Fortunately, normalizing the data is easy to do in fastai by adding the `Normalize` transform. This acts on a whole mini-batch at once, so you can add it to the `batch_tfms` section of your data block. You need to pass to this transform the mean and standard deviation that you want to use; fastai comes with the standard ImageNet mean and standard deviation already defined. (If you do not pass any statistics to the `Normalize` transform, fastai will automatically calculate them from a single batch of your data.)
@@ -89,18 +88,18 @@ x.mean(dim=[0,2,3]),x.std(dim=[0,2,3])
 
 def get_dls(bs, size):
     dblock = DataBlock(blocks=(ImageBlock, CategoryBlock),
-                   get_items=get_image_files,
-                   get_y=parent_label,
-                   item_tfms=Resize(460),
-                   batch_tfms=[*aug_transforms(size=size, min_scale=0.75),
-                               Normalize.from_stats(*imagenet_stats)])
+                       get_items=get_image_files,
+                       get_y=parent_label,
+                       item_tfms=Resize(460),
+                       batch_tfms=[*aug_transforms(size=size, min_scale=0.75),
+                                   Normalize.from_stats(*imagenet_stats)])
     return dblock.dataloaders(path, bs=bs)
 
 
 dls = get_dls(64, 224)
 
-x,y = dls.one_batch()
-x.mean(dim=[0,2,3]),x.std(dim=[0,2,3])
+x, y = dls.one_batch()
+x.mean(dim=[0, 2, 3]), x.std(dim=[0, 2, 3])
 
 # Let's check what effect this had on training our model:
 
@@ -108,7 +107,7 @@ model = xresnet50()
 learn = Learner(dls, model, loss_func=CrossEntropyLossFlat(), metrics=accuracy)
 learn.fit_one_cycle(5, 3e-3)
 
-# Although it only helped a little here, normalization becomes especially important when using pretrained models. The pretrained model only knows how to work with data of the type that it has seen before. If the average pixel value was 0 in the data it was trained with, but your data has 0 as the minimum possible value of a pixel, then the model is going to be seeing something very different to what is intended! 
+# Although it only helped a little here, normalization becomes especially important when using pretrained models. The pretrained model only knows how to work with data of the type that it has seen before. If the average pixel value was 0 in the data it was trained with, but your data has 0 as the minimum possible value of a pixel, then the model is going to be seeing something very different to what is intended!
 #
 # This means that when you distribute a model, you need to also distribute the statistics used for normalization, since anyone using it for inference, or transfer learning, will need to use the same statistics. By the same token, if you're using a model that someone else has trained, make sure you find out what normalization statistics they used, and match them.
 #
@@ -133,7 +132,7 @@ learn.fit_one_cycle(5, 3e-3)
 # Now you can create your `DataLoaders` with a small size and use `fit_one_cycle` in the usual way, training for a few less epochs than you might otherwise do:
 
 dls = get_dls(128, 128)
-learn = Learner(dls, xresnet50(), loss_func=CrossEntropyLossFlat(), 
+learn = Learner(dls, xresnet50(), loss_func=CrossEntropyLossFlat(),
                 metrics=accuracy)
 learn.fit_one_cycle(4, 3e-3)
 
@@ -168,7 +167,7 @@ learn.fine_tune(5, 1e-3)
 #
 # You can pass any `DataLoader` to fastai's `tta` method; by default, it will use your validation set:
 
-preds,targs = learn.tta()
+preds, targs = learn.tta()
 accuracy(preds, targs).item()
 
 # As we can see, using TTA gives us good a boost in performance, with no additional training required. However, it does make inference slower—if you're averaging five images for TTA, inference will be five times slower.
@@ -210,21 +209,21 @@ accuracy(preds, targs).item()
 # <<mixup_example>> shows what it looks like when we take a *linear combination* of images, as done in Mixup.
 
 # + hide_input=true
-#hide_input
-#id mixup_example
-#caption Mixing a church and a gas station
-#alt An image of a church, a gas station and the two mixed up.
-church = PILImage.create(get_image_files_sorted(path/'train'/'n03028079')[0])
-gas = PILImage.create(get_image_files_sorted(path/'train'/'n03425413')[0])
-church = church.resize((256,256))
-gas = gas.resize((256,256))
+# hide_input
+# id mixup_example
+# caption Mixing a church and a gas station
+# alt An image of a church, a gas station and the two mixed up.
+church = PILImage.create(get_image_files_sorted(path / 'train' / 'n03028079')[0])
+gas = PILImage.create(get_image_files_sorted(path / 'train' / 'n03425413')[0])
+church = church.resize((256, 256))
+gas = gas.resize((256, 256))
 tchurch = tensor(church).float() / 255.
 tgas = tensor(gas).float() / 255.
 
-_,axs = plt.subplots(1, 3, figsize=(12,4))
-show_image(tchurch, ax=axs[0]);
-show_image(tgas, ax=axs[1]);
-show_image((0.3*tchurch + 0.7*tgas), ax=axs[2]);
+_, axs = plt.subplots(1, 3, figsize=(12, 4))
+show_image(tchurch, ax=axs[0])
+show_image(tgas, ax=axs[1])
+show_image((0.3 * tchurch + 0.7 * tgas), ax=axs[2])
 # -
 
 # The third image is built by adding 0.3 times the first one and 0.7 times the second. In this example, should the model predict "church" or "gas station"? The right answer is 30% church and 70% gas station, since that's what we'll get if we take the linear combination of the one-hot-encoded targets. For instance, suppose we have 10 classes and "church" is represented by the index 2 and "gas station" is reprsented by the index 7, the one-hot-encoded representations are:
@@ -242,8 +241,8 @@ show_image((0.3*tchurch + 0.7*tgas), ax=axs[2]);
 #
 # ```python
 # model = xresnet50()
-# learn = Learner(dls, model, loss_func=CrossEntropyLossFlat(), 
-#                 metrics=accuracy, cbs=Mixup)
+# learn = Learner(dls, model, loss_func=CrossEntropyLossFlat(),
+#                 metrics=accuracy, cbs=MixUp)
 # learn.fit_one_cycle(5, 3e-3)
 # ```
 
@@ -293,7 +292,7 @@ show_image((0.3*tchurch + 0.7*tgas), ax=axs[2]);
 #
 # ```python
 # model = xresnet50()
-# learn = Learner(dls, model, loss_func=LabelSmoothingCrossEntropy(), 
+# learn = Learner(dls, model, loss_func=LabelSmoothingCrossEntropy(),
 #                 metrics=accuracy)
 # learn.fit_one_cycle(5, 3e-3)
 # ```
@@ -306,7 +305,7 @@ show_image((0.3*tchurch + 0.7*tgas), ax=axs[2]);
 #
 # Most importantly, remember that if your dataset is big, there is no point prototyping on the whole thing. Find a small subset that is representative of the whole, like we did with Imagenette, and experiment on it.
 #
-# In the next three chapters, we will look at the other applications directly supported by fastai: collaborative filtering, tabular modeling and working with text. We will go back to computer vision in the next section of the book, with a deep dive into convolutional neural networks in <<chapter_convolutions>>. 
+# In the next three chapters, we will look at the other applications directly supported by fastai: collaborative filtering, tabular modeling and working with text. We will go back to computer vision in the next section of the book, with a deep dive into convolutional neural networks in <<chapter_convolutions>>.
 
 # ## Questionnaire
 
@@ -331,5 +330,3 @@ show_image((0.3*tchurch + 0.7*tgas), ax=axs[2]);
 # 1. Find the Mixup paper on arXiv and read it. Pick one or two more recent articles introducing variants of Mixup and read them, then try to implement them on your problem.
 # 1. Find the script training Imagenette using Mixup and use it as an example to build a script for a long training on your own project. Execute it and see if it helps.
 # 1. Read the sidebar "Label Smoothing, the Paper", look at the relevant section of the original paper and see if you can follow it. Don't be afraid to ask for help!
-
-
