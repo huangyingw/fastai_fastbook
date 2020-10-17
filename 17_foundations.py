@@ -15,14 +15,19 @@
 #     name: python3
 # ---
 
-#hide
-# !pip install -Uqq fastbook
+# hide
+from sympy import symbols, diff
+import torch.nn as nn
+from torch.autograd import Function
+from math import sqrt
+from torch import tensor
+import torch
+from fastai.gen_doc.nbdoc import *
 import fastbook
 fastbook.setup_book()
 
 # + hide_input=false
-#hide
-from fastai.gen_doc.nbdoc import *
+# hide
 
 # + active=""
 # [[chapter_foundations]]
@@ -55,7 +60,7 @@ from fastai.gen_doc.nbdoc import *
 # def relu(x): return x if x >= 0 else 0
 # ```
 
-# A deep learning model is then built by stacking a lot of those neurons in successive layers. We create a first layer with a certain number of neurons (known as *hidden size*) and link all the inputs to each of those neurons. Such a layer is often called a *fully connected layer* or a *dense layer* (for densely connected), or a *linear layer*. 
+# A deep learning model is then built by stacking a lot of those neurons in successive layers. We create a first layer with a certain number of neurons (known as *hidden size*) and link all the inputs to each of those neurons. Such a layer is often called a *fully connected layer* or a *dense layer* (for densely connected), or a *linear layer*.
 #
 # It requires to compute, for each `input` in our batch and each neuron with a give `weight`, the dot product:
 #
@@ -91,27 +96,26 @@ from fastai.gen_doc.nbdoc import *
 
 # Let's write a function that computes the matrix product of two tensors, before we allow ourselves to use the PyTorch version of it. We will only use the indexing in PyTorch tensors:
 
-import torch
-from torch import tensor
 
 
 # We'll need three nested `for` loops: one for the row indices, one for the column indices, and one for the inner sum. `ac` and `ar` stand for number of columns of `a` and number of rows of `a`, respectively (the same convention is followed for `b`), and we make sure calculating the matrix product is possible by checking that `a` has as many columns as `b` has rows:
 
-def matmul(a,b):
-    ar,ac = a.shape # n_rows * n_cols
-    br,bc = b.shape
-    assert ac==br
+def matmul(a, b):
+    ar, ac = a.shape  # n_rows * n_cols
+    br, bc = b.shape
+    assert ac == br
     c = torch.zeros(ar, bc)
     for i in range(ar):
         for j in range(bc):
-            for k in range(ac): c[i,j] += a[i,k] * b[k,j]
+            for k in range(ac):
+                c[i, j] += a[i, k] * b[k, j]
     return c
 
 
 # To test this out, we'll pretend (using random matrices) that we're working with a small batch of 5 MNIST images, flattened into 28×28 vectors, with linear model to turn them into 10 activations:
 
-m1 = torch.randn(5,28*28)
-m2 = torch.randn(784,10)
+m1 = torch.randn(5, 28 * 28)
+m2 = torch.randn(784, 10)
 
 # Let's time our function, using the Jupyter "magic" command `%time`:
 
@@ -139,7 +143,7 @@ a < b
 
 # If we want to know if every element of `a` is less than the corresponding element in `b`, or if two tensors are equal, we need to combine those elementwise operations with `torch.all`:
 
-(a < b).all(), (a==b).all()
+(a < b).all(), (a == b).all()
 
 # Reduction operations like `all()`, `sum()` and `mean()` return tensors with only one element, called rank-0 tensors. If you want to convert this to a plain Python Boolean or number, you need to call `.item()`:
 
@@ -147,28 +151,29 @@ a < b
 
 # The elementwise operations work on tensors of any rank, as long as they have the same shape:
 
-m = tensor([[1., 2, 3], [4,5,6], [7,8,9]])
-m*m
+m = tensor([[1., 2, 3], [4, 5, 6], [7, 8, 9]])
+m * m
 
 # However you can't perform elementwise operations on tensors that don't have the same shape (unless they are broadcastable, as discussed in the next section):
 
-n = tensor([[1., 2, 3], [4,5,6]])
-m*n
+n = tensor([[1., 2, 3], [4, 5, 6]])
+m * n
 
 
-# With elementwise arithmetic, we can remove one of our three nested loops: we can multiply the tensors that correspond to the `i`-th row of `a` and the `j`-th column of `b` before summing all the elements, which will speed things up because the inner loop will now be executed by PyTorch at C speed. 
+# With elementwise arithmetic, we can remove one of our three nested loops: we can multiply the tensors that correspond to the `i`-th row of `a` and the `j`-th column of `b` before summing all the elements, which will speed things up because the inner loop will now be executed by PyTorch at C speed.
 #
-# To access one column or row, we can simply write `a[i,:]` or `b[:,j]`. The `:` means take everything in that dimension. We could restrict this and take only a slice of that particular dimension by passing a range, like `1:5`, instead of just `:`. In that case, we would take the elements in columns or rows 1 to 4 (the second number is noninclusive). 
+# To access one column or row, we can simply write `a[i,:]` or `b[:,j]`. The `:` means take everything in that dimension. We could restrict this and take only a slice of that particular dimension by passing a range, like `1:5`, instead of just `:`. In that case, we would take the elements in columns or rows 1 to 4 (the second number is noninclusive).
 #
 # One simplification is that we can always omit a trailing colon, so `a[i,:]` can be abbreviated to `a[i]`. With all of that in mind, we can write a new version of our matrix multiplication:
 
-def matmul(a,b):
-    ar,ac = a.shape
-    br,bc = b.shape
-    assert ac==br
+def matmul(a, b):
+    ar, ac = a.shape
+    br, bc = b.shape
+    assert ac == br
     c = torch.zeros(ar, bc)
     for i in range(ar):
-        for j in range(bc): c[i,j] = (a[i] * b[:,j]).sum()
+        for j in range(bc):
+            c[i, j] = (a[i] * b[:, j]).sum()
     return c
 
 
@@ -189,11 +194,11 @@ def matmul(a,b):
 a = tensor([10., 6, -4])
 a > 0
 
-# How are we able to do this comparison? `0` is being *broadcast* to have the same dimensions as `a`. Note that this is done without creating a tensor full of zeros in memory (that would be very inefficient). 
+# How are we able to do this comparison? `0` is being *broadcast* to have the same dimensions as `a`. Note that this is done without creating a tensor full of zeros in memory (that would be very inefficient).
 #
 # This is very useful if you want to normalize your dataset by subtracting the mean (a scalar) from the entire data set (a matrix) and dividing by the standard deviation (another scalar):
 
-m = tensor([[1., 2, 3], [4,5,6], [7,8,9]])
+m = tensor([[1., 2, 3], [4, 5, 6], [7, 8, 9]])
 (m - 5) / 2.73
 
 # What if have different means for each row of the matrix? in that case you will need to broadcast a vector to a matrix.
@@ -202,9 +207,9 @@ m = tensor([[1., 2, 3], [4,5,6], [7,8,9]])
 
 # We can broadcast a vector to a matrix as follows:
 
-c = tensor([10.,20,30])
-m = tensor([[1., 2, 3], [4,5,6], [7,8,9]])
-m.shape,c.shape
+c = tensor([10., 20, 30])
+m = tensor([[1., 2, 3], [4, 5, 6], [7, 8, 9]])
+m.shape, c.shape
 
 m + c
 
@@ -227,26 +232,26 @@ c + m
 
 # In fact, it's only possible to broadcast a vector of size `n` with a matrix of size `m` by `n`:
 
-c = tensor([10.,20,30])
-m = tensor([[1., 2, 3], [4,5,6]])
-c+m
+c = tensor([10., 20, 30])
+m = tensor([[1., 2, 3], [4, 5, 6]])
+c + m
 
 # This won't work:
 
-c = tensor([10.,20])
-m = tensor([[1., 2, 3], [4,5,6]])
-c+m
+c = tensor([10., 20])
+m = tensor([[1., 2, 3], [4, 5, 6]])
+c + m
 
 # If we want to broadcast in the other dimension, we have to change the shape of our vector to make it a 3×1 matrix. This is done with the `unsqueeze` method in PyTorch:
 
-c = tensor([10.,20,30])
-m = tensor([[1., 2, 3], [4,5,6], [7,8,9]])
+c = tensor([10., 20, 30])
+m = tensor([[1., 2, 3], [4, 5, 6], [7, 8, 9]])
 c = c.unsqueeze(1)
-m.shape,c.shape
+m.shape, c.shape
 
 # This time, `c` is expanded on the column side:
 
-c+m
+c + m
 
 # Like before, only three scalars are stored in memory:
 
@@ -259,28 +264,28 @@ t.stride(), t.shape
 
 # With broadcasting, by default if we need to add dimensions, they are added at the beginning. When we were broadcasting before, Pytorch was doing `c.unsqueeze(0)` behind the scenes:
 
-c = tensor([10.,20,30])
-c.shape, c.unsqueeze(0).shape,c.unsqueeze(1).shape
+c = tensor([10., 20, 30])
+c.shape, c.unsqueeze(0).shape, c.unsqueeze(1).shape
 
 # The `unsqueeze` command can be replaced by `None` indexing:
 
-c.shape, c[None,:].shape,c[:,None].shape
+c.shape, c[None, :].shape, c[:, None].shape
 
 # You can always omit trailing colons, and `...` means all preceding dimensions:
 
-c[None].shape,c[...,None].shape
+c[None].shape, c[..., None].shape
 
 
 # With this, we can remove another `for` loop in our matrix multiplication function. Now, instead of multiplying `a[i]` with `b[:,j]`, we can multiply `a[i]` with the whole matrix `b` using broadcasting, then sum the results:
 
-def matmul(a,b):
-    ar,ac = a.shape
-    br,bc = b.shape
-    assert ac==br
+def matmul(a, b):
+    ar, ac = a.shape
+    br, bc = b.shape
+    assert ac == br
     c = torch.zeros(ar, bc)
     for i in range(ar):
-#       c[i,j] = (a[i,:]          * b[:,j]).sum() # previous
-        c[i]   = (a[i  ].unsqueeze(-1) * b).sum(dim=0)
+        #       c[i,j] = (a[i,:]          * b[:,j]).sum() # previous
+        c[i] = (a[i].unsqueeze(-1) * b).sum(dim=0)
     return c
 
 
@@ -302,7 +307,7 @@ def matmul(a,b):
 # Scale  (1d tensor):  (1)   (1)  3
 # Result (3d tensor): 256 x 256 x 3
 # ```
-#     
+#
 # However, a 2D tensor of size 256×256 isn't compatible with our image:
 #
 # ```
@@ -331,7 +336,7 @@ def matmul(a,b):
 # ik,kj -> ij
 # ```
 #
-# The lefthand side represents the operands dimensions, separated by commas. Here we have two tensors that each have two dimensions (`i,k` and `k,j`).  The righthand side represents the result dimensions, so here we have a tensor with two dimensions `i,j`. 
+# The lefthand side represents the operands dimensions, separated by commas. Here we have two tensors that each have two dimensions (`i,k` and `k,j`).  The righthand side represents the result dimensions, so here we have a tensor with two dimensions `i,j`.
 #
 # The rules of Einstein summation notation are as follows:
 #
@@ -341,7 +346,7 @@ def matmul(a,b):
 #
 # So in our example, since `k` is repeated, we sum over that index. In the end the formula represents the matrix obtained when we put in `(i,j)` the sum of all the coefficients `(i,k)` in the first tensor multiplied by the coefficients `(k,j)` in the second tensor... which is the matrix product! Here is how we can code this in PyTorch:
 
-def matmul(a,b): return torch.einsum('ik,kj->ij', a, b)
+def matmul(a, b): return torch.einsum('ik,kj->ij', a, b)
 
 
 # Einstein summation is a very practical way of expressing operations involving indexing and sum of products. Note that you can have just one member on the lefthand side. For instance, this:
@@ -356,7 +361,7 @@ def matmul(a,b): return torch.einsum('ik,kj->ij', a, b)
 # torch.einsum('bi,ij,bj->b', a, b, c)
 # ```
 #
-# will return a vector of size `b` where the `k`-th coordinate is the sum of `a[k,i] b[i,j] c[k,j]`. This notation is particularly convenient when you have more dimensions because of batches. For example, if you have two batches of matrices and want to compute the matrix product per batch, you would could this: 
+# will return a vector of size `b` where the `k`-th coordinate is the sum of `a[k,i] b[i,j] c[k,j]`. This notation is particularly convenient when you have more dimensions because of batches. For example, if you have two batches of matrices and want to compute the matrix product per batch, you would could this:
 #
 # ```python
 # torch.einsum('bik,bkj->bij', a, b)
@@ -381,7 +386,7 @@ def matmul(a,b): return torch.einsum('ik,kj->ij', a, b)
 def lin(x, w, b): return x @ w + b
 
 
-# We can stack the second layer on top of the first, but since mathematically the composition of two linear operations is another linear operation, this only makes sense if we put something nonlinear in the middle, called an activation function. As mentioned at the beginning of the chapter, in deep learning applications the activation function most commonly used is a ReLU, which returns the maximum of `x` and `0`. 
+# We can stack the second layer on top of the first, but since mathematically the composition of two linear operations is another linear operation, this only makes sense if we put something nonlinear in the middle, called an activation function. As mentioned at the beginning of the chapter, in deep learning applications the activation function most commonly used is a ReLU, which returns the maximum of `x` and `0`.
 #
 # We won't actually train our model in this chapter, so we'll use random tensors for our inputs and targets. Let's say our inputs are 200 vectors of size 100, which we group into one batch, and our targets are 200 random floats:
 
@@ -390,9 +395,9 @@ y = torch.randn(200)
 
 # For our two-layer model we will need two weight matrices and two bias vectors. Let's say we have a hidden size of 50 and the output size is 1 (for one of our inputs, the corresponding output is one float in this toy example). We initialize the weights randomly and the bias at zero:
 
-w1 = torch.randn(100,50)
+w1 = torch.randn(100, 50)
 b1 = torch.zeros(50)
-w2 = torch.randn(50,1)
+w2 = torch.randn(50, 1)
 b2 = torch.zeros(1)
 
 # Then the result of our first layer is simply:
@@ -411,28 +416,31 @@ l1.mean(), l1.std()
 # Indeed, if we make just 50 multiplications between `x` and random matrices of size 100×100, we'll have:
 
 x = torch.randn(200, 100)
-for i in range(50): x = x @ torch.randn(100,100)
-x[0:5,0:5]
+for i in range(50):
+    x = x @ torch.randn(100, 100)
+x[0:5, 0:5]
 
 # The result is `nan`s everywhere. So maybe the scale of our matrix was too big, and we need to have smaller weights? But if we use too small weights, we will have the opposite problem—the scale of our activations will go from 1 to 0.1, and after 100 layers we'll be left with zeros everywhere:
 
 x = torch.randn(200, 100)
-for i in range(50): x = x @ (torch.randn(100,100) * 0.01)
-x[0:5,0:5]
+for i in range(50):
+    x = x @ (torch.randn(100, 100) * 0.01)
+x[0:5, 0:5]
 
 # So we have to scale our weight matrices exactly right so that the standard deviation of our activations stays at 1. We can compute the exact value to use mathematically, as illustrated by Xavier Glorot and Yoshua Bengio in ["Understanding the Difficulty of Training Deep Feedforward Neural Networks"](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf). The right scale for a given layer is $1/\sqrt{n_{in}}$, where $n_{in}$ represents the number of inputs.
 #
 # In our case, if we have 100 inputs, we should scale our weight matrices by 0.1:
 
 x = torch.randn(200, 100)
-for i in range(50): x = x @ (torch.randn(100,100) * 0.1)
-x[0:5,0:5]
+for i in range(50):
+    x = x @ (torch.randn(100, 100) * 0.1)
+x[0:5, 0:5]
 
 # Finally some numbers that are neither zeros nor `nan`s! Notice how stable the scale of our activations is, even after those 50 fake layers:
 
 x.std()
 
-# If you play a little bit with the value for scale you'll notice that even a slight variation from 0.1 will get you either to very small or very large numbers, so initializing the weights properly is extremely important. 
+# If you play a little bit with the value for scale you'll notice that even a slight variation from 0.1 will get you either to very small or very large numbers, so initializing the weights properly is extremely important.
 #
 # Let's go back to our neural net. Since we messed a bit with our inputs, we need to redefine them:
 
@@ -441,16 +449,15 @@ y = torch.randn(200)
 
 # And for our weights, we'll use the right scale, which is known as *Xavier initialization* (or *Glorot initialization*):
 
-from math import sqrt
-w1 = torch.randn(100,50) / sqrt(100)
+w1 = torch.randn(100, 50) / sqrt(100)
 b1 = torch.zeros(50)
-w2 = torch.randn(50,1) / sqrt(50)
+w2 = torch.randn(50, 1) / sqrt(50)
 b2 = torch.zeros(1)
 
 # Now if we compute the result of the first layer, we can check that the mean and standard deviation are under control:
 
 l1 = lin(x, w1, b1)
-l1.mean(),l1.std()
+l1.mean(), l1.std()
 
 
 # Very good. Now we need to go through a ReLU, so let's define one. A ReLU removes the negatives and replaces them with zeros, which is another way of saying it clamps our tensor at zero:
@@ -461,28 +468,30 @@ def relu(x): return x.clamp_min(0.)
 # We pass our activations through this:
 
 l2 = relu(l1)
-l2.mean(),l2.std()
+l2.mean(), l2.std()
 
 # And we're back to square one: the mean of our activations has gone to 0.4 (which is understandable since we removed the negatives) and the std went down to 0.58. So like before, after a few layers we will probably wind up with zeros:
 
 x = torch.randn(200, 100)
-for i in range(50): x = relu(x @ (torch.randn(100,100) * 0.1))
-x[0:5,0:5]
+for i in range(50):
+    x = relu(x @ (torch.randn(100, 100) * 0.1))
+x[0:5, 0:5]
 
 # This means our initialization wasn't right. Why? At the time Glorot and Bengio wrote their article, the popular activation in a neural net was the hyperbolic tangent (tanh, which is the one they used), and that initialization doesn't account for our ReLU. Fortunately, someone else has done the math for us and computed the right scale for us to use. In ["Delving Deep into Rectifiers: Surpassing Human-Level Performance"](https://arxiv.org/abs/1502.01852) (which we've seen before—it's the article that introduced the ResNet), Kaiming He et al. show that we should use the following scale instead: $\sqrt{2 / n_{in}}$, where $n_{in}$ is the number of inputs of our model. Let's see what this gives us:
 
 x = torch.randn(200, 100)
-for i in range(50): x = relu(x @ (torch.randn(100,100) * sqrt(2/100)))
-x[0:5,0:5]
+for i in range(50):
+    x = relu(x @ (torch.randn(100, 100) * sqrt(2 / 100)))
+x[0:5, 0:5]
 
 # That's better: our numbers aren't all zeroed this time. So let's go back to the definition of our neural net and use this initialization (which is named *Kaiming initialization* or *He initialization*):
 
 x = torch.randn(200, 100)
 y = torch.randn(200)
 
-w1 = torch.randn(100,50) * sqrt(2 / 100)
+w1 = torch.randn(100, 50) * sqrt(2 / 100)
 b1 = torch.zeros(50)
-w2 = torch.randn(50,1) * sqrt(2 / 50)
+w2 = torch.randn(50, 1) * sqrt(2 / 50)
 b2 = torch.zeros(1)
 
 # Let's look at the scale of our activations after going through the first linear layer and ReLU:
@@ -544,11 +553,11 @@ loss = mse(out, y)
 #
 # So to compute all the gradients we need for the update, we need to begin from the output of the model and work our way *backward*, one layer after the other—which is why this step is known as *backpropagation*. We can automate it by having each function we implemented (`relu`, `mse`, `lin`) provide its backward step: that is, how to derive the gradients of the loss with respect to the input(s) from the gradients of the loss with respect to the output.
 #
-# Here we populate those gradients in an attribute of each tensor, a bit like PyTorch does with `.grad`. 
+# Here we populate those gradients in an attribute of each tensor, a bit like PyTorch does with `.grad`.
 #
 # The first are the gradients of the loss with respect to the output of our model (which is the input of the loss function). We undo the `squeeze` we did in `mse`, then we use the formula that gives us the derivative of $x^{2}$: $2x$. The derivative of the mean is just $1/n$ where $n$ is the number of elements in our input:
 
-def mse_grad(inp, targ): 
+def mse_grad(inp, targ):
     # grad of loss with respect to output of previous layer
     inp.g = 2. * (inp.squeeze() - targ).unsqueeze(-1) / inp.shape[0]
 
@@ -557,7 +566,7 @@ def mse_grad(inp, targ):
 
 def relu_grad(inp, out):
     # grad of relu with respect to input activations
-    inp.g = (inp>0).float() * out.g
+    inp.g = (inp > 0).float() * out.g
 
 
 # The scheme is the same to compute the gradients of the loss with respect to the inputs, weights, and bias in the linear layer:
@@ -579,8 +588,7 @@ def lin_grad(inp, out, w, b):
 
 # To do symbolic computation, we first define a *symbol*, and then do a computation, like so:
 
-from sympy import symbols,diff
-sx,sy = symbols('sx sy')
+sx, sy = symbols('sx sy')
 diff(sx**2, sx)
 
 
@@ -597,7 +605,7 @@ def forward_and_backward(inp, targ):
     out = l2 @ w2 + b2
     # we don't actually need the loss in backward!
     loss = mse(out, targ)
-    
+
     # backward pass:
     mse_grad(out, targ)
     lin_grad(l2, out, w2, b2)
@@ -618,20 +626,20 @@ class Relu():
         self.inp = inp
         self.out = inp.clamp_min(0.)
         return self.out
-    
-    def backward(self): self.inp.g = (self.inp>0).float() * self.out.g
+
+    def backward(self): self.inp.g = (self.inp > 0).float() * self.out.g
 
 
 # `__call__` is a magic name in Python that will make our class callable. This is what will be executed when we type `y = Relu()(x)`. We can do the same for our linear layer and the MSE loss:
 
 class Lin():
-    def __init__(self, w, b): self.w,self.b = w,b
-        
+    def __init__(self, w, b): self.w, self.b = w, b
+
     def __call__(self, inp):
         self.inp = inp
         self.out = inp@self.w + self.b
         return self.out
-    
+
     def backward(self):
         self.inp.g = self.out.g @ self.w.t()
         self.w.g = self.inp.t() @ self.out.g
@@ -644,26 +652,28 @@ class Mse():
         self.targ = targ
         self.out = (inp.squeeze() - targ).pow(2).mean()
         return self.out
-    
+
     def backward(self):
-        x = (self.inp.squeeze()-self.targ).unsqueeze(-1)
-        self.inp.g = 2.*x/self.targ.shape[0]
+        x = (self.inp.squeeze() - self.targ).unsqueeze(-1)
+        self.inp.g = 2. * x / self.targ.shape[0]
 
 
 # Then we can put everything in a model that we initiate with our tensors `w1`, `b1`, `w2`, `b2`:
 
 class Model():
     def __init__(self, w1, b1, w2, b2):
-        self.layers = [Lin(w1,b1), Relu(), Lin(w2,b2)]
+        self.layers = [Lin(w1, b1), Relu(), Lin(w2, b2)]
         self.loss = Mse()
-        
+
     def __call__(self, x, targ):
-        for l in self.layers: x = l(x)
+        for l in self.layers:
+            x = l(x)
         return self.loss(x, targ)
-    
+
     def backward(self):
         self.loss.backward()
-        for l in reversed(self.layers): l.backward()
+        for l in reversed(self.layers):
+            l.backward()
 
 
 # What is really nice about this refactoring and registering things as layers of our model is that the forward and backward passes are now really easy to write. If we want to instantiate our model, we just need to write:
@@ -688,9 +698,9 @@ class LayerFunction():
         self.args = args
         self.out = self.forward(*args)
         return self.out
-    
-    def forward(self):  raise Exception('not implemented')
-    def bwd(self):      raise Exception('not implemented')
+
+    def forward(self): raise Exception('not implemented')
+    def bwd(self): raise Exception('not implemented')
     def backward(self): self.bwd(self.out, *self.args)
 
 
@@ -698,14 +708,14 @@ class LayerFunction():
 
 class Relu(LayerFunction):
     def forward(self, inp): return inp.clamp_min(0.)
-    def bwd(self, out, inp): inp.g = (inp>0).float() * out.g
+    def bwd(self, out, inp): inp.g = (inp > 0).float() * out.g
 
 
 class Lin(LayerFunction):
-    def __init__(self, w, b): self.w,self.b = w,b
-        
+    def __init__(self, w, b): self.w, self.b = w, b
+
     def forward(self, inp): return inp@self.w + self.b
-    
+
     def bwd(self, out, inp):
         inp.g = out.g @ self.w.t()
         self.w.g = self.inp.t() @ self.out.g
@@ -713,9 +723,9 @@ class Lin(LayerFunction):
 
 
 class Mse(LayerFunction):
-    def forward (self, inp, targ): return (inp.squeeze() - targ).pow(2).mean()
-    def bwd(self, out, inp, targ): 
-        inp.g = 2*(inp.squeeze()-targ).unsqueeze(-1) / targ.shape[0]
+    def forward(self, inp, targ): return (inp.squeeze() - targ).pow(2).mean()
+    def bwd(self, out, inp, targ):
+        inp.g = 2 * (inp.squeeze() - targ).unsqueeze(-1) / targ.shape[0]
 
 
 # The rest of our model can be the same as before. This is getting closer and closer to what PyTorch does. Each basic function we need to differentiate is written as a `torch.autograd.Function` object that has a `forward` and a `backward` method. PyTorch will then keep trace of any computation we do to be able to properly run the backward pass, unless we set the `requires_grad` attribute of our tensors to `False`.
@@ -723,7 +733,6 @@ class Mse(LayerFunction):
 # Writing one of these is (almost) as easy as writing our original classes. The difference is that we choose what to save and what to put in a context variable (so that we make sure we don't save anything we don't need), and we return the gradients in the `backward` pass. It's very rare to have to write your own `Function` but if you ever need something exotic or want to mess with the gradients of a regular function, here is how to write one:
 
 # +
-from torch.autograd import Function
 
 class MyRelu(Function):
     @staticmethod
@@ -731,11 +740,11 @@ class MyRelu(Function):
         result = i.clamp_min(0.)
         ctx.save_for_backward(i)
         return result
-    
+
     @staticmethod
     def backward(ctx, grad_output):
         i, = ctx.saved_tensors
-        return grad_output * (i>0).float()
+        return grad_output * (i > 0).float()
 
 
 # -
@@ -751,14 +760,13 @@ class MyRelu(Function):
 # As an example, here is the linear layer from scratch:
 
 # +
-import torch.nn as nn
 
 class LinearLayer(nn.Module):
     def __init__(self, n_in, n_out):
         super().__init__()
-        self.weight = nn.Parameter(torch.randn(n_out, n_in) * sqrt(2/n_in))
+        self.weight = nn.Parameter(torch.randn(n_out, n_in) * sqrt(2 / n_in))
         self.bias = nn.Parameter(torch.zeros(n_out))
-    
+
     def forward(self, x): return x @ self.weight.t() + self.bias
 
 
@@ -766,9 +774,9 @@ class LinearLayer(nn.Module):
 
 # As you see, this class automatically keeps track of what parameters have been defined:
 
-lin = LinearLayer(10,2)
-p1,p2 = lin.parameters()
-p1.shape,p2.shape
+lin = LinearLayer(10, 2)
+p1, p2 = lin.parameters()
+p1.shape, p2.shape
 
 
 # It is thanks to this feature of `nn.Module` that we can just say `opt.step()` and have an optimizer loop through the parameters and update each one.
@@ -781,9 +789,9 @@ class Model(nn.Module):
     def __init__(self, n_in, nh, n_out):
         super().__init__()
         self.layers = nn.Sequential(
-            nn.Linear(n_in,nh), nn.ReLU(), nn.Linear(nh,n_out))
+            nn.Linear(n_in, nh), nn.ReLU(), nn.Linear(nh, n_out))
         self.loss = mse
-        
+
     def forward(self, x, targ): return self.loss(self.layers(x).squeeze(), targ)
 
 
@@ -792,9 +800,9 @@ class Model(nn.Module):
 class Model(Module):
     def __init__(self, n_in, nh, n_out):
         self.layers = nn.Sequential(
-            nn.Linear(n_in,nh), nn.ReLU(), nn.Linear(nh,n_out))
+            nn.Linear(n_in, nh), nn.ReLU(), nn.Linear(nh, n_out))
         self.loss = mse
-        
+
     def forward(self, x, targ): return self.loss(self.layers(x).squeeze(), targ)
 
 # In the last chapter, we will start from such a model and see how to build a training loop from scratch and refactor it to what we've been using in previous chapters.
@@ -860,6 +868,4 @@ class Model(Module):
 # 1. Implement ReLU as a `torch.autograd.Function` and train a model with it.
 # 1. If you are mathematically inclined, find out what the gradients of a linear layer are in mathematical notation. Map that to the implementation we saw in this chapter.
 # 1. Learn about the `unfold` method in PyTorch, and use it along with matrix multiplication to implement your own 2D convolution function. Then train a CNN that uses it.
-# 1. Implement everything in this chapter using NumPy instead of PyTorch. 
-
-
+# 1. Implement everything in this chapter using NumPy instead of PyTorch.
