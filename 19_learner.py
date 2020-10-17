@@ -15,13 +15,13 @@
 #     name: python3
 # ---
 
-#hide
-# !pip install -Uqq fastbook
+# hide
+from glob import glob
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-#hide
-from fastbook import *
+# hide
 
 # # A fastai Learner from Scratch
 
@@ -44,7 +44,6 @@ t[0]
 
 # Or we could do the same thing using just Python's standard library, with `glob`:
 
-from glob import glob
 files = L(glob(f'{path}/**/*.JPEG', recursive=True)).map(Path)
 files[0]
 
@@ -60,11 +59,13 @@ im_t.shape
 
 # That's going to be the basis of our independent variable. For our dependent variable, we can use `Path.parent` from `pathlib`. First we'll need our vocab:
 
-lbls = files.map(Self.parent.name()).unique(); lbls
+lbls = files.map(Self.parent.name()).unique()
+lbls
 
 # ...and the reverse mapping, thanks to `L.val2idx`:
 
-v2i = lbls.val2idx(); v2i
+v2i = lbls.val2idx()
+v2i
 
 
 # That's all the pieces we need to put together our `Dataset`.
@@ -74,54 +75,55 @@ v2i = lbls.val2idx(); v2i
 # A `Dataset` in PyTorch can be anything that supports indexing (`__getitem__`) and `len`:
 
 class Dataset:
-    def __init__(self, fns): self.fns=fns
+    def __init__(self, fns): self.fns = fns
     def __len__(self): return len(self.fns)
     def __getitem__(self, i):
-        im = Image.open(self.fns[i]).resize((64,64)).convert('RGB')
+        im = Image.open(self.fns[i]).resize((64, 64)).convert('RGB')
         y = v2i[self.fns[i].parent.name]
-        return tensor(im).float()/255, tensor(y)
+        return tensor(im).float() / 255, tensor(y)
 
 
 # We need a list of training and validation filenames to pass to `Dataset.__init__`:
 
-train_filt = L(o.parent.parent.name=='train' for o in files)
-train,valid = files[train_filt],files[~train_filt]
-len(train),len(valid)
+train_filt = L(o.parent.parent.name == 'train' for o in files)
+train, valid = files[train_filt], files[~train_filt]
+len(train), len(valid)
 
 # Now we can try it out:
 
-train_ds,valid_ds = Dataset(train),Dataset(valid)
-x,y = train_ds[0]
-x.shape,y
+train_ds, valid_ds = Dataset(train), Dataset(valid)
+x, y = train_ds[0]
+x.shape, y
 
-show_image(x, title=lbls[y]);
+show_image(x, title=lbls[y])
 
 
 # As you see, our dataset is returning the independent and dependent variables as a tuple, which is just what we need. We'll need to be able to collate these into a mini-batch. Generally this is done with `torch.stack`, which is what we'll use here:
 
 def collate(idxs, ds):
-    xb,yb = zip(*[ds[i] for i in idxs])
-    return torch.stack(xb),torch.stack(yb)
+    xb, yb = zip(*[ds[i] for i in idxs])
+    return torch.stack(xb), torch.stack(yb)
 
 
 # Here's a mini-batch with two items, for testing our `collate`:
 
-x,y = collate([1,2], train_ds)
-x.shape,y
+x, y = collate([1, 2], train_ds)
+x.shape, y
 
 
 # Now that we have a dataset and a collation function, we're ready to create `DataLoader`. We'll add two more things here: an optional `shuffle` for the training set, and a `ProcessPoolExecutor` to do our preprocessing in parallel. A parallel data loader is very important, because opening and decoding a JPEG image is a slow process. One CPU core is not enough to decode images fast enough to keep a modern GPU busy. Here's our `DataLoader` class:
 
 class DataLoader:
     def __init__(self, ds, bs=128, shuffle=False, n_workers=1):
-        self.ds,self.bs,self.shuffle,self.n_workers = ds,bs,shuffle,n_workers
+        self.ds, self.bs, self.shuffle, self.n_workers = ds, bs, shuffle, n_workers
 
-    def __len__(self): return (len(self.ds)-1)//self.bs+1
+    def __len__(self): return (len(self.ds) - 1) // self.bs + 1
 
     def __iter__(self):
         idxs = L.range(self.ds)
-        if self.shuffle: idxs = idxs.shuffle()
-        chunks = [idxs[n:n+self.bs] for n in range(0, len(self.ds), self.bs)]
+        if self.shuffle:
+            idxs = idxs.shuffle()
+        chunks = [idxs[n:n + self.bs] for n in range(0, len(self.ds), self.bs)]
         with ProcessPoolExecutor(self.n_workers) as ex:
             yield from ex.map(collate, chunks, ds=self.ds)
 
@@ -131,35 +133,35 @@ class DataLoader:
 n_workers = min(16, defaults.cpus)
 train_dl = DataLoader(train_ds, bs=128, shuffle=True, n_workers=n_workers)
 valid_dl = DataLoader(valid_ds, bs=256, shuffle=False, n_workers=n_workers)
-xb,yb = first(train_dl)
-xb.shape,yb.shape,len(train_dl)
+xb, yb = first(train_dl)
+xb.shape, yb.shape, len(train_dl)
 
 # This data loader is not much slower than PyTorch's, but it's far simpler. So if you're debugging a complex data loading process, don't be afraid to try doing things manually to help you see exactly what's going on.
 #
 # For normalization, we'll need image statistics. Generally it's fine to calculate these on a single training mini-batch, since precision isn't needed here:
 
-stats = [xb.mean((0,1,2)),xb.std((0,1,2))]
+stats = [xb.mean((0, 1, 2)), xb.std((0, 1, 2))]
 stats
 
 
 # Our `Normalize` class just needs to store these stats and apply them (to see why the `to_device` is needed, try commenting it out, and see what happens later in this notebook):
 
 class Normalize:
-    def __init__(self, stats): self.stats=stats
+    def __init__(self, stats): self.stats = stats
     def __call__(self, x):
         if x.device != self.stats[0].device:
             self.stats = to_device(self.stats, x.device)
-        return (x-self.stats[0])/self.stats[1]
+        return (x - self.stats[0]) / self.stats[1]
 
 
 # We always like to test everything we build in a notebook, as soon as we build it:
 
 norm = Normalize(stats)
-def tfm_x(x): return norm(x).permute((0,3,1,2))
+def tfm_x(x): return norm(x).permute((0, 3, 1, 2))
 
 
 t = tfm_x(x)
-t.mean((0,2,3)),t.std((0,2,3))
+t.mean((0, 2, 3)), t.std((0, 2, 3))
 
 
 # Here `tfm_x` isn't just applying `Normalize`, but is also permuting the axis order from `NHWC` to `NCHW` (see <<chapter_convolutions>> if you need a reminder of what these acronyms refer to). PIL uses `HWC` axis order, which we can't use with PyTorch, hence the need for this `permute`.
@@ -186,33 +188,38 @@ Parameter(tensor(3.))
 
 class Module:
     def __init__(self):
-        self.hook,self.params,self.children,self._training = None,[],[],False
+        self.hook, self.params, self.children, self._training = None, [], [], False
 
     def register_parameters(self, *ps): self.params += ps
-    def register_modules   (self, *ms): self.children += ms
+    def register_modules(self, *ms): self.children += ms
 
     @property
     def training(self): return self._training
     @training.setter
-    def training(self,v):
+    def training(self, v):
         self._training = v
-        for m in self.children: m.training=v
+        for m in self.children:
+            m.training = v
 
     def parameters(self):
         return self.params + sum([m.parameters() for m in self.children], [])
 
-    def __setattr__(self,k,v):
-        super().__setattr__(k,v)
-        if isinstance(v,Parameter): self.register_parameters(v)
-        if isinstance(v,Module):    self.register_modules(v)
+    def __setattr__(self, k, v):
+        super().__setattr__(k, v)
+        if isinstance(v, Parameter):
+            self.register_parameters(v)
+        if isinstance(v, Module):
+            self.register_modules(v)
 
     def __call__(self, *args, **kwargs):
         res = self.forward(*args, **kwargs)
-        if self.hook is not None: self.hook(res, args)
+        if self.hook is not None:
+            self.hook(res, args)
         return res
 
     def cuda(self):
-        for p in self.parameters(): p.data = p.data.cuda()
+        for p in self.parameters():
+            p.data = p.data.cuda()
 
 
 # The key functionality is in the definition of `parameters`:
@@ -238,15 +245,16 @@ class Module:
 class ConvLayer(Module):
     def __init__(self, ni, nf, stride=1, bias=True, act=True):
         super().__init__()
-        self.w = Parameter(torch.zeros(nf,ni,3,3))
+        self.w = Parameter(torch.zeros(nf, ni, 3, 3))
         self.b = Parameter(torch.zeros(nf)) if bias else None
-        self.act,self.stride = act,stride
+        self.act, self.stride = act, stride
         init = nn.init.kaiming_normal_ if act else nn.init.xavier_normal_
         init(self.w)
 
     def forward(self, x):
         x = F.conv2d(x, self.w, self.b, stride=self.stride, padding=1)
-        if self.act: x = F.relu(x)
+        if self.act:
+            x = F.relu(x)
         return x
 
 
@@ -267,7 +275,7 @@ r.shape
 class Linear(Module):
     def __init__(self, ni, nf):
         super().__init__()
-        self.w = Parameter(torch.zeros(nf,ni))
+        self.w = Parameter(torch.zeros(nf, ni))
         self.b = Parameter(torch.zeros(nf))
         nn.init.xavier_normal_(self.w)
 
@@ -276,8 +284,8 @@ class Linear(Module):
 
 # and test if it works:
 
-l = Linear(4,2)
-r = l(torch.ones(3,4))
+l = Linear(4, 2)
+r = l(torch.ones(3, 4))
 r.shape
 
 
@@ -286,7 +294,7 @@ r.shape
 class T(Module):
     def __init__(self):
         super().__init__()
-        self.c,self.l = ConvLayer(3,4),Linear(4,2)
+        self.c, self.l = ConvLayer(3, 4), Linear(4, 2)
 
 
 # Since we have a conv layer and a linear layer, each of which has weights and biases, we'd expect four parameters in total:
@@ -313,7 +321,8 @@ class Sequential(Module):
         self.register_modules(*layers)
 
     def forward(self, x):
-        for l in self.layers: x = l(x)
+        for l in self.layers:
+            x = l(x)
         return x
 
 
@@ -324,17 +333,17 @@ class Sequential(Module):
 # We can create a simplified `AdaptivePool` that only handles pooling to a 1×1 output, and flattens it as well, by just using `mean`:
 
 class AdaptivePool(Module):
-    def forward(self, x): return x.mean((2,3))
+    def forward(self, x): return x.mean((2, 3))
 
 
 # That's enough for us to create a CNN!
 
 def simple_cnn():
     return Sequential(
-        ConvLayer(3 ,16 ,stride=2), #32
-        ConvLayer(16,32 ,stride=2), #16
-        ConvLayer(32,64 ,stride=2), # 8
-        ConvLayer(64,128,stride=2), # 4
+        ConvLayer(3, 16, stride=2),  # 32
+        ConvLayer(16, 32, stride=2),  # 16
+        ConvLayer(32, 64, stride=2),  # 8
+        ConvLayer(64, 128, stride=2),  # 4
         AdaptivePool(),
         Linear(128, 10)
     )
@@ -349,8 +358,9 @@ len(m.parameters())
 # Now we can try adding a hook. Note that we've only left room for one hook in `Module`; you could make it a list, or use something like `Pipeline` to run a few as a single function:
 
 # +
-def print_stats(outp, inp): print (outp.mean().item(),outp.std().item())
-for i in range(4): m.layers[i].hook = print_stats
+def print_stats(outp, inp): print (outp.mean().item(), outp.std().item())
+for i in range(4):
+    m.layers[i].hook = print_stats
 
 r = m(xbt)
 r.shape
@@ -370,9 +380,10 @@ def nll(input, target): return -input[range(target.shape[0]), target].mean()
 # Well actually, there's no log here, since we're using the same definition as PyTorch. That means we need to put the log together with softmax:
 
 # +
-def log_softmax(x): return (x.exp()/(x.exp().sum(-1,keepdim=True))).log()
+def log_softmax(x): return (x.exp() / (x.exp().sum(-1, keepdim=True))).log()
 
-sm = log_softmax(r); sm[0][0]
+sm = log_softmax(r)
+sm[0][0]
 # -
 
 # Combining these gives us our cross-entropy loss:
@@ -387,8 +398,9 @@ loss
 #
 # gives a simplification when we compute the log softmax, which was previously defined as `(x.exp()/(x.exp().sum(-1))).log()`:
 
-def log_softmax(x): return x - x.exp().sum(-1,keepdim=True).log()
-sm = log_softmax(r); sm[0][0]
+def log_softmax(x): return x - x.exp().sum(-1, keepdim=True).log()
+sm = log_softmax(r)
+sm[0][0]
 
 # Then, there is a more stable way to compute the log of the sum of exponentials, called the [LogSumExp](https://en.wikipedia.org/wiki/LogSumExp) trick. The idea is to use the following formula:
 #
@@ -401,7 +413,7 @@ sm = log_softmax(r); sm[0][0]
 
 x = torch.rand(5)
 a = x.max()
-x.exp().sum().log() == a + (x-a).exp().sum().log()
+x.exp().sum().log() == a + (x - a).exp().sum().log()
 
 
 # We'll put that into a function:
@@ -409,7 +421,7 @@ x.exp().sum().log() == a + (x-a).exp().sum().log()
 # +
 def logsumexp(x):
     m = x.max(-1)[0]
-    return m + (x-m[:,None]).exp().sum(-1).log()
+    return m + (x - m[:, None]).exp().sum(-1).log()
 
 logsumexp(r)[0]
 
@@ -418,12 +430,13 @@ logsumexp(r)[0]
 
 # so we can use it for our `log_softmax` function:
 
-def log_softmax(x): return x - x.logsumexp(-1,keepdim=True)
+def log_softmax(x): return x - x.logsumexp(-1, keepdim=True)
 
 
 # Which gives the same result as before:
 
-sm = log_softmax(r); sm[0][0]
+sm = log_softmax(r)
+sm[0][0]
 
 
 # We can use these to create `cross_entropy`:
@@ -438,10 +451,10 @@ def cross_entropy(preds, yb): return nll(log_softmax(preds), yb).mean()
 # We have data, a model, and a loss function; we only need one more thing we can fit a model, and that's an optimizer! Here's SGD:
 
 class SGD:
-    def __init__(self, params, lr, wd=0.): store_attr(self, 'params,lr,wd')
+    def __init__(self, params, lr, wd=0.): store_attr()
     def step(self):
         for p in self.params:
-            p.data -= (p.grad.data + p.data*self.wd) * self.lr
+            p.data -= (p.grad.data + p.data * self.wd) * self.lr
             p.grad.data.zero_()
 
 
@@ -449,9 +462,9 @@ class SGD:
 
 # +
 class DataLoaders:
-    def __init__(self, *dls): self.train,self.valid = dls
+    def __init__(self, *dls): self.train, self.valid = dls
 
-dls = DataLoaders(train_dl,valid_dl)
+dls = DataLoaders(train_dl, valid_dl)
 
 
 # -
@@ -460,12 +473,13 @@ dls = DataLoaders(train_dl,valid_dl)
 
 class Learner:
     def __init__(self, model, dls, loss_func, lr, cbs, opt_func=SGD):
-        store_attr(self, 'model,dls,loss_func,lr,cbs,opt_func')
-        for cb in cbs: cb.learner = self
+        store_attr()
+        for cb in cbs:
+            cb.learner = self
 
     def one_batch(self):
         self('before_batch')
-        xb,yb = self.batch
+        xb, yb = self.batch
         self.preds = self.model(xb)
         self.loss = self.loss_func(self.preds, yb)
         if self.model.training:
@@ -477,7 +491,7 @@ class Learner:
         self.model.training = train
         self('before_epoch')
         dl = self.dls.train if train else self.dls.valid
-        for self.num,self.batch in enumerate(progress_bar(dl, leave=False)):
+        for self.num, self.batch in enumerate(progress_bar(dl, leave=False)):
             self.one_batch()
         self('after_epoch')
 
@@ -489,11 +503,13 @@ class Learner:
             for self.epoch in range(n_epochs):
                 self.one_epoch(True)
                 self.one_epoch(False)
-        except CancelFitException: pass
+        except CancelFitException:
+            pass
         self('after_fit')
 
-    def __call__(self,name):
-        for cb in self.cbs: getattr(cb,name,noop)()
+    def __call__(self, name):
+        for cb in self.cbs:
+            getattr(cb, name, noop)()
 
 
 # This is the largest class we've created in the book, but each method is quite small, so by looking at each in turn you should be able to follow what's going on.
@@ -520,7 +536,8 @@ class Learner:
 #
 # In other words, every callback knows what learner it is used in. This is critical, since otherwise a callback can't get information from the learner, or change things in the learner. Because getting information from the learner is so common, we make that easier by defining `Callback` as a subclass of `GetAttr`, with a default attribute of `learner`:
 
-class Callback(GetAttr): _default='learner'
+class Callback(GetAttr):
+    _default = 'learner'
 
 
 # `GetAttr` is a fastai class that implements Python's standard `__getattr__` and `__dir__` methods for you, such that any time you try to access an attribute that doesn't exist, it passes the request along to whatever you have defined as `_default`.
@@ -529,8 +546,8 @@ class Callback(GetAttr): _default='learner'
 
 class SetupLearnerCB(Callback):
     def before_batch(self):
-        xb,yb = to_device(self.batch)
-        self.learner.batch = tfm_x(xb),yb
+        xb, yb = to_device(self.batch)
+        self.learner.batch = tfm_x(xb), yb
 
     def before_fit(self): self.model.cuda()
 
@@ -540,25 +557,25 @@ class SetupLearnerCB(Callback):
 # Before we try our `Learner` out, let's create a callback to track and print progress. Otherwise we won't really know if it's working properly:
 
 class TrackResults(Callback):
-    def before_epoch(self): self.accs,self.losses,self.ns = [],[],[]
+    def before_epoch(self): self.accs, self.losses, self.ns = [], [], []
 
     def after_epoch(self):
         n = sum(self.ns)
         print(self.epoch, self.model.training,
-              sum(self.losses).item()/n, sum(self.accs).item()/n)
+              sum(self.losses).item() / n, sum(self.accs).item() / n)
 
     def after_batch(self):
-        xb,yb = self.batch
-        acc = (self.preds.argmax(dim=1)==yb).float().sum()
+        xb, yb = self.batch
+        acc = (self.preds.argmax(dim=1) == yb).float().sum()
         self.accs.append(acc)
         n = len(xb)
-        self.losses.append(self.loss*n)
+        self.losses.append(self.loss * n)
         self.ns.append(n)
 
 
 # Now we're ready to use our `Learner` for the first time!
 
-cbs = [SetupLearnerCB(),TrackResults()]
+cbs = [SetupLearnerCB(), TrackResults()]
 learn = Learner(simple_cnn(), dls, cross_entropy, lr=0.1, cbs=cbs)
 learn.fit(1)
 
@@ -571,16 +588,19 @@ learn.fit(1)
 
 class LRFinder(Callback):
     def before_fit(self):
-        self.losses,self.lrs = [],[]
+        self.losses, self.lrs = [], []
         self.learner.lr = 1e-6
 
     def before_batch(self):
-        if not self.model.training: return
+        if not self.model.training:
+            return
         self.opt.lr *= 1.2
 
     def after_batch(self):
-        if not self.model.training: return
-        if self.opt.lr>10 or torch.isnan(self.loss): raise CancelFitException
+        if not self.model.training:
+            return
+        if self.opt.lr > 10 or torch.isnan(self.loss):
+            raise CancelFitException
         self.losses.append(self.loss.item())
         self.lrs.append(self.opt.lr)
 
@@ -588,12 +608,12 @@ class LRFinder(Callback):
 # This shows how we're using `CancelFitException`, which is itself an empty class, only used to signify the type of exception. You can see in `Learner` that this exception is caught. (You should add and test `CancelBatchException`, `CancelEpochException`, etc. yourself.) Let's try it out, by adding it to our list of callbacks:
 
 lrfind = LRFinder()
-learn = Learner(simple_cnn(), dls, cross_entropy, lr=0.1, cbs=cbs+[lrfind])
+learn = Learner(simple_cnn(), dls, cross_entropy, lr=0.1, cbs=cbs + [lrfind])
 learn.fit(2)
 
 # And take a look at the results:
 
-plt.plot(lrfind.lrs[:-2],lrfind.losses[:-2])
+plt.plot(lrfind.lrs[:-2], lrfind.losses[:-2])
 plt.xscale('log')
 
 
@@ -604,18 +624,19 @@ class OneCycle(Callback):
     def before_fit(self): self.lrs = []
 
     def before_batch(self):
-        if not self.model.training: return
+        if not self.model.training:
+            return
         n = len(self.dls.train)
-        bn = self.epoch*n + self.num
-        mn = self.n_epochs*n
-        pct = bn/mn
-        pct_start,div_start = 0.25,10
-        if pct<pct_start:
+        bn = self.epoch * n + self.num
+        mn = self.n_epochs * n
+        pct = bn / mn
+        pct_start, div_start = 0.25, 10
+        if pct < pct_start:
             pct /= pct_start
-            lr = (1-pct)*self.base_lr/div_start + pct*self.base_lr
+            lr = (1 - pct) * self.base_lr / div_start + pct * self.base_lr
         else:
-            pct = (pct-pct_start)/(1-pct_start)
-            lr = (1-pct)*self.base_lr
+            pct = (pct - pct_start) / (1 - pct_start)
+            lr = (1 - pct) * self.base_lr
         self.opt.lr = lr
         self.lrs.append(lr)
 
@@ -623,16 +644,16 @@ class OneCycle(Callback):
 # We'll try an LR of 0.1:
 
 onecyc = OneCycle(0.1)
-learn = Learner(simple_cnn(), dls, cross_entropy, lr=0.1, cbs=cbs+[onecyc])
+learn = Learner(simple_cnn(), dls, cross_entropy, lr=0.1, cbs=cbs + [onecyc])
 
 # Let's fit for a while and see how it looks (we won't show all the output in the book—try it in the notebook to see the results):
 
-#hide_output
+# hide_output
 learn.fit(8)
 
 # Finally, we'll check that the learning rate followed the schedule we defined (as you see, we're not using cosine annealing here):
 
-plt.plot(onecyc.lrs);
+plt.plot(onecyc.lrs)
 
 # ## Conclusion
 

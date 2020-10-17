@@ -14,7 +14,7 @@
 #     name: python3
 # ---
 
-#hide
+# hide
 import fastbook
 fastbook.setup_book()
 

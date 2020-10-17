@@ -28,7 +28,6 @@ from pandas.api.types import is_string_dtype, is_numeric_dtype, is_categorical_d
 from kaggle import api
 from fastbook import *
 import fastbook
-import kaggle
 fastbook.setup_book()
 
 # +
@@ -48,6 +47,14 @@ pd.options.display.max_columns = 8
 
 # ### Kaggle Competitions
 
+creds = ''
+
+cred_path = Path('~/.kaggle/kaggle.json').expanduser()
+if not cred_path.exists():
+    cred_path.parent.mkdir(exist_ok=True)
+    cred_path.write(creds)
+    cred_path.chmod(0o600)
+
 path = URLs.path('bluebook')
 path
 
@@ -57,7 +64,7 @@ Path.BASE_PATH = path
 # +
 if not path.exists():
     path.mkdir()
-    kaggle.api.competition_download_cli('bluebook-for-bulldozers', path=path)
+    api.competition_download_cli('bluebook-for-bulldozers', path=path)
     file_extract(path / 'bluebook-for-bulldozers.zip')
 
 path.ls(file_type='text')
@@ -304,9 +311,11 @@ plot_partial_dependence(m, valid_xs_final, ['YearMade', 'ProductSize'],
 
 # ### Tree Interpreter
 
+# +
 # hide
 warnings.simplefilter('ignore', FutureWarning)
 
+# -
 
 row = valid_xs_final.iloc[:5]
 

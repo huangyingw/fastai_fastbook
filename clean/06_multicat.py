@@ -98,10 +98,10 @@ def splitter(df):
     valid = df.index[df['is_valid']].tolist()
     return train, valid
 
-, dblock = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
-                     splitter=splitter,
-                     get_x=get_x,
-                     get_y=get_y)
+dblock = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
+                   splitter=splitter,
+                   get_x=get_x,
+                   get_y=get_y)
 
 dsets = dblock.datasets(df)
 dsets.train[0]

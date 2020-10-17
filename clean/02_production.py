@@ -50,6 +50,13 @@ fastbook.setup_book()
 # # clean
 # To download images with Bing Image Search, sign up at Microsoft for a free account. You will be given a key, which you can copy and enter in a cell as follows (replacing 'XXX' with your key and executing it):
 
+key = os.environ.get('AZURE_SEARCH_KEY', 'XXX')
+
+search_images_bing
+
+results = search_images_bing(key, 'grizzly bear')
+ims = results.attrgot('content_url')
+len(ims)
 
 # hide
 ims = ['http://3.bp.blogspot.com/-S1scRCkI3vY/UHzV2kucsPI/AAAAAAAAA-k/YQ5UzHEm9Ss/s1600/Grizzly%2BBear%2BWildlife.jpg']
@@ -63,6 +70,13 @@ im.to_thumb(128, 128)
 bear_types = 'grizzly', 'black', 'teddy'
 path = Path('bears')
 
+if not path.exists():
+    path.mkdir()
+    for o in bear_types:
+        dest = (path / o)
+        dest.mkdir(exist_ok=True)
+        results = search_images_bing(key, f'{o} bear')
+        download_images(dest, urls=results.attrgot('content_url'))
 
 fns = get_image_files(path)
 fns
@@ -182,7 +196,6 @@ def on_click_classify(change):
     pred, pred_idx, probs = learn_inf.predict(img)
     lbl_pred.value = f'Prediction: {pred}; Probability: {probs[pred_idx]:.04f}'
 
-
 btn_run.on_click(on_click_classify)
 # -
 
@@ -197,7 +210,6 @@ VBox([widgets.Label('Select your bear!'),
 
 # +
 # hide
-# # !pip install voila
 # # !jupyter serverextension enable voila —sys-prefix
 # -
 

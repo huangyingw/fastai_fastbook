@@ -15,14 +15,15 @@
 #     name: python3
 # ---
 
-#hide
+# hide
+from fastai.callback.hook import *
+from fastbook import *
+from fastai.vision.all import *
 import fastbook
 fastbook.setup_book()
 
 # +
-#hide
-from fastai.vision.all import *
-from fastbook import *
+# hide
 
 matplotlib.rc('image', cmap='Greys')
 # -
@@ -31,66 +32,66 @@ matplotlib.rc('image', cmap='Greys')
 
 # ## The Magic of Convolutions
 
-top_edge = tensor([[-1,-1,-1],
-                   [ 0, 0, 0],
-                   [ 1, 1, 1]]).float()
+top_edge = tensor([[-1, -1, -1],
+                   [0, 0, 0],
+                   [1, 1, 1]]).float()
 
 path = untar_data(URLs.MNIST_SAMPLE)
 
-#hide
+# hide
 Path.BASE_PATH = path
 
-im3 = Image.open(path/'train'/'3'/'12.png')
-show_image(im3);
+im3 = Image.open(path / 'train' / '3' / '12.png')
+show_image(im3)
 
 im3_t = tensor(im3)
-im3_t[0:3,0:3] * top_edge
+im3_t[0:3, 0:3] * top_edge
 
-(im3_t[0:3,0:3] * top_edge).sum()
+(im3_t[0:3, 0:3] * top_edge).sum()
 
-df = pd.DataFrame(im3_t[:10,:20])
-df.style.set_properties(**{'font-size':'6pt'}).background_gradient('Greys')
+df = pd.DataFrame(im3_t[:10, :20])
+df.style.set_properties(**{'font-size': '6pt'}).background_gradient('Greys')
 
-(im3_t[4:7,6:9] * top_edge).sum()
+(im3_t[4:7, 6:9] * top_edge).sum()
 
-(im3_t[7:10,17:20] * top_edge).sum()
+(im3_t[7:10, 17:20] * top_edge).sum()
 
 
 def apply_kernel(row, col, kernel):
-    return (im3_t[row-1:row+2,col-1:col+2] * kernel).sum()
+    return (im3_t[row - 1:row + 2, col - 1:col + 2] * kernel).sum()
 
 
-apply_kernel(5,7,top_edge)
+apply_kernel(5, 7, top_edge)
 
 # ### Mapping a Convolution Kernel
 
-[[(i,j) for j in range(1,5)] for i in range(1,5)]
+[[(i, j) for j in range(1, 5)] for i in range(1, 5)]
 
 # +
-rng = range(1,27)
-top_edge3 = tensor([[apply_kernel(i,j,top_edge) for j in rng] for i in rng])
+rng = range(1, 27)
+top_edge3 = tensor([[apply_kernel(i, j, top_edge) for j in rng] for i in rng])
 
-show_image(top_edge3);
+show_image(top_edge3)
 
 # +
-left_edge = tensor([[-1,1,0],
-                    [-1,1,0],
-                    [-1,1,0]]).float()
+left_edge = tensor([[-1, 1, 0],
+                    [-1, 1, 0],
+                    [-1, 1, 0]]).float()
 
-left_edge3 = tensor([[apply_kernel(i,j,left_edge) for j in rng] for i in rng])
+left_edge3 = tensor([[apply_kernel(i, j, left_edge) for j in rng] for i in rng])
 
-show_image(left_edge3);
+show_image(left_edge3)
 # -
 
 # ### Convolutions in PyTorch
 
 # +
-diag1_edge = tensor([[ 0,-1, 1],
+diag1_edge = tensor([[0, -1, 1],
                      [-1, 1, 0],
-                     [ 1, 0, 0]]).float()
-diag2_edge = tensor([[ 1,-1, 0],
-                     [ 0, 1,-1],
-                     [ 0, 0, 1]]).float()
+                     [1, 0, 0]]).float()
+diag2_edge = tensor([[1, -1, 0],
+                     [0, 1, -1],
+                     [0, 0, 1]]).float()
 
 edge_kernels = torch.stack([left_edge, top_edge, diag1_edge, diag2_edge])
 edge_kernels.shape
@@ -102,20 +103,20 @@ mnist = DataBlock((ImageBlock(cls=PILImageBW), CategoryBlock),
                   get_y=parent_label)
 
 dls = mnist.dataloaders(path)
-xb,yb = first(dls.valid)
+xb, yb = first(dls.valid)
 xb.shape
 # -
 
-xb,yb = to_cpu(xb),to_cpu(yb)
+xb, yb = to_cpu(xb), to_cpu(yb)
 
-edge_kernels.shape,edge_kernels.unsqueeze(1).shape
+edge_kernels.shape, edge_kernels.unsqueeze(1).shape
 
 edge_kernels = edge_kernels.unsqueeze(1)
 
 batch_features = F.conv2d(xb, edge_kernels)
 batch_features.shape
 
-show_image(batch_features[0,0]);
+show_image(batch_features[0, 0])
 
 # ### Strides and Padding
 
@@ -126,34 +127,35 @@ show_image(batch_features[0,0]);
 # ### Creating the CNN
 
 simple_net = nn.Sequential(
-    nn.Linear(28*28,30),
+    nn.Linear(28 * 28, 30),
     nn.ReLU(),
-    nn.Linear(30,1)
+    nn.Linear(30, 1)
 )
 
 simple_net
 
 broken_cnn = sequential(
-    nn.Conv2d(1,30, kernel_size=3, padding=1),
+    nn.Conv2d(1, 30, kernel_size=3, padding=1),
     nn.ReLU(),
-    nn.Conv2d(30,1, kernel_size=3, padding=1)
+    nn.Conv2d(30, 1, kernel_size=3, padding=1)
 )
 
 broken_cnn(xb).shape
 
 
 def conv(ni, nf, ks=3, act=True):
-    res = nn.Conv2d(ni, nf, stride=2, kernel_size=ks, padding=ks//2)
-    if act: res = nn.Sequential(res, nn.ReLU())
+    res = nn.Conv2d(ni, nf, stride=2, kernel_size=ks, padding=ks // 2)
+    if act:
+        res = nn.Sequential(res, nn.ReLU())
     return res
 
 
 simple_cnn = sequential(
-    conv(1 ,4),            #14x14
-    conv(4 ,8),            #7x7
-    conv(8 ,16),           #4x4
-    conv(16,32),           #2x2
-    conv(32,2, act=False), #1x1
+    conv(1, 4),  # 14x14
+    conv(4, 8),  # 7x7
+    conv(8, 16),  # 4x4
+    conv(16, 32),  # 2x2
+    conv(32, 2, act=False),  # 1x1
     Flatten(),
 )
 
@@ -183,17 +185,17 @@ m[0].bias.shape
 im = image2tensor(Image.open(image_bear()))
 im.shape
 
-show_image(im);
+show_image(im)
 
-_,axs = subplots(1,3)
-for bear,ax,color in zip(im,axs,('Reds','Greens','Blues')):
-    show_image(255-bear, ax=ax, cmap=color)
+_, axs = subplots(1, 3)
+for bear, ax, color in zip(im, axs, ('Reds', 'Greens', 'Blues')):
+    show_image(255 - bear, ax=ax, cmap=color)
 
 # ## Improving Training Stability
 
 path = untar_data(URLs.MNIST)
 
-#hide
+# hide
 Path.BASE_PATH = path
 
 path.ls()
@@ -204,7 +206,7 @@ def get_dls(bs=64):
     return DataBlock(
         blocks=(ImageBlock(cls=PILImageBW), CategoryBlock),
         get_items=get_image_files,
-        splitter=GrandparentSplitter('training','testing'),
+        splitter=GrandparentSplitter('training', 'testing'),
         get_y=parent_label,
         batch_tfms=Normalize()
     ).dataloaders(path, bs=bs)
@@ -212,29 +214,29 @@ def get_dls(bs=64):
 dls = get_dls()
 # -
 
-dls.show_batch(max_n=9, figsize=(4,4))
+dls.show_batch(max_n=9, figsize=(4, 4))
 
 
 # ### A Simple Baseline
 
 def conv(ni, nf, ks=3, act=True):
-    res = nn.Conv2d(ni, nf, stride=2, kernel_size=ks, padding=ks//2)
-    if act: res = nn.Sequential(res, nn.ReLU())
+    res = nn.Conv2d(ni, nf, stride=2, kernel_size=ks, padding=ks // 2)
+    if act:
+        res = nn.Sequential(res, nn.ReLU())
     return res
 
 
 def simple_cnn():
     return sequential(
-        conv(1 ,8, ks=5),        #14x14
-        conv(8 ,16),             #7x7
-        conv(16,32),             #4x4
-        conv(32,64),             #2x2
-        conv(64,10, act=False),  #1x1
+        conv(1, 8, ks=5),  # 14x14
+        conv(8, 16),  # 7x7
+        conv(16, 32),  # 4x4
+        conv(32, 64),  # 2x2
+        conv(64, 10, act=False),  # 1x1
         Flatten(),
     )
 
 
-from fastai.callback.hook import *
 
 
 def fit(epochs=1):
@@ -282,9 +284,10 @@ learn.activation_stats.color_dim(-2)
 # ### Batch Normalization
 
 def conv(ni, nf, ks=3, act=True):
-    layers = [nn.Conv2d(ni, nf, stride=2, kernel_size=ks, padding=ks//2)]
+    layers = [nn.Conv2d(ni, nf, stride=2, kernel_size=ks, padding=ks // 2)]
     layers.append(nn.BatchNorm2d(nf))
-    if act: layers.append(nn.ReLU())
+    if act:
+        layers.append(nn.ReLU())
     return nn.Sequential(*layers)
 
 

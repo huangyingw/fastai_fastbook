@@ -13,21 +13,24 @@
 #     name: python3
 # ---
 
-#hide
+# hide
+from fastai.vision.all import *
+from PIL import Image
+import matplotlib.pyplot as plt
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-from fastbook import *
 
 # # Appendix: Jupyter Notebook 101
 
 # ## Introduction
 
-1+1
+1 + 1
 
 # ## Writing
 
-3/2
+3 / 2
 
 # ## Modes
 
@@ -45,18 +48,15 @@ from fastbook import *
 # ## Code Capabilities
 
 # Import necessary libraries
-from fastai.vision.all import *
-import matplotlib.pyplot as plt
 
-from PIL import Image
 
 a = 1
 b = a + 1
 c = b + a + 1
 d = c + b + a + 1
-a, b, c ,d
+a, b, c, d
 
-plt.plot([a,b,c,d])
+plt.plot([a, b, c, d])
 plt.show()
 
 Image.open(image_cat())

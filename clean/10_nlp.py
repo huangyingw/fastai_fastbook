@@ -15,13 +15,14 @@
 #     name: python3
 # ---
 
-#hide
+# hide
+from IPython.display import display, HTML
+from fastai.text.all import *
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-#hide
-from fastbook import *
-from IPython.display import display,HTML
+# hide
 
 # # NLP Deep Dive: RNNs
 
@@ -31,12 +32,12 @@ from IPython.display import display,HTML
 
 # ### Word Tokenization with fastai
 
-from fastai.text.all import *
 path = untar_data(URLs.IMDB)
 
-files = get_text_files(path, folders = ['train', 'test', 'unsup'])
+files = get_text_files(path, folders=['train', 'test', 'unsup'])
 
-txt = files[0].open().read(); txt[:75]
+txt = files[0].open().read()
+txt[:75]
 
 spacy = WordTokenizer()
 toks = first(spacy([txt]))
@@ -78,9 +79,10 @@ toks200[0]
 
 num = Numericalize()
 num.setup(toks200)
-coll_repr(num.vocab,20)
+coll_repr(num.vocab, 20)
 
-nums = num(toks)[:20]; nums
+nums = num(toks)[:20]
+nums
 
 ' '.join(num.vocab[o] for o in nums)
 
@@ -88,32 +90,32 @@ nums = num(toks)[:20]; nums
 
 stream = "In this chapter, we will go back over the example of classifying movie reviews we studied in chapter 1 and dig deeper under the surface. First we will look at the processing steps necessary to convert text into numbers and how to customize it. By doing this, we'll have another example of the PreProcessor used in the data block API.\nThen we will study how we build a language model and train it for a while."
 tokens = tkn(stream)
-bs,seq_len = 6,15
-d_tokens = np.array([tokens[i*seq_len:(i+1)*seq_len] for i in range(bs)])
+bs, seq_len = 6, 15
+d_tokens = np.array([tokens[i * seq_len:(i + 1) * seq_len] for i in range(bs)])
 df = pd.DataFrame(d_tokens)
-display(HTML(df.to_html(index=False,header=None)))
+display(HTML(df.to_html(index=False, header=None)))
 
-bs,seq_len = 6,5
-d_tokens = np.array([tokens[i*15:i*15+seq_len] for i in range(bs)])
+bs, seq_len = 6, 5
+d_tokens = np.array([tokens[i * 15:i * 15 + seq_len] for i in range(bs)])
 df = pd.DataFrame(d_tokens)
-display(HTML(df.to_html(index=False,header=None)))
+display(HTML(df.to_html(index=False, header=None)))
 
-bs,seq_len = 6,5
-d_tokens = np.array([tokens[i*15+seq_len:i*15+2*seq_len] for i in range(bs)])
+bs, seq_len = 6, 5
+d_tokens = np.array([tokens[i * 15 + seq_len:i * 15 + 2 * seq_len] for i in range(bs)])
 df = pd.DataFrame(d_tokens)
-display(HTML(df.to_html(index=False,header=None)))
+display(HTML(df.to_html(index=False, header=None)))
 
-bs,seq_len = 6,5
-d_tokens = np.array([tokens[i*15+10:i*15+15] for i in range(bs)])
+bs, seq_len = 6, 5
+d_tokens = np.array([tokens[i * 15 + 10:i * 15 + 15] for i in range(bs)])
 df = pd.DataFrame(d_tokens)
-display(HTML(df.to_html(index=False,header=None)))
+display(HTML(df.to_html(index=False, header=None)))
 
 nums200 = toks200.map(num)
 
 dl = LMDataLoader(nums200)
 
-x,y = first(dl)
-x.shape,y.shape
+x, y = first(dl)
+x.shape, y.shape
 
 ' '.join(num.vocab[o] for o in x[0][:20])
 
@@ -166,8 +168,8 @@ print("\n".join(preds))
 # ### Creating the Classifier DataLoaders
 
 dls_clas = DataBlock(
-    blocks=(TextBlock.from_folder(path, vocab=dls_lm.vocab),CategoryBlock),
-    get_y = parent_label,
+    blocks=(TextBlock.from_folder(path, vocab=dls_lm.vocab), CategoryBlock),
+    get_y=parent_label,
     get_items=partial(get_text_files, folders=['train', 'test']),
     splitter=GrandparentSplitter(valid_name='test')
 ).dataloaders(path, path=path, bs=128, seq_len=72)
@@ -188,13 +190,13 @@ learn = learn.load_encoder('finetuned')
 learn.fit_one_cycle(1, 2e-2)
 
 learn.freeze_to(-2)
-learn.fit_one_cycle(1, slice(1e-2/(2.6**4),1e-2))
+learn.fit_one_cycle(1, slice(1e-2 / (2.6**4), 1e-2))
 
 learn.freeze_to(-3)
-learn.fit_one_cycle(1, slice(5e-3/(2.6**4),5e-3))
+learn.fit_one_cycle(1, slice(5e-3 / (2.6**4), 5e-3))
 
 learn.unfreeze()
-learn.fit_one_cycle(2, slice(1e-3/(2.6**4),1e-3))
+learn.fit_one_cycle(2, slice(1e-3 / (2.6**4), 1e-3))
 
 # ## Disinformation and Language Models
 

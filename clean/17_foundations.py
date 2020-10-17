@@ -15,12 +15,18 @@
 #     name: python3
 # ---
 
-#hide
+# hide
+from sympy import symbols, diff
+import torch.nn as nn
+from torch.autograd import Function
+from math import sqrt
+from torch import tensor
+import torch
+from fastai.gen_doc.nbdoc import *
 import fastbook
 fastbook.setup_book()
 
-#hide
-from fastai.gen_doc.nbdoc import *
+# hide
 
 # # A Neural Net from the Foundations
 
@@ -30,23 +36,22 @@ from fastai.gen_doc.nbdoc import *
 
 # ### Matrix Multiplication from Scratch
 
-import torch
-from torch import tensor
 
 
-def matmul(a,b):
-    ar,ac = a.shape # n_rows * n_cols
-    br,bc = b.shape
-    assert ac==br
+def matmul(a, b):
+    ar, ac = a.shape  # n_rows * n_cols
+    br, bc = b.shape
+    assert ac == br
     c = torch.zeros(ar, bc)
     for i in range(ar):
         for j in range(bc):
-            for k in range(ac): c[i,j] += a[i,k] * b[k,j]
+            for k in range(ac):
+                c[i, j] += a[i, k] * b[k, j]
     return c
 
 
-m1 = torch.randn(5,28*28)
-m2 = torch.randn(784,10)
+m1 = torch.randn(5, 28 * 28)
+m2 = torch.randn(784, 10)
 
 # %time t1=matmul(m1, m2)
 
@@ -60,24 +65,25 @@ a + b
 
 a < b
 
-(a < b).all(), (a==b).all()
+(a < b).all(), (a == b).all()
 
 (a + b).mean().item()
 
-m = tensor([[1., 2, 3], [4,5,6], [7,8,9]])
-m*m
+m = tensor([[1., 2, 3], [4, 5, 6], [7, 8, 9]])
+m * m
 
-n = tensor([[1., 2, 3], [4,5,6]])
-m*n
+n = tensor([[1., 2, 3], [4, 5, 6]])
+m * n
 
 
-def matmul(a,b):
-    ar,ac = a.shape
-    br,bc = b.shape
-    assert ac==br
+def matmul(a, b):
+    ar, ac = a.shape
+    br, bc = b.shape
+    assert ac == br
     c = torch.zeros(ar, bc)
     for i in range(ar):
-        for j in range(bc): c[i,j] = (a[i] * b[:,j]).sum()
+        for j in range(bc):
+            c[i, j] = (a[i] * b[:, j]).sum()
     return c
 
 
@@ -90,14 +96,14 @@ def matmul(a,b):
 a = tensor([10., 6, -4])
 a > 0
 
-m = tensor([[1., 2, 3], [4,5,6], [7,8,9]])
+m = tensor([[1., 2, 3], [4, 5, 6], [7, 8, 9]])
 (m - 5) / 2.73
 
 # #### Broadcasting a vector to a matrix
 
-c = tensor([10.,20,30])
-m = tensor([[1., 2, 3], [4,5,6], [7,8,9]])
-m.shape,c.shape
+c = tensor([10., 20, 30])
+m = tensor([[1., 2, 3], [4, 5, 6], [7, 8, 9]])
+m.shape, c.shape
 
 m + c
 
@@ -110,42 +116,42 @@ t.stride(), t.shape
 
 c + m
 
-c = tensor([10.,20,30])
-m = tensor([[1., 2, 3], [4,5,6]])
-c+m
+c = tensor([10., 20, 30])
+m = tensor([[1., 2, 3], [4, 5, 6]])
+c + m
 
-c = tensor([10.,20])
-m = tensor([[1., 2, 3], [4,5,6]])
-c+m
+c = tensor([10., 20])
+m = tensor([[1., 2, 3], [4, 5, 6]])
+c + m
 
-c = tensor([10.,20,30])
-m = tensor([[1., 2, 3], [4,5,6], [7,8,9]])
+c = tensor([10., 20, 30])
+m = tensor([[1., 2, 3], [4, 5, 6], [7, 8, 9]])
 c = c.unsqueeze(1)
-m.shape,c.shape
+m.shape, c.shape
 
-c+m
+c + m
 
 t = c.expand_as(m)
 t.storage()
 
 t.stride(), t.shape
 
-c = tensor([10.,20,30])
-c.shape, c.unsqueeze(0).shape,c.unsqueeze(1).shape
+c = tensor([10., 20, 30])
+c.shape, c.unsqueeze(0).shape, c.unsqueeze(1).shape
 
-c.shape, c[None,:].shape,c[:,None].shape
+c.shape, c[None, :].shape, c[:, None].shape
 
-c[None].shape,c[...,None].shape
+c[None].shape, c[..., None].shape
 
 
-def matmul(a,b):
-    ar,ac = a.shape
-    br,bc = b.shape
-    assert ac==br
+def matmul(a, b):
+    ar, ac = a.shape
+    br, bc = b.shape
+    assert ac == br
     c = torch.zeros(ar, bc)
     for i in range(ar):
-#       c[i,j] = (a[i,:]          * b[:,j]).sum() # previous
-        c[i]   = (a[i  ].unsqueeze(-1) * b).sum(dim=0)
+        #       c[i,j] = (a[i,:]          * b[:,j]).sum() # previous
+        c[i] = (a[i].unsqueeze(-1) * b).sum(dim=0)
     return c
 
 
@@ -155,7 +161,7 @@ def matmul(a,b):
 
 # ### Einstein Summation
 
-def matmul(a,b): return torch.einsum('ik,kj->ij', a, b)
+def matmul(a, b): return torch.einsum('ik,kj->ij', a, b)
 
 
 # %timeit -n 20 t5 = matmul(m1,m2)
@@ -170,9 +176,9 @@ def lin(x, w, b): return x @ w + b
 x = torch.randn(200, 100)
 y = torch.randn(200)
 
-w1 = torch.randn(100,50)
+w1 = torch.randn(100, 50)
 b1 = torch.zeros(50)
-w2 = torch.randn(50,1)
+w2 = torch.randn(50, 1)
 b2 = torch.zeros(1)
 
 l1 = lin(x, w1, b1)
@@ -181,52 +187,56 @@ l1.shape
 l1.mean(), l1.std()
 
 x = torch.randn(200, 100)
-for i in range(50): x = x @ torch.randn(100,100)
-x[0:5,0:5]
+for i in range(50):
+    x = x @ torch.randn(100, 100)
+x[0:5, 0:5]
 
 x = torch.randn(200, 100)
-for i in range(50): x = x @ (torch.randn(100,100) * 0.01)
-x[0:5,0:5]
+for i in range(50):
+    x = x @ (torch.randn(100, 100) * 0.01)
+x[0:5, 0:5]
 
 x = torch.randn(200, 100)
-for i in range(50): x = x @ (torch.randn(100,100) * 0.1)
-x[0:5,0:5]
+for i in range(50):
+    x = x @ (torch.randn(100, 100) * 0.1)
+x[0:5, 0:5]
 
 x.std()
 
 x = torch.randn(200, 100)
 y = torch.randn(200)
 
-from math import sqrt
-w1 = torch.randn(100,50) / sqrt(100)
+w1 = torch.randn(100, 50) / sqrt(100)
 b1 = torch.zeros(50)
-w2 = torch.randn(50,1) / sqrt(50)
+w2 = torch.randn(50, 1) / sqrt(50)
 b2 = torch.zeros(1)
 
 l1 = lin(x, w1, b1)
-l1.mean(),l1.std()
+l1.mean(), l1.std()
 
 
 def relu(x): return x.clamp_min(0.)
 
 
 l2 = relu(l1)
-l2.mean(),l2.std()
+l2.mean(), l2.std()
 
 x = torch.randn(200, 100)
-for i in range(50): x = relu(x @ (torch.randn(100,100) * 0.1))
-x[0:5,0:5]
+for i in range(50):
+    x = relu(x @ (torch.randn(100, 100) * 0.1))
+x[0:5, 0:5]
 
 x = torch.randn(200, 100)
-for i in range(50): x = relu(x @ (torch.randn(100,100) * sqrt(2/100)))
-x[0:5,0:5]
+for i in range(50):
+    x = relu(x @ (torch.randn(100, 100) * sqrt(2 / 100)))
+x[0:5, 0:5]
 
 x = torch.randn(200, 100)
 y = torch.randn(200)
 
-w1 = torch.randn(100,50) * sqrt(2 / 100)
+w1 = torch.randn(100, 50) * sqrt(2 / 100)
 b1 = torch.zeros(50)
-w2 = torch.randn(50,1) * sqrt(2 / 50)
+w2 = torch.randn(50, 1) * sqrt(2 / 50)
 b2 = torch.zeros(1)
 
 l1 = lin(x, w1, b1)
@@ -260,7 +270,7 @@ def mse_grad(inp, targ):
 
 def relu_grad(inp, out):
     # grad of relu with respect to input activations
-    inp.g = (inp>0).float() * out.g
+    inp.g = (inp > 0).float() * out.g
 
 
 def lin_grad(inp, out, w, b):
@@ -272,8 +282,7 @@ def lin_grad(inp, out, w, b):
 
 # ### Sidebar: SymPy
 
-from sympy import symbols,diff
-sx,sy = symbols('sx sy')
+sx, sy = symbols('sx sy')
 diff(sx**2, sx)
 
 
@@ -302,11 +311,11 @@ class Relu():
         self.out = inp.clamp_min(0.)
         return self.out
 
-    def backward(self): self.inp.g = (self.inp>0).float() * self.out.g
+    def backward(self): self.inp.g = (self.inp > 0).float() * self.out.g
 
 
 class Lin():
-    def __init__(self, w, b): self.w,self.b = w,b
+    def __init__(self, w, b): self.w, self.b = w, b
 
     def __call__(self, inp):
         self.inp = inp
@@ -327,22 +336,24 @@ class Mse():
         return self.out
 
     def backward(self):
-        x = (self.inp.squeeze()-self.targ).unsqueeze(-1)
-        self.inp.g = 2.*x/self.targ.shape[0]
+        x = (self.inp.squeeze() - self.targ).unsqueeze(-1)
+        self.inp.g = 2. * x / self.targ.shape[0]
 
 
 class Model():
     def __init__(self, w1, b1, w2, b2):
-        self.layers = [Lin(w1,b1), Relu(), Lin(w2,b2)]
+        self.layers = [Lin(w1, b1), Relu(), Lin(w2, b2)]
         self.loss = Mse()
 
     def __call__(self, x, targ):
-        for l in self.layers: x = l(x)
+        for l in self.layers:
+            x = l(x)
         return self.loss(x, targ)
 
     def backward(self):
         self.loss.backward()
-        for l in reversed(self.layers): l.backward()
+        for l in reversed(self.layers):
+            l.backward()
 
 
 model = Model(w1, b1, w2, b2)
@@ -360,18 +371,18 @@ class LayerFunction():
         self.out = self.forward(*args)
         return self.out
 
-    def forward(self):  raise Exception('not implemented')
-    def bwd(self):      raise Exception('not implemented')
+    def forward(self): raise Exception('not implemented')
+    def bwd(self): raise Exception('not implemented')
     def backward(self): self.bwd(self.out, *self.args)
 
 
 class Relu(LayerFunction):
     def forward(self, inp): return inp.clamp_min(0.)
-    def bwd(self, out, inp): inp.g = (inp>0).float() * out.g
+    def bwd(self, out, inp): inp.g = (inp > 0).float() * out.g
 
 
 class Lin(LayerFunction):
-    def __init__(self, w, b): self.w,self.b = w,b
+    def __init__(self, w, b): self.w, self.b = w, b
 
     def forward(self, inp): return inp@self.w + self.b
 
@@ -382,13 +393,12 @@ class Lin(LayerFunction):
 
 
 class Mse(LayerFunction):
-    def forward (self, inp, targ): return (inp.squeeze() - targ).pow(2).mean()
+    def forward(self, inp, targ): return (inp.squeeze() - targ).pow(2).mean()
     def bwd(self, out, inp, targ):
-        inp.g = 2*(inp.squeeze()-targ).unsqueeze(-1) / targ.shape[0]
+        inp.g = 2 * (inp.squeeze() - targ).unsqueeze(-1) / targ.shape[0]
 
 
 # +
-from torch.autograd import Function
 
 class MyRelu(Function):
     @staticmethod
@@ -400,16 +410,15 @@ class MyRelu(Function):
     @staticmethod
     def backward(ctx, grad_output):
         i, = ctx.saved_tensors
-        return grad_output * (i>0).float()
+        return grad_output * (i > 0).float()
 
 
 # +
-import torch.nn as nn
 
 class LinearLayer(nn.Module):
     def __init__(self, n_in, n_out):
         super().__init__()
-        self.weight = nn.Parameter(torch.randn(n_out, n_in) * sqrt(2/n_in))
+        self.weight = nn.Parameter(torch.randn(n_out, n_in) * sqrt(2 / n_in))
         self.bias = nn.Parameter(torch.zeros(n_out))
 
     def forward(self, x): return x @ self.weight.t() + self.bias
@@ -417,16 +426,16 @@ class LinearLayer(nn.Module):
 
 # -
 
-lin = LinearLayer(10,2)
-p1,p2 = lin.parameters()
-p1.shape,p2.shape
+lin = LinearLayer(10, 2)
+p1, p2 = lin.parameters()
+p1.shape, p2.shape
 
 
 class Model(nn.Module):
     def __init__(self, n_in, nh, n_out):
         super().__init__()
         self.layers = nn.Sequential(
-            nn.Linear(n_in,nh), nn.ReLU(), nn.Linear(nh,n_out))
+            nn.Linear(n_in, nh), nn.ReLU(), nn.Linear(nh, n_out))
         self.loss = mse
 
     def forward(self, x, targ): return self.loss(self.layers(x).squeeze(), targ)
@@ -435,7 +444,7 @@ class Model(nn.Module):
 class Model(Module):
     def __init__(self, n_in, nh, n_out):
         self.layers = nn.Sequential(
-            nn.Linear(n_in,nh), nn.ReLU(), nn.Linear(nh,n_out))
+            nn.Linear(n_in, nh), nn.ReLU(), nn.Linear(nh, n_out))
         self.loss = mse
 
     def forward(self, x, targ): return self.loss(self.layers(x).squeeze(), targ)

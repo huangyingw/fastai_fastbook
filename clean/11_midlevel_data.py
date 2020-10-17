@@ -15,35 +15,36 @@
 #     name: python3
 # ---
 
-#hide
+# hide
+from IPython.display import display, HTML
+from fastai.vision.all import *
+from fastai.text.all import *
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-#hide
-from fastbook import *
-from IPython.display import display,HTML
+# hide
 
 # # Data Munging with fastai's Mid-Level API
 
 # ## Going Deeper into fastai's Layered API
 
 # +
-from fastai.text.all import *
 
 dls = TextDataLoaders.from_folder(untar_data(URLs.IMDB), valid='test')
 # -
 
 path = untar_data(URLs.IMDB)
 dls = DataBlock(
-    blocks=(TextBlock.from_folder(path),CategoryBlock),
-    get_y = parent_label,
+    blocks=(TextBlock.from_folder(path), CategoryBlock),
+    get_y=parent_label,
     get_items=partial(get_text_files, folders=['train', 'test']),
     splitter=GrandparentSplitter(valid_name='test')
 ).dataloaders(path)
 
 # ### Transforms
 
-files = get_text_files(path, folders = ['train', 'test'])
+files = get_text_files(path, folders=['train', 'test'])
 txts = L(o.open().read() for o in files[:2000])
 
 tok = Tokenizer.from_folder(path)
@@ -56,7 +57,8 @@ num.setup(toks)
 nums = toks.map(num)
 nums[0][:10]
 
-nums_dec = num.decode(nums[0][:10]); nums_dec
+nums_dec = num.decode(nums[0][:10])
+nums_dec
 
 tok.decode(nums_dec)
 
@@ -65,33 +67,34 @@ tok((txts[0], txts[1]))
 
 # ### Writing Your Own Transform
 
-def f(x:int): return x+1
+def f(x: int): return x + 1
 tfm = Transform(f)
-tfm(2),tfm(2.0)
+tfm(2), tfm(2.0)
 
 
 @Transform
-def f(x:int): return x+1
-f(2),f(2.0)
+def f(x: int): return x + 1
+f(2), f(2.0)
 
 
 class NormalizeMean(Transform):
-    def setups(self, items): self.mean = sum(items)/len(items)
-    def encodes(self, x): return x-self.mean
-    def decodes(self, x): return x+self.mean
+    def setups(self, items): self.mean = sum(items) / len(items)
+    def encodes(self, x): return x - self.mean
+    def decodes(self, x): return x + self.mean
 
 
 tfm = NormalizeMean()
-tfm.setup([1,2,3,4,5])
+tfm.setup([1, 2, 3, 4, 5])
 start = 2
 y = tfm(start)
 z = tfm.decode(y)
-tfm.mean,y,z
+tfm.mean, y, z
 
 # ### Pipeline
 
 tfms = Pipeline([tok, num])
-t = tfms(txts[0]); t[:20]
+t = tfms(txts[0])
+t[:20]
 
 tfms.decode(t)[:100]
 
@@ -101,14 +104,15 @@ tfms.decode(t)[:100]
 
 tls = TfmdLists(files, [Tokenizer.from_folder(path), Numericalize])
 
-t = tls[0]; t[:20]
+t = tls[0]
+t[:20]
 
 tls.decode(t)[:100]
 
 tls.show(t)
 
-cut = int(len(files)*0.8)
-splits = [list(range(cut)), list(range(cut,len(files)))]
+cut = int(len(files) * 0.8)
+splits = [list(range(cut)), list(range(cut, len(files)))]
 tls = TfmdLists(files, [Tokenizer.from_folder(path), Numericalize],
                 splits=splits)
 
@@ -129,14 +133,14 @@ tls_y[0]
 x_tfms = [Tokenizer.from_folder(path), Numericalize]
 y_tfms = [parent_label, Categorize()]
 dsets = Datasets(files, [x_tfms, y_tfms])
-x,y = dsets[0]
-x[:20],y
+x, y = dsets[0]
+x[:20], y
 
 x_tfms = [Tokenizer.from_folder(path), Numericalize]
 y_tfms = [parent_label, Categorize()]
 dsets = Datasets(files, [x_tfms, y_tfms], splits=splits)
-x,y = dsets.valid[0]
-x[:20],y
+x, y = dsets.valid[0]
+x[:20], y
 
 t = dsets.valid[0]
 dsets.decode(t)
@@ -144,49 +148,50 @@ dsets.decode(t)
 dls = dsets.dataloaders(bs=64, before_batch=pad_input)
 
 tfms = [[Tokenizer.from_folder(path), Numericalize], [parent_label, Categorize]]
-files = get_text_files(path, folders = ['train', 'test'])
+files = get_text_files(path, folders=['train', 'test'])
 splits = GrandparentSplitter(valid_name='test')(files)
 dsets = Datasets(files, tfms, splits=splits)
 dls = dsets.dataloaders(dl_type=SortedDL, before_batch=pad_input)
 
 path = untar_data(URLs.IMDB)
 dls = DataBlock(
-    blocks=(TextBlock.from_folder(path),CategoryBlock),
-    get_y = parent_label,
+    blocks=(TextBlock.from_folder(path), CategoryBlock),
+    get_y=parent_label,
     get_items=partial(get_text_files, folders=['train', 'test']),
     splitter=GrandparentSplitter(valid_name='test')
 ).dataloaders(path)
 
 # ## Applying the Mid-Level Data API: SiamesePair
 
-from fastai.vision.all import *
 path = untar_data(URLs.PETS)
-files = get_image_files(path/"images")
+files = get_image_files(path / "images")
 
 
 class SiameseImage(fastuple):
     def show(self, ctx=None, **kwargs):
-        img1,img2,same_breed = self
+        img1, img2, same_breed = self
         if not isinstance(img1, Tensor):
-            if img2.size != img1.size: img2 = img2.resize(img1.size)
-            t1,t2 = tensor(img1),tensor(img2)
-            t1,t2 = t1.permute(2,0,1),t2.permute(2,0,1)
-        else: t1,t2 = img1,img2
+            if img2.size != img1.size:
+                img2 = img2.resize(img1.size)
+            t1, t2 = tensor(img1), tensor(img2)
+            t1, t2 = t1.permute(2, 0, 1), t2.permute(2, 0, 1)
+        else:
+            t1, t2 = img1, img2
         line = t1.new_zeros(t1.shape[0], t1.shape[1], 10)
-        return show_image(torch.cat([t1,line,t2], dim=2),
+        return show_image(torch.cat([t1, line, t2], dim=2),
                           title=same_breed, ctx=ctx)
 
 
 img = PILImage.create(files[0])
 s = SiameseImage(img, img, True)
-s.show();
+s.show()
 
 img1 = PILImage.create(files[1])
 s1 = SiameseImage(img, img1, False)
-s1.show();
+s1.show()
 
 s2 = Resize(224)(s1)
-s2.show();
+s2.show()
 
 
 def label_func(fname):
@@ -202,8 +207,8 @@ class SiameseTransform(Transform):
         self.valid = {f: self._draw(f) for f in files[splits[1]]}
 
     def encodes(self, f):
-        f2,t = self.valid.get(f, self._draw(f))
-        img1,img2 = PILImage.create(f),PILImage.create(f2)
+        f2, t = self.valid.get(f, self._draw(f))
+        img1, img2 = PILImage.create(f), PILImage.create(f2)
         return SiameseImage(img1, img2, t)
 
     def _draw(self, f):
@@ -211,18 +216,18 @@ class SiameseTransform(Transform):
         cls = self.label_func(f)
         if not same:
             cls = random.choice(L(l for l in self.labels if l != cls))
-        return random.choice(self.lbl2files[cls]),same
+        return random.choice(self.lbl2files[cls]), same
 
 
 splits = RandomSplitter()(files)
 tfm = SiameseTransform(files, label_func, splits)
-tfm(files[0]).show();
+tfm(files[0]).show()
 
 tls = TfmdLists(files, tfm, splits=splits)
-show_at(tls.valid, 0);
+show_at(tls.valid, 0)
 
 dls = tls.dataloaders(after_item=[Resize(224), ToTensor],
-    after_batch=[IntToFloatTensor, Normalize.from_stats(*imagenet_stats)])
+                      after_batch=[IntToFloatTensor, Normalize.from_stats(*imagenet_stats)])
 
 # ## Conclusion
 

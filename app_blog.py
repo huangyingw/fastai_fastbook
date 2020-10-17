@@ -25,7 +25,7 @@
 
 # Unfortunately, when it comes to blogging, it seems like you have to make a difficult decision: either use a platform that makes it easy but subjects you and your readers to advertisements, paywalls, and fees, or spend hours setting up your own hosting service and weeks learning about all kinds of intricate details. Perhaps the biggest benefit to the "do-it-yourself" approach is that you really own your own posts, rather than being at the whim of a service provider and their decisions about how to monetize your content in the future.
 #
-# It turns out, however, that you can have the best of both worlds! 
+# It turns out, however, that you can have the best of both worlds!
 
 # ## Blogging with GitHub Pages
 
@@ -126,10 +126,8 @@
 
 # ## Jupyter for Blogging
 
-# You can also write blog posts using Jupyter notebooks. Your markdown cells, code cells, and all the outputs will appear in your exported blog post. The best way to do this may have changed by the time you are reading this book, so be sure to check out the [book's website](https://book.fast.ai) for the latest information. As we write this, the easiest way to create a blog from notebooks is to use [`fastpages`](http://fastpages.fast.ai/), which is a more advanced version of `fast_template`. 
+# You can also write blog posts using Jupyter notebooks. Your markdown cells, code cells, and all the outputs will appear in your exported blog post. The best way to do this may have changed by the time you are reading this book, so be sure to check out the [book's website](https://book.fast.ai) for the latest information. As we write this, the easiest way to create a blog from notebooks is to use [`fastpages`](http://fastpages.fast.ai/), which is a more advanced version of `fast_template`.
 #
 # To blog with a notebook, just pop it in the *\_notebooks* folder in your blog repo, and it will appear in your list of blog posts. When you write your notebook, write whatever you want your audience to see. Since most writing platforms make it hard to include code and outputs, many of us are in the habit of including fewer real examples than we should. This is a great way to instead get into the habit of including lots of examples as you write.
 #
 # Often, you'll want to hide boilerplate such as import statements. You can add `#hide` to the top of any cell to make it not show up in output. Jupyter displays the result of the last line of a cell, so there's no need to include `print()`. (Including extra code that isn't needed means there's more cognitive overhead for the reader; so don't include code that you don't really need!)
-
-

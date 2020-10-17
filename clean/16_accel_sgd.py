@@ -15,12 +15,12 @@
 #     name: python3
 # ---
 
-#hide
+# hide
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-#hide
-from fastbook import *
+# hide
 
 
 # # The Training Process
@@ -43,7 +43,7 @@ dls = get_data(URLs.IMAGENETTE_160, 160, 128)
 
 def get_learner(**kwargs):
     return cnn_learner(dls, resnet34, pretrained=False,
-                    metrics=accuracy, **kwargs).to_fp16()
+                       metrics=accuracy, **kwargs).to_fp16()
 
 
 learn = get_learner()
@@ -53,7 +53,7 @@ learn = get_learner(opt_func=SGD)
 
 learn.lr_find()
 
-learn.fit_one_cycle(3, 0.03, moms=(0,0,0))
+learn.fit_one_cycle(3, 0.03, moms=(0, 0, 0))
 
 
 # ## A Generic Optimizer
@@ -69,43 +69,44 @@ learn.fit(3, 0.03)
 # ## Momentum
 
 x = np.linspace(-4, 4, 100)
-y = 1 - (x/3) ** 2
+y = 1 - (x / 3) ** 2
 x1 = x + np.random.randn(100) * 0.1
 y1 = y + np.random.randn(100) * 0.1
-plt.scatter(x1,y1)
+plt.scatter(x1, y1)
 idx = x1.argsort()
-beta,avg,res = 0.7,0,[]
+beta, avg, res = 0.7, 0, []
 for i in idx:
-    avg = beta * avg + (1-beta) * y1[i]
-    res.append(avg/(1-beta**(i+1)))
-plt.plot(x1[idx],np.array(res), color='red');
+    avg = beta * avg + (1 - beta) * y1[i]
+    res.append(avg / (1 - beta**(i + 1)))
+plt.plot(x1[idx], np.array(res), color='red')
 
 x = np.linspace(-4, 4, 100)
-y = 1 - (x/3) ** 2
+y = 1 - (x / 3) ** 2
 x1 = x + np.random.randn(100) * 0.1
 y1 = y + np.random.randn(100) * 0.1
-_,axs = plt.subplots(2,2, figsize=(12,8))
-betas = [0.5,0.7,0.9,0.99]
+_, axs = plt.subplots(2, 2, figsize=(12, 8))
+betas = [0.5, 0.7, 0.9, 0.99]
 idx = x1.argsort()
-for beta,ax in zip(betas, axs.flatten()):
-    ax.scatter(x1,y1)
-    avg,res = 0,[]
+for beta, ax in zip(betas, axs.flatten()):
+    ax.scatter(x1, y1)
+    avg, res = 0, []
     for i in idx:
-        avg = beta * avg + (1-beta) * y1[i]
-        res.append(avg)#/(1-beta**(i+1)))
-    ax.plot(x1[idx],np.array(res), color='red');
+        avg = beta * avg + (1 - beta) * y1[i]
+        res.append(avg)  # /(1-beta**(i+1)))
+    ax.plot(x1[idx], np.array(res), color='red')
     ax.set_title(f'beta={beta}')
 
 
 def average_grad(p, mom, grad_avg=None, **kwargs):
-    if grad_avg is None: grad_avg = torch.zeros_like(p.grad.data)
-    return {'grad_avg': grad_avg*mom + p.grad.data}
+    if grad_avg is None:
+        grad_avg = torch.zeros_like(p.grad.data)
+    return {'grad_avg': grad_avg * mom + p.grad.data}
 
 
 def momentum_step(p, lr, grad_avg, **kwargs): p.data.add_(-lr, grad_avg)
 
 
-opt_func = partial(Optimizer, cbs=[average_grad,momentum_step], mom=0.9)
+opt_func = partial(Optimizer, cbs=[average_grad, momentum_step], mom=0.9)
 
 learn = get_learner(opt_func=opt_func)
 learn.fit_one_cycle(3, 0.03)
@@ -116,8 +117,9 @@ learn.recorder.plot_sched()
 # ## RMSProp
 
 def average_sqr_grad(p, sqr_mom, sqr_avg=None, **kwargs):
-    if sqr_avg is None: sqr_avg = torch.zeros_like(p.grad.data)
-    return {'sqr_avg': sqr_avg*sqr_mom + p.grad.data**2}
+    if sqr_avg is None:
+        sqr_avg = torch.zeros_like(p.grad.data)
+    return {'sqr_avg': sqr_avg * sqr_mom + p.grad.data**2}
 
 
 # +
@@ -125,7 +127,7 @@ def rms_prop_step(p, lr, sqr_avg, eps, grad_avg=None, **kwargs):
     denom = sqr_avg.sqrt().add_(eps)
     p.data.addcdiv_(-lr, p.grad, denom)
 
-opt_func = partial(Optimizer, cbs=[average_sqr_grad,rms_prop_step],
+opt_func = partial(Optimizer, cbs=[average_sqr_grad, rms_prop_step],
                    sqr_mom=0.99, eps=1e-7)
 # -
 
@@ -142,32 +144,33 @@ learn.fit_one_cycle(3, 0.003)
 # ### Creating a Callback
 
 class ModelResetter(Callback):
-    def begin_train(self):    self.model.reset()
+    def begin_train(self): self.model.reset()
     def begin_validate(self): self.model.reset()
 
 
 class RNNRegularizer(Callback):
-    def __init__(self, alpha=0., beta=0.): self.alpha,self.beta = alpha,beta
+    def __init__(self, alpha=0., beta=0.): self.alpha, self.beta = alpha, beta
 
     def after_pred(self):
-        self.raw_out,self.out = self.pred[1],self.pred[2]
+        self.raw_out, self.out = self.pred[1], self.pred[2]
         self.learn.pred = self.pred[0]
 
     def after_loss(self):
-        if not self.training: return
+        if not self.training:
+            return
         if self.alpha != 0.:
             self.learn.loss += self.alpha * self.out[-1].float().pow(2).mean()
         if self.beta != 0.:
             h = self.raw_out[-1]
-            if len(h)>1:
-                self.learn.loss += self.beta * (h[:,1:] - h[:,:-1]
-                                               ).float().pow(2).mean()
+            if len(h) > 1:
+                self.learn.loss += self.beta * (h[:, 1:] - h[:, :-1]
+                                                ).float().pow(2).mean()
 
 
 # ### Callback Ordering and Exceptions
 
 class TerminateOnNaNCallback(Callback):
-    run_before=Recorder
+    run_before = Recorder
     def after_batch(self):
         if torch.isinf(self.loss) or torch.isnan(self.loss):
             raise CancelFitException

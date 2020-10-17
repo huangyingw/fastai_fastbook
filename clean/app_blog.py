@@ -27,5 +27,3 @@
 # ### Synchronizing GitHub and Your Computer
 
 # ## Jupyter for Blogging
-
-

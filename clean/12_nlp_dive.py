@@ -14,28 +14,30 @@
 #     name: python3
 # ---
 
-#hide
+# hide
+from fastai.text.all import *
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-#hide
-from fastbook import *
+# hide
 
 # # A Language Model from Scratch
 
 # ## The Data
 
-from fastai.text.all import *
 path = untar_data(URLs.HUMAN_NUMBERS)
 
-#hide
+# hide
 Path.BASE_PATH = path
 
 path.ls()
 
 lines = L()
-with open(path/'train.txt') as f: lines += L(*f.readlines())
-with open(path/'valid.txt') as f: lines += L(*f.readlines())
+with open(path / 'train.txt') as f:
+    lines += L(*f.readlines())
+with open(path / 'valid.txt') as f:
+    lines += L(*f.readlines())
 lines
 
 text = ' . '.join([l.strip() for l in lines])
@@ -47,15 +49,15 @@ tokens[:10]
 vocab = L(*tokens).unique()
 vocab
 
-word2idx = {w:i for i,w in enumerate(vocab)}
+word2idx = {w: i for i, w in enumerate(vocab)}
 nums = L(word2idx[i] for i in tokens)
 nums
 
 # ## Our First Language Model from Scratch
 
-L((tokens[i:i+3], tokens[i+3]) for i in range(0,len(tokens)-4,3))
+L((tokens[i:i + 3], tokens[i + 3]) for i in range(0, len(tokens) - 4, 3))
 
-seqs = L((tensor(nums[i:i+3]), nums[i+3]) for i in range(0,len(nums)-4,3))
+seqs = L((tensor(nums[i:i + 3]), nums[i + 3]) for i in range(0, len(nums) - 4, 3))
 seqs
 
 bs = 64
@@ -69,13 +71,13 @@ class LMModel1(Module):
     def __init__(self, vocab_sz, n_hidden):
         self.i_h = nn.Embedding(vocab_sz, n_hidden)
         self.h_h = nn.Linear(n_hidden, n_hidden)
-        self.h_o = nn.Linear(n_hidden,vocab_sz)
+        self.h_o = nn.Linear(n_hidden, vocab_sz)
 
     def forward(self, x):
-        h = F.relu(self.h_h(self.i_h(x[:,0])))
-        h = h + self.i_h(x[:,1])
+        h = F.relu(self.h_h(self.i_h(x[:, 0])))
+        h = h + self.i_h(x[:, 1])
         h = F.relu(self.h_h(h))
-        h = h + self.i_h(x[:,2])
+        h = h + self.i_h(x[:, 2])
         h = F.relu(self.h_h(h))
         return self.h_o(h)
 
@@ -84,12 +86,13 @@ learn = Learner(dls, LMModel1(len(vocab), 64), loss_func=F.cross_entropy,
                 metrics=accuracy)
 learn.fit_one_cycle(4, 1e-3)
 
-n,counts = 0,torch.zeros(len(vocab))
-for x,y in dls.valid:
+n, counts = 0, torch.zeros(len(vocab))
+for x, y in dls.valid:
     n += y.shape[0]
-    for i in range_of(vocab): counts[i] += (y==i).long().sum()
+    for i in range_of(vocab):
+        counts[i] += (y == i).long().sum()
 idx = torch.argmax(counts)
-idx, vocab[idx.item()], counts[idx].item()/n
+idx, vocab[idx.item()], counts[idx].item() / n
 
 
 # ### Our First Recurrent Neural Network
@@ -98,12 +101,12 @@ class LMModel2(Module):
     def __init__(self, vocab_sz, n_hidden):
         self.i_h = nn.Embedding(vocab_sz, n_hidden)
         self.h_h = nn.Linear(n_hidden, n_hidden)
-        self.h_o = nn.Linear(n_hidden,vocab_sz)
+        self.h_o = nn.Linear(n_hidden, vocab_sz)
 
     def forward(self, x):
         h = 0
         for i in range(3):
-            h = h + self.i_h(x[:,i])
+            h = h + self.i_h(x[:, i])
             h = F.relu(self.h_h(h))
         return self.h_o(h)
 
@@ -121,12 +124,12 @@ class LMModel3(Module):
     def __init__(self, vocab_sz, n_hidden):
         self.i_h = nn.Embedding(vocab_sz, n_hidden)
         self.h_h = nn.Linear(n_hidden, n_hidden)
-        self.h_o = nn.Linear(n_hidden,vocab_sz)
+        self.h_o = nn.Linear(n_hidden, vocab_sz)
         self.h = 0
 
     def forward(self, x):
         for i in range(3):
-            self.h = self.h + self.i_h(x[:,i])
+            self.h = self.h + self.i_h(x[:, i])
             self.h = F.relu(self.h_h(self.h))
         out = self.h_o(self.h)
         self.h = self.h.detach()
@@ -135,14 +138,15 @@ class LMModel3(Module):
     def reset(self): self.h = 0
 
 
-m = len(seqs)//bs
-m,bs,len(seqs)
+m = len(seqs) // bs
+m, bs, len(seqs)
 
 
 def group_chunks(ds, bs):
     m = len(ds) // bs
     new_ds = L()
-    for i in range(m): new_ds += L(ds[i + m*j] for j in range(bs))
+    for i in range(m):
+        new_ds += L(ds[i + m * j] for j in range(bs))
     return new_ds
 
 
@@ -159,8 +163,8 @@ learn.fit_one_cycle(10, 3e-3)
 # ### Creating More Signal
 
 sl = 16
-seqs = L((tensor(nums[i:i+sl]), tensor(nums[i+1:i+sl+1]))
-         for i in range(0,len(nums)-sl-1,sl))
+seqs = L((tensor(nums[i:i + sl]), tensor(nums[i + 1:i + sl + 1]))
+         for i in range(0, len(nums) - sl - 1, sl))
 cut = int(len(seqs) * 0.8)
 dls = DataLoaders.from_dsets(group_chunks(seqs[:cut], bs),
                              group_chunks(seqs[cut:], bs),
@@ -173,13 +177,13 @@ class LMModel4(Module):
     def __init__(self, vocab_sz, n_hidden):
         self.i_h = nn.Embedding(vocab_sz, n_hidden)
         self.h_h = nn.Linear(n_hidden, n_hidden)
-        self.h_o = nn.Linear(n_hidden,vocab_sz)
+        self.h_o = nn.Linear(n_hidden, vocab_sz)
         self.h = 0
 
     def forward(self, x):
         outs = []
         for i in range(sl):
-            self.h = self.h + self.i_h(x[:,i])
+            self.h = self.h + self.i_h(x[:, i])
             self.h = F.relu(self.h_h(self.h))
             outs.append(self.h_o(self.h))
         self.h = self.h.detach()
@@ -209,7 +213,7 @@ class LMModel5(Module):
         self.h = torch.zeros(n_layers, bs, n_hidden)
 
     def forward(self, x):
-        res,h = self.rnn(self.i_h(x), self.h)
+        res, h = self.rnn(self.i_h(x), self.h)
         self.h = h.detach()
         return self.h_o(res)
 
@@ -231,12 +235,12 @@ learn.fit_one_cycle(15, 3e-3)
 class LSTMCell(Module):
     def __init__(self, ni, nh):
         self.forget_gate = nn.Linear(ni + nh, nh)
-        self.input_gate  = nn.Linear(ni + nh, nh)
-        self.cell_gate   = nn.Linear(ni + nh, nh)
+        self.input_gate = nn.Linear(ni + nh, nh)
+        self.cell_gate = nn.Linear(ni + nh, nh)
         self.output_gate = nn.Linear(ni + nh, nh)
 
     def forward(self, input, state):
-        h,c = state
+        h, c = state
         h = torch.stack([h, input], dim=1)
         forget = torch.sigmoid(self.forget_gate(h))
         c = c * forget
@@ -245,27 +249,28 @@ class LSTMCell(Module):
         c = c + inp * cell
         out = torch.sigmoid(self.output_gate(h))
         h = outgate * torch.tanh(c)
-        return h, (h,c)
+        return h, (h, c)
 
 
 class LSTMCell(Module):
     def __init__(self, ni, nh):
-        self.ih = nn.Linear(ni,4*nh)
-        self.hh = nn.Linear(nh,4*nh)
+        self.ih = nn.Linear(ni, 4 * nh)
+        self.hh = nn.Linear(nh, 4 * nh)
 
     def forward(self, input, state):
-        h,c = state
+        h, c = state
         # One big multiplication for all the gates is better than 4 smaller ones
         gates = (self.ih(input) + self.hh(h)).chunk(4, 1)
-        ingate,forgetgate,outgate = map(torch.sigmoid, gates[:3])
+        ingate, forgetgate, outgate = map(torch.sigmoid, gates[:3])
         cellgate = gates[3].tanh()
 
-        c = (forgetgate*c) + (ingate*cellgate)
+        c = (forgetgate * c) + (ingate * cellgate)
         h = outgate * c.tanh()
-        return h, (h,c)
+        return h, (h, c)
 
 
-t = torch.arange(0,10); t
+t = torch.arange(0, 10)
+t
 
 t.chunk(2)
 
@@ -280,12 +285,13 @@ class LMModel6(Module):
         self.h = [torch.zeros(n_layers, bs, n_hidden) for _ in range(2)]
 
     def forward(self, x):
-        res,h = self.rnn(self.i_h(x), self.h)
+        res, h = self.rnn(self.i_h(x), self.h)
         self.h = [h_.detach() for h_ in h]
         return self.h_o(res)
 
     def reset(self):
-        for h in self.h: h.zero_()
+        for h in self.h:
+            h.zero_()
 
 
 learn = Learner(dls, LMModel6(len(vocab), 64, 2),
@@ -301,9 +307,10 @@ learn.fit_one_cycle(15, 1e-2)
 class Dropout(Module):
     def __init__(self, p): self.p = p
     def forward(self, x):
-        if not self.training: return x
-        mask = x.new(*x.shape).bernoulli_(1-p)
-        return x * mask.div_(1-p)
+        if not self.training:
+            return x
+        mask = x.new(*x.shape).bernoulli_(1 - p)
+        return x * mask.div_(1 - p)
 
 
 # ### Activation Regularization and Temporal Activation Regularization
@@ -320,13 +327,14 @@ class LMModel7(Module):
         self.h = [torch.zeros(n_layers, bs, n_hidden) for _ in range(2)]
 
     def forward(self, x):
-        raw,h = self.rnn(self.i_h(x), self.h)
+        raw, h = self.rnn(self.i_h(x), self.h)
         out = self.drop(raw)
         self.h = [h_.detach() for h_ in h]
-        return self.h_o(out),raw,out
+        return self.h_o(out), raw, out
 
     def reset(self):
-        for h in self.h: h.zero_()
+        for h in self.h:
+            h.zero_()
 
 
 learn = Learner(dls, LMModel7(len(vocab), 64, 2, 0.5),

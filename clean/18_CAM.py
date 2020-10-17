@@ -14,18 +14,18 @@
 #     name: python3
 # ---
 
-#hide
+# hide
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-#hide
-from fastbook import *
+# hide
 
 # # CNN Interpretation with CAM
 
 # ## CAM and Hooks
 
-path = untar_data(URLs.PETS)/'images'
+path = untar_data(URLs.PETS) / 'images'
 def is_cat(x): return x[0].isupper()
 dls = ImageDataLoaders.from_name_func(
     path, get_image_files(path), valid_pct=0.2, seed=21,
@@ -44,7 +44,8 @@ class Hook():
 hook_output = Hook()
 hook = learn.model[0].register_forward_hook(hook_output.hook_func)
 
-with torch.no_grad(): output = learn.model.eval()(x)
+with torch.no_grad():
+    output = learn.model.eval()(x)
 
 act = hook_output.stored[0]
 
@@ -58,10 +59,10 @@ cam_map = torch.einsum('ck,kij->cij', learn.model[1][-1].weight, act)
 cam_map.shape
 
 x_dec = TensorImage(dls.train.decode((x,))[0][0])
-_,ax = plt.subplots()
+_, ax = plt.subplots()
 x_dec.show(ctx=ax)
-ax.imshow(cam_map[1].detach().cpu(), alpha=0.6, extent=(0,224,224,0),
-              interpolation='bilinear', cmap='magma');
+ax.imshow(cam_map[1].detach().cpu(), alpha=0.6, extent=(0, 224, 224, 0),
+          interpolation='bilinear', cmap='magma')
 
 hook.remove()
 
@@ -75,7 +76,8 @@ class Hook():
 
 
 with Hook(learn.model[0]) as hook:
-    with torch.no_grad(): output = learn.model.eval()(x.cuda())
+    with torch.no_grad():
+        output = learn.model.eval()(x.cuda())
     act = hook.stored
 
 
@@ -94,31 +96,31 @@ with HookBwd(learn.model[0]) as hookg:
     with Hook(learn.model[0]) as hook:
         output = learn.model.eval()(x.cuda())
         act = hook.stored
-    output[0,cls].backward()
+    output[0, cls].backward()
     grad = hookg.stored
 
-w = grad[0].mean(dim=[1,2], keepdim=True)
+w = grad[0].mean(dim=[1, 2], keepdim=True)
 cam_map = (w * act[0]).sum(0)
 
-_,ax = plt.subplots()
+_, ax = plt.subplots()
 x_dec.show(ctx=ax)
-ax.imshow(cam_map.detach().cpu(), alpha=0.6, extent=(0,224,224,0),
-              interpolation='bilinear', cmap='magma');
+ax.imshow(cam_map.detach().cpu(), alpha=0.6, extent=(0, 224, 224, 0),
+          interpolation='bilinear', cmap='magma')
 
 with HookBwd(learn.model[0][-2]) as hookg:
     with Hook(learn.model[0][-2]) as hook:
         output = learn.model.eval()(x.cuda())
         act = hook.stored
-    output[0,cls].backward()
+    output[0, cls].backward()
     grad = hookg.stored
 
-w = grad[0].mean(dim=[1,2], keepdim=True)
+w = grad[0].mean(dim=[1, 2], keepdim=True)
 cam_map = (w * act[0]).sum(0)
 
-_,ax = plt.subplots()
+_, ax = plt.subplots()
 x_dec.show(ctx=ax)
-ax.imshow(cam_map.detach().cpu(), alpha=0.6, extent=(0,224,224,0),
-              interpolation='bilinear', cmap='magma');
+ax.imshow(cam_map.detach().cpu(), alpha=0.6, extent=(0, 224, 224, 0),
+          interpolation='bilinear', cmap='magma')
 
 # ## Conclusion
 

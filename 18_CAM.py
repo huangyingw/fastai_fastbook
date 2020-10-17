@@ -15,14 +15,13 @@
 #     name: python3
 # ---
 
-#hide
-# !pip install -Uqq fastbook
+# hide
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
 # + hide_input=false
-#hide
-from fastbook import *
+# hide
 
 # + active=""
 # [[chapter_cam]]
@@ -44,7 +43,7 @@ from fastbook import *
 #
 # To illustrate, we'll use the same cats and dogs model we trained in <<chapter_intro>>:
 
-path = untar_data(URLs.PETS)/'images'
+path = untar_data(URLs.PETS) / 'images'
 def is_cat(x): return x[0].isupper()
 dls = ImageDataLoaders.from_name_func(
     path, get_image_files(path), valid_pct=0.2, seed=21,
@@ -71,7 +70,8 @@ hook = learn.model[0].register_forward_hook(hook_output.hook_func)
 
 # Now we can grab a batch and feed it through our model:
 
-with torch.no_grad(): output = learn.model.eval()(x)
+with torch.no_grad():
+    output = learn.model.eval()(x)
 
 # And we can access our stored activations:
 
@@ -81,7 +81,7 @@ act = hook_output.stored[0]
 
 F.softmax(output, dim=-1)
 
-# We know `0` (for `False`) is "dog," because the classes are automatically sorted in fastai, bu we can still double-check by looking at `dls.vocab`: 
+# We know `0` (for `False`) is "dog," because the classes are automatically sorted in fastai, bu we can still double-check by looking at `dls.vocab`:
 
 dls.vocab
 
@@ -99,10 +99,10 @@ cam_map.shape
 # For instance, we can find out which areas made the model decide this animal was a cat (note that we need to `decode` the input `x` since it's been normalized by the `DataLoader`, and we need to cast to `TensorImage` since at the time this book is written PyTorch does not maintain types when indexing—this may be fixed by the time you are reading this):
 
 x_dec = TensorImage(dls.train.decode((x,))[0][0])
-_,ax = plt.subplots()
+_, ax = plt.subplots()
 x_dec.show(ctx=ax)
-ax.imshow(cam_map[1].detach().cpu(), alpha=0.6, extent=(0,224,224,0),
-              interpolation='bilinear', cmap='magma');
+ax.imshow(cam_map[1].detach().cpu(), alpha=0.6, extent=(0, 224, 224, 0),
+          interpolation='bilinear', cmap='magma')
 
 # The areas in bright yellow correspond to high activations and the areas in purple to low activations. In this case, we can see the head and the front paw were the two main areas that made the model decide it was a picture of a cat.
 #
@@ -115,7 +115,7 @@ hook.remove()
 
 class Hook():
     def __init__(self, m):
-        self.hook = m.register_forward_hook(self.hook_func)   
+        self.hook = m.register_forward_hook(self.hook_func)
     def hook_func(self, m, i, o): self.stored = o.detach().clone()
     def __enter__(self, *args): return self
     def __exit__(self, *args): self.hook.remove()
@@ -124,7 +124,8 @@ class Hook():
 # we can safely use it this way:
 
 with Hook(learn.model[0]) as hook:
-    with torch.no_grad(): output = learn.model.eval()(x.cuda())
+    with torch.no_grad():
+        output = learn.model.eval()(x.cuda())
     act = hook.stored
 
 
@@ -140,7 +141,7 @@ with Hook(learn.model[0]) as hook:
 
 class HookBwd():
     def __init__(self, m):
-        self.hook = m.register_backward_hook(self.hook_func)   
+        self.hook = m.register_backward_hook(self.hook_func)
     def hook_func(self, m, gi, go): self.stored = go[0].detach().clone()
     def __enter__(self, *args): return self
     def __exit__(self, *args): self.hook.remove()
@@ -153,18 +154,18 @@ with HookBwd(learn.model[0]) as hookg:
     with Hook(learn.model[0]) as hook:
         output = learn.model.eval()(x.cuda())
         act = hook.stored
-    output[0,cls].backward()
+    output[0, cls].backward()
     grad = hookg.stored
 
 # The weights for our Grad-CAM are given by the average of our gradients across the feature map. Then it's exactly the same as before:
 
-w = grad[0].mean(dim=[1,2], keepdim=True)
+w = grad[0].mean(dim=[1, 2], keepdim=True)
 cam_map = (w * act[0]).sum(0)
 
-_,ax = plt.subplots()
+_, ax = plt.subplots()
 x_dec.show(ctx=ax)
-ax.imshow(cam_map.detach().cpu(), alpha=0.6, extent=(0,224,224,0),
-              interpolation='bilinear', cmap='magma');
+ax.imshow(cam_map.detach().cpu(), alpha=0.6, extent=(0, 224, 224, 0),
+          interpolation='bilinear', cmap='magma')
 
 # The novelty with Grad-CAM is that we can use it on any layer. For example, here we use it on the output of the second-to-last ResNet group:
 
@@ -172,18 +173,18 @@ with HookBwd(learn.model[0][-2]) as hookg:
     with Hook(learn.model[0][-2]) as hook:
         output = learn.model.eval()(x.cuda())
         act = hook.stored
-    output[0,cls].backward()
+    output[0, cls].backward()
     grad = hookg.stored
 
-w = grad[0].mean(dim=[1,2], keepdim=True)
+w = grad[0].mean(dim=[1, 2], keepdim=True)
 cam_map = (w * act[0]).sum(0)
 
 # And we can now view the activation map for this layer:
 
-_,ax = plt.subplots()
+_, ax = plt.subplots()
 x_dec.show(ctx=ax)
-ax.imshow(cam_map.detach().cpu(), alpha=0.6, extent=(0,224,224,0),
-              interpolation='bilinear', cmap='magma');
+ax.imshow(cam_map.detach().cpu(), alpha=0.6, extent=(0, 224, 224, 0),
+          interpolation='bilinear', cmap='magma')
 
 # ## Conclusion
 
@@ -209,5 +210,3 @@ ax.imshow(cam_map.detach().cpu(), alpha=0.6, extent=(0,224,224,0),
 
 # 1. Try removing `keepdim` and see what happens. Look up this parameter in the PyTorch docs. Why do we need it in this notebook?
 # 1. Create a notebook like this one, but for NLP, and use it to find which words in a movie review are most significant in assessing the sentiment of a particular movie review.
-
-

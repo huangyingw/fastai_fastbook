@@ -14,18 +14,18 @@
 #     name: python3
 # ---
 
-#hide
+# hide
+from fastai.vision.all import *
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-#hide
-from fastbook import *
+# hide
 
 # # Training a State-of-the-Art Model
 
 # ## Imagenette
 
-from fastai.vision.all import *
 path = untar_data(URLs.IMAGENETTE)
 
 dblock = DataBlock(blocks=(ImageBlock(), CategoryBlock()),
@@ -41,24 +41,24 @@ learn.fit_one_cycle(5, 3e-3)
 
 # ## Normalization
 
-x,y = dls.one_batch()
-x.mean(dim=[0,2,3]),x.std(dim=[0,2,3])
+x, y = dls.one_batch()
+x.mean(dim=[0, 2, 3]), x.std(dim=[0, 2, 3])
 
 
 def get_dls(bs, size):
     dblock = DataBlock(blocks=(ImageBlock, CategoryBlock),
-                   get_items=get_image_files,
-                   get_y=parent_label,
-                   item_tfms=Resize(460),
-                   batch_tfms=[*aug_transforms(size=size, min_scale=0.75),
-                               Normalize.from_stats(*imagenet_stats)])
+                       get_items=get_image_files,
+                       get_y=parent_label,
+                       item_tfms=Resize(460),
+                       batch_tfms=[*aug_transforms(size=size, min_scale=0.75),
+                                   Normalize.from_stats(*imagenet_stats)])
     return dblock.dataloaders(path, bs=bs)
 
 
 dls = get_dls(64, 224)
 
-x,y = dls.one_batch()
-x.mean(dim=[0,2,3]),x.std(dim=[0,2,3])
+x, y = dls.one_batch()
+x.mean(dim=[0, 2, 3]), x.std(dim=[0, 2, 3])
 
 model = xresnet50()
 learn = Learner(dls, model, loss_func=CrossEntropyLossFlat(), metrics=accuracy)
@@ -76,7 +76,7 @@ learn.fine_tune(5, 1e-3)
 
 # ## Test Time Augmentation
 
-preds,targs = learn.tta()
+preds, targs = learn.tta()
 accuracy(preds, targs).item()
 
 # ## Mixup
@@ -86,17 +86,17 @@ accuracy(preds, targs).item()
 # ### End sidebar
 
 # +
-church = PILImage.create(get_image_files_sorted(path/'train'/'n03028079')[0])
-gas = PILImage.create(get_image_files_sorted(path/'train'/'n03425413')[0])
-church = church.resize((256,256))
-gas = gas.resize((256,256))
+church = PILImage.create(get_image_files_sorted(path / 'train' / 'n03028079')[0])
+gas = PILImage.create(get_image_files_sorted(path / 'train' / 'n03425413')[0])
+church = church.resize((256, 256))
+gas = gas.resize((256, 256))
 tchurch = tensor(church).float() / 255.
 tgas = tensor(gas).float() / 255.
 
-_,axs = plt.subplots(1, 3, figsize=(12,4))
-show_image(tchurch, ax=axs[0]);
-show_image(tgas, ax=axs[1]);
-show_image((0.3*tchurch + 0.7*tgas), ax=axs[2]);
+_, axs = plt.subplots(1, 3, figsize=(12, 4))
+show_image(tchurch, ax=axs[0])
+show_image(tgas, ax=axs[1])
+show_image((0.3 * tchurch + 0.7 * tgas), ax=axs[2])
 # -
 
 # ## Label Smoothing

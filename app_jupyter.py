@@ -13,12 +13,14 @@
 #     name: python3
 # ---
 
-#hide
-# !pip install -Uqq fastbook
+# hide
+from fastai.vision.all import *
+from PIL import Image
+import matplotlib.pyplot as plt
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-from fastbook import *
 
 # + active=""
 # [appendix]
@@ -36,9 +38,9 @@ from fastbook import *
 
 # Let's build up from the basics: what is a Jupyter Notebook? Well, we wrote this book using Jupyter Notebooks. A notebook is a document made of cells. You can write in some of them (markdown cells) or you can perform calculations in Python (code cells) and run them like this:
 
-1+1
+1 + 1
 
-# Cool, huh? This combination of prose and code makes Jupyter Notebook ideal for experimentation: we can see the rationale for each experiment, the code, and the results in one comprehensive document. 
+# Cool, huh? This combination of prose and code makes Jupyter Notebook ideal for experimentation: we can see the rationale for each experiment, the code, and the results in one comprehensive document.
 #
 # Other renowned institutions in academia and industry use Jupyter Notebook, including Google, Microsoft, IBM, Bloomberg, Berkeley and NASA among others. Even Nobel-winning economists [use Jupyter Notebooks](https://paulromer.net/jupyter-mathematica-and-the-future-of-the-research-paper/)  for their experiments and some suggest that Jupyter Notebooks will be the [new format for research papers](https://www.theatlantic.com/science/archive/2018/04/the-scientific-paper-is-obsolete/556676/).
 #
@@ -57,7 +59,7 @@ from fastbook import *
 
 # Now try making your first _Code_ cell: follow the same steps as before but don't change the cell type (when you add a cell its default type is _Code_). Type something like 3/2. You should see '1.5' as output.
 
-3/2
+3 / 2
 
 # ## Modes
 
@@ -65,7 +67,7 @@ from fastbook import *
 #
 # - Edit Mode:: Allows you to edit a cell's content.
 #
-# - Command Mode:: Allows you to edit the notebook as a whole and use keyboard shortcuts but not edit a cell's content. 
+# - Command Mode:: Allows you to edit the notebook as a whole and use keyboard shortcuts but not edit a cell's content.
 #
 # You can toggle between these two by either pressing <kbd>ESC</kbd> and <kbd>Enter</kbd> or clicking outside a cell or inside it (you need to double click if it's a Markdown cell). You can always tell which mode you're on: the current cell will have a green border in **Edit Mode** and a blue border in **Command Mode**. Try it!
 #
@@ -83,11 +85,11 @@ from fastbook import *
 # There are a couple of shortcuts you must know about which we use **all** the time (always in **Command Mode**). These are:
 #
 #  - Shift+Enter:: Run the code or markdown on a cell
-#  
+#
 #  - Up Arrow+Down Arrow:: Toggle across cells
-#  
+#
 #  - b:: Create new cell
-#  
+#
 #  - 0+0:: Reset Kernel
 #
 # You can find more shortcuts by typing <kbd>h</kbd> (for help).
@@ -105,7 +107,7 @@ from fastbook import *
 # ### Italics, Bold, Strikethrough, Inline, Blockquotes and Links
 
 # The five most important concepts to format your code appropriately when using Markdown are:
-#     
+#
 # - *Italics*:: Surround your text with \_ or \*.
 #
 # - **Bold**:: Surround your text with \__ or \**.
@@ -149,7 +151,7 @@ from fastbook import *
 #     - [x] Other Considerations
 # - [ ] Change the world
 #
-# In the notebook, double click on them to see how they are built! 
+# In the notebook, double click on them to see how they are built!
 #
 
 # ## Code Capabilities
@@ -157,18 +159,15 @@ from fastbook import *
 # **Code** cells are different than **Markdown** cells in that they have an output cell. This means that we can _keep_ the results of our code within the notebook and share them. Let's say we want to show a graph that explains the result of an experiment. We can just run the necessary cells and save the notebook. The output will be there when we open it again! Try it out by running the next four cells.
 
 # Import necessary libraries
-from fastai.vision.all import * 
-import matplotlib.pyplot as plt
 
-from PIL import Image
 
 a = 1
 b = a + 1
 c = b + a + 1
 d = c + b + a + 1
-a, b, c ,d
+a, b, c, d
 
-plt.plot([a,b,c,d])
+plt.plot([a, b, c, d])
 plt.show()
 
 # We can also print images while experimenting.
@@ -212,7 +211,7 @@ Image.open(image_cat())
 #
 # - Shift+M:: Merge selected cells
 #
-# - Shift+Tab (press once):: See which parameters to pass to a function 
+# - Shift+Tab (press once):: See which parameters to pass to a function
 #
 # - Shift+Tab (press three times):: Get additional information on the method
 #
