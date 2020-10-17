@@ -15,14 +15,14 @@
 #     name: python3
 # ---
 
-#hide
-# !pip install -Uqq fastbook
+# hide
+from IPython.display import display, HTML
+from fastai.text.all import *
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-#hide
-from fastbook import *
-from IPython.display import display,HTML
+# hide
 
 # + active=""
 # [[chapter_nlp]]
@@ -61,7 +61,7 @@ from IPython.display import display,HTML
 # 1. Create an embedding matrix for this containing a row for each level (i.e., for each item of the vocab).
 # 1. Use this embedding matrix as the first layer of a neural network. (A dedicated embedding matrix can take as inputs the raw vocab indexes created in step 2; this is equivalent to but faster and more efficient than a matrix that takes as input one-hot-encoded vectors representing the indexes.)
 #
-# We can do nearly the same thing with text! What is new is the idea of a sequence. First we concatenate all of the documents in our dataset into one big long string and split it into words, giving us a very long list of words (or "tokens"). Our independent variable will be the sequence of words starting with the first word in our very long list and ending with the second to last, and our dependent variable will be the sequence of words starting with the second word and ending with the last word. 
+# We can do nearly the same thing with text! What is new is the idea of a sequence. First we concatenate all of the documents in our dataset into one big long string and split it into words, giving us a very long list of words (or "tokens"). Our independent variable will be the sequence of words starting with the first word in our very long list and ending with the second to last, and our dependent variable will be the sequence of words starting with the second word and ending with the last word.
 #
 # Our vocab will consist of a mix of common words that are already in the vocabulary of our pretrained model and new words specific to our corpus (cinematographic terms or actors names, for instance). Our embedding matrix will be built accordingly: for words that are in the vocabulary of our pretrained model, we will take the corresponding row in the embedding matrix of the pretrained model; but for new words we won't have anything, so we will just initialize the corresponding row with a random vector.
 
@@ -94,16 +94,16 @@ from IPython.display import display,HTML
 #
 # Let's try it out with the IMDb dataset that we used in <<chapter_intro>>:
 
-from fastai.text.all import *
 path = untar_data(URLs.IMDB)
 
 # We'll need to grab the text files in order to try out a tokenizer. Just like `get_image_files`, which we've used many times already, gets all the image files in a path, `get_text_files` gets all the text files in a path. We can also optionally pass `folders` to restrict the search to a particular list of subfolders:
 
-files = get_text_files(path, folders = ['train', 'test', 'unsup'])
+files = get_text_files(path, folders=['train', 'test', 'unsup'])
 
 # Here's a review that we'll tokenize (we'll just print the start of it here to save space):
 
-txt = files[0].open().read(); txt[:75]
+txt = files[0].open().read()
+txt[:75]
 
 # As we write this book, the default English word tokenizer for fastai uses a library called *spaCy*. It has a sophisticated rules engine with special rules for URLs, individual special English words, and much more. Rather than directly using `SpacyTokenizer`, however, we'll use `WordTokenizer`, since that will always point to fastai's current default word tokenizer (which may not necessarily be spaCy, depending when you're reading this).
 #
@@ -226,7 +226,7 @@ toks200[0]
 
 num = Numericalize()
 num.setup(toks200)
-coll_repr(num.vocab,20)
+coll_repr(num.vocab, 20)
 
 # Our special rules tokens appear first, and then every word appears once, in frequency order. The defaults to `Numericalize` are `min_freq=3,max_vocab=60000`. `max_vocab=60000` results in fastai replacing all words other than the most common 60,000 with a special *unknown word* token, `xxunk`. This is useful to avoid having an overly large embedding matrix, since that can slow down training and use up too much memory, and can also mean that there isn't enough data to train useful representations for rare words. However, this last issue is better handled by setting `min_freq`; the default `min_freq=3` means that any word appearing less than three times is replaced with `xxunk`.
 #
@@ -234,7 +234,8 @@ coll_repr(num.vocab,20)
 #
 # Once we've created our `Numericalize` object, we can use it as if it were a function:
 
-nums = num(toks)[:20]; nums
+nums = num(toks)[:20]
+nums
 
 # This time, our tokens have been converted to a tensor of integers that our model can receive. We can check that they map back to the original text:
 
@@ -257,47 +258,47 @@ nums = num(toks)[:20]; nums
 # We now have 90 tokens, separated by spaces. Let's say we want a batch size of 6. We need to break this text into 6 contiguous parts of length 15:
 
 # + hide_input=false
-#hide_input
+# hide_input
 stream = "In this chapter, we will go back over the example of classifying movie reviews we studied in chapter 1 and dig deeper under the surface. First we will look at the processing steps necessary to convert text into numbers and how to customize it. By doing this, we'll have another example of the PreProcessor used in the data block API.\nThen we will study how we build a language model and train it for a while."
 tokens = tkn(stream)
-bs,seq_len = 6,15
-d_tokens = np.array([tokens[i*seq_len:(i+1)*seq_len] for i in range(bs)])
+bs, seq_len = 6, 15
+d_tokens = np.array([tokens[i * seq_len:(i + 1) * seq_len] for i in range(bs)])
 df = pd.DataFrame(d_tokens)
-display(HTML(df.to_html(index=False,header=None)))
+display(HTML(df.to_html(index=False, header=None)))
 # -
 
 # In a perfect world, we could then give this one batch to our model. But that approach doesn't scale, because outside of this toy example it's unlikely that a single batch containing all the texts would fit in our GPU memory (here we have 90 tokens, but all the IMDb reviews together give several million).
 #
-# So, we need to divide this array more finely into subarrays of a fixed sequence length. It is important to maintain order within and across these subarrays, because we will use a model that maintains a state so that it remembers what it read previously when predicting what comes next. 
+# So, we need to divide this array more finely into subarrays of a fixed sequence length. It is important to maintain order within and across these subarrays, because we will use a model that maintains a state so that it remembers what it read previously when predicting what comes next.
 #
 # Going back to our previous example with 6 batches of length 15, if we chose a sequence length of 5, that would mean we first feed the following array:
 
 # + hide_input=true
-#hide_input
-bs,seq_len = 6,5
-d_tokens = np.array([tokens[i*15:i*15+seq_len] for i in range(bs)])
+# hide_input
+bs, seq_len = 6, 5
+d_tokens = np.array([tokens[i * 15:i * 15 + seq_len] for i in range(bs)])
 df = pd.DataFrame(d_tokens)
-display(HTML(df.to_html(index=False,header=None)))
+display(HTML(df.to_html(index=False, header=None)))
 # -
 
 # Then this one:
 
 # + hide_input=true
-#hide_input
-bs,seq_len = 6,5
-d_tokens = np.array([tokens[i*15+seq_len:i*15+2*seq_len] for i in range(bs)])
+# hide_input
+bs, seq_len = 6, 5
+d_tokens = np.array([tokens[i * 15 + seq_len:i * 15 + 2 * seq_len] for i in range(bs)])
 df = pd.DataFrame(d_tokens)
-display(HTML(df.to_html(index=False,header=None)))
+display(HTML(df.to_html(index=False, header=None)))
 # -
 
 # And finally:
 
 # + hide_input=true
-#hide_input
-bs,seq_len = 6,5
-d_tokens = np.array([tokens[i*15+10:i*15+15] for i in range(bs)])
+# hide_input
+bs, seq_len = 6, 5
+d_tokens = np.array([tokens[i * 15 + 10:i * 15 + 15] for i in range(bs)])
 df = pd.DataFrame(d_tokens)
-display(HTML(df.to_html(index=False,header=None)))
+display(HTML(df.to_html(index=False, header=None)))
 # -
 
 # Going back to our movie reviews dataset, the first step is to transform the individual texts into a stream by concatenating them together. As with images, it's best to randomize the order of the inputs, so at the beginning of each epoch we will shuffle the entries to make a new stream (we shuffle the order of the documents, not the order of the words inside them, or the texts would not make sense anymore!).
@@ -316,8 +317,8 @@ dl = LMDataLoader(nums200)
 
 # Let's confirm that this gives the expected results, by grabbing the first batch:
 
-x,y = first(dl)
-x.shape,y.shape
+x, y = first(dl)
+x.shape, y.shape
 
 # and then looking at the first row of the independent variable, which should be the start of the first text:
 
@@ -350,7 +351,7 @@ dls_lm = DataBlock(
 ).dataloaders(path, path=path, bs=128, seq_len=80)
 # -
 
-# One thing that's different to previous types we've used in `DataBlock` is that we're not just using the class directly (i.e., `TextBlock(...)`, but instead are calling a *class method*. A class method is a Python method that, as the name suggests, belongs to a *class* rather than an *object*. (Be sure to search online for more information about class methods if you're not familiar with them, since they're commonly used in many Python libraries and applications; we've used them a few times previously in the book, but haven't called attention to them.) The reason that `TextBlock` is special is that setting up the numericalizer's vocab can take a long time (we have to read and tokenize every document to get the vocab). To be as efficient as possible preforms a few optimizations: 
+# One thing that's different to previous types we've used in `DataBlock` is that we're not just using the class directly (i.e., `TextBlock(...)`, but instead are calling a *class method*. A class method is a Python method that, as the name suggests, belongs to a *class* rather than an *object*. (Be sure to search online for more information about class methods if you're not familiar with them, since they're commonly used in many Python libraries and applications; we've used them a few times previously in the book, but haven't called attention to them.) The reason that `TextBlock` is special is that setting up the numericalizer's vocab can take a long time (we have to read and tokenize every document to get the vocab). To be as efficient as possible it performs a few optimizations:
 #
 # - It saves the tokenized documents in a temporary folder, so it doesn't have to tokenize them more than once
 # - It runs multiple tokenization processes in parallel, to take advantage of your computer's CPUs
@@ -368,7 +369,7 @@ dls_lm.show_batch(max_n=2)
 # To convert the integer word indices into activations that we can use for our neural network, we will use embeddings, just like we did for collaborative filtering and tabular modeling. Then we'll feed those embeddings into a *recurrent neural network* (RNN), using an architecture called *AWD-LSTM* (we will show you how to write such a model from scratch in <<chapter_nlp_dive>>). As we discussed earlier, the embeddings in the pretrained model are merged with random embeddings added for words that weren't in the pretraining vocabulary. This is handled automatically inside `language_model_learner`:
 
 learn = language_model_learner(
-    dls_lm, AWD_LSTM, drop_mult=0.3, 
+    dls_lm, AWD_LSTM, drop_mult=0.3,
     metrics=[accuracy, Perplexity()]).to_fp16()
 
 # The loss function used by default is cross-entropy loss, since we essentially have a classification problem (the different categories being the words in our vocab). The *perplexity* metric used here is often used in NLP for language models: it is the exponential of the loss (i.e., `torch.exp(cross_entropy)`). We  also include the accuracy metric, to see how many times our model is right when trying to predict the next word, since cross-entropy (as we've seen) is both hard to interpret, and tells us more about the model's confidence than its accuracy.
@@ -381,7 +382,7 @@ learn = language_model_learner(
 
 learn.fit_one_cycle(1, 2e-2)
 
-# This model takes a while to train, so it's a good opportunity to talk about saving intermediary results. 
+# This model takes a while to train, so it's a good opportunity to talk about saving intermediary results.
 
 # ### Saving and Loading Models
 
@@ -413,12 +414,12 @@ learn.save_encoder('finetuned')
 TEXT = "I liked this movie because"
 N_WORDS = 40
 N_SENTENCES = 2
-preds = [learn.predict(TEXT, N_WORDS, temperature=0.75) 
+preds = [learn.predict(TEXT, N_WORDS, temperature=0.75)
          for _ in range(N_SENTENCES)]
 
 print("\n".join(preds))
 
-# As you can see, we add some randomness (we pick a random word based on the probabilities returned by the model) so we don't get exactly the same review twice. Our model doesn't have any programmed knowledge of the structure of a sentence or grammar rules, yet it has clearly learned a lot about English sentences: we can see it capitalizes properly (*I* is just transformed to *i* because our rules require two characters or more to consider a word as capitalized, so it's normal to see it lowercased) and is using consistent tense. The general review makes sense at first glance, and it's only if you read carefully that you can notice something is a bit off. Not bad for a model trained in a couple of hours! 
+# As you can see, we add some randomness (we pick a random word based on the probabilities returned by the model) so we don't get exactly the same review twice. Our model doesn't have any programmed knowledge of the structure of a sentence or grammar rules, yet it has clearly learned a lot about English sentences: we can see it capitalizes properly (*I* is just transformed to *i* because our rules require two characters or more to consider a word as capitalized, so it's normal to see it lowercased) and is using consistent tense. The general review makes sense at first glance, and it's only if you read carefully that you can notice something is a bit off. Not bad for a model trained in a couple of hours!
 #
 # But our end goal wasn't to train a model to generate reviews, but to classify them... so let's use this model to do just that.
 
@@ -429,8 +430,8 @@ print("\n".join(preds))
 # This means that the structure of our `DataBlock` for NLP classification will look very familiar. It's actually nearly the same as we've seen for the many image classification datasets we've worked with:
 
 dls_clas = DataBlock(
-    blocks=(TextBlock.from_folder(path, vocab=dls_lm.vocab),CategoryBlock),
-    get_y = parent_label,
+    blocks=(TextBlock.from_folder(path, vocab=dls_lm.vocab), CategoryBlock),
+    get_y=parent_label,
     get_items=partial(get_text_files, folders=['train', 'test']),
     splitter=GrandparentSplitter(valid_name='test')
 ).dataloaders(path, path=path, bs=128, seq_len=72)
@@ -462,7 +463,7 @@ nums_samp.map(len)
 #
 # We can now create a model to classify our texts:
 
-learn = text_classifier_learner(dls_clas, AWD_LSTM, drop_mult=0.5, 
+learn = text_classifier_learner(dls_clas, AWD_LSTM, drop_mult=0.5,
                                 metrics=accuracy).to_fp16()
 
 # The final step prior to training the classifier is to load the encoder from our fine-tuned language model. We use `load_encoder` instead of `load` because we only have pretrained weights available for the encoder; `load` by default raises an exception if an incomplete model is loaded:
@@ -478,17 +479,17 @@ learn.fit_one_cycle(1, 2e-2)
 # In just one epoch we get the same result as our training in <<chapter_intro>>: not too bad! We can pass `-2` to `freeze_to` to freeze all except the last two parameter groups:
 
 learn.freeze_to(-2)
-learn.fit_one_cycle(1, slice(1e-2/(2.6**4),1e-2))
+learn.fit_one_cycle(1, slice(1e-2 / (2.6**4), 1e-2))
 
 # Then we can unfreeze a bit more, and continue training:
 
 learn.freeze_to(-3)
-learn.fit_one_cycle(1, slice(5e-3/(2.6**4),5e-3))
+learn.fit_one_cycle(1, slice(5e-3 / (2.6**4), 5e-3))
 
 # And finally, the whole model!
 
 learn.unfreeze()
-learn.fit_one_cycle(2, slice(1e-3/(2.6**4),1e-3))
+learn.fit_one_cycle(2, slice(1e-3 / (2.6**4), 1e-3))
 
 # We reached 94.3% accuracy, which was state-of-the-art performance just three years ago. By training another model on all the texts read backwards and averaging the predictions of those two models, we can even get to 95.1% accuracy, which was the state of the art introduced by the ULMFiT paper. It was only beaten a few months ago, by fine-tuning a much bigger model and using expensive data augmentation techniques (translating sentences in another language and back, using another model for translation).
 #
@@ -551,5 +552,3 @@ learn.fit_one_cycle(2, slice(1e-3/(2.6**4),1e-3))
 
 # 1. See what you can learn about language models and disinformation. What are the best language models today? Take a look at some of their outputs. Do you find them convincing? How could a bad actor best use such a model to create conflict and uncertainty?
 # 1. Given the limitation that models are unlikely to be able to consistently recognize machine-generated texts, what other approaches may be needed to handle large-scale disinformation campaigns that leverage deep learning?
-
-
