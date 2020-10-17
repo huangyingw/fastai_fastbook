@@ -4,3 +4,6 @@
 [submodule "pytorch"]
 	path = pytorch
 	url = git@github.com:pytorch/pytorch.git
+[submodule "vision"]
+	path = vision
+	url = git@github.com:pytorch/vision.git
