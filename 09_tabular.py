@@ -14,21 +14,24 @@
 #     name: python3
 # ---
 
-#hide
-# !pip install -Uqq fastbook
+# hide
+from waterfall_chart import plot as waterfall
+from treeinterpreter import treeinterpreter
+import warnings
+from sklearn.inspection import plot_partial_dependence
+from IPython.display import Image, display_svg, SVG
+from dtreeviz.trees import *
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
+from fastai.tabular.all import *
+from pandas.api.types import is_string_dtype, is_numeric_dtype, is_categorical_dtype
+from kaggle import api
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
 # + hide_input=false
-#hide
-from fastbook import *
-from kaggle import api
-from pandas.api.types import is_string_dtype, is_numeric_dtype, is_categorical_dtype
-from fastai.tabular.all import *
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.tree import DecisionTreeRegressor
-from dtreeviz.trees import *
-from IPython.display import Image, display_svg, SVG
+# hide
 
 pd.options.display.max_rows = 20
 pd.options.display.max_columns = 8
@@ -146,7 +149,6 @@ pd.options.display.max_columns = 8
 #
 # The easiest way to download Kaggle datasets is to use the Kaggle API. You can install this using `pip` by running this in a notebook cell:
 #
-#     # !pip install kaggle
 #
 # You need an API key to use the Kaggle API; to get one, click on your profile picture on the Kaggle website, and choose My Account, then click Create New API Token. This will save a file called *kaggle.json* to your PC. You need to copy this key on your GPU server. To do so, open the file you downloaded, copy the contents, and paste them in the following cell in the notebook associated with this chapter (e.g., `creds = '{"username":"xxx","key":"xxx"}'`):
 
@@ -165,7 +167,7 @@ if not cred_path.exists():
 path = URLs.path('bluebook')
 path
 
-#hide
+# hide
 Path.BASE_PATH = path
 
 # And use the Kaggle API to download the dataset to that path, and extract it:
@@ -173,8 +175,8 @@ Path.BASE_PATH = path
 # +
 if not path.exists():
     path.mkdir()
-api.competition_download_cli('bluebook-for-bulldozers', path=path)
-file_extract(path/'bluebook-for-bulldozers.zip')
+    api.competition_download_cli('bluebook-for-bulldozers', path=path)
+    file_extract(path / 'bluebook-for-bulldozers.zip')
 
 path.ls(file_type='text')
 # -
@@ -194,7 +196,7 @@ path.ls(file_type='text')
 #
 # Let's load our data and have a look at the columns:
 
-df = pd.read_csv(path/'TrainAndValid.csv', low_memory=False)
+df = pd.read_csv(path / 'TrainAndValid.csv', low_memory=False)
 
 df.columns
 
@@ -206,7 +208,7 @@ df['ProductSize'].unique()
 
 # We can tell Pandas about a suitable ordering of these levels like so:
 
-sizes = 'Large','Large / Medium','Medium','Small','Mini','Compact'
+sizes = 'Large', 'Large / Medium', 'Medium', 'Small', 'Mini', 'Compact'
 
 df['ProductSize'] = df['ProductSize'].astype('category')
 df['ProductSize'].cat.set_categories(sizes, ordered=True, inplace=True)
@@ -259,7 +261,7 @@ df = add_datepart(df, 'saledate')
 
 # Let's do the same for the test set while we're there:
 
-df_test = pd.read_csv(path/'Test.csv', low_memory=False)
+df_test = pd.read_csv(path / 'Test.csv', low_memory=False)
 df_test = add_datepart(df_test, 'saledate')
 
 # We can see that there are now lots of new columns in our DataFrame:
@@ -292,38 +294,38 @@ procs = [Categorify, FillMissing]
 # To do this we use `np.where`, a useful function that returns (as the first element of a tuple) the indices of all `True` values:
 
 # +
-cond = (df.saleYear<2011) | (df.saleMonth<10)
-train_idx = np.where( cond)[0]
+cond = (df.saleYear < 2011) | (df.saleMonth < 10)
+train_idx = np.where(cond)[0]
 valid_idx = np.where(~cond)[0]
 
-splits = (list(train_idx),list(valid_idx))
+splits = (list(train_idx), list(valid_idx))
 # -
 
 # `TabularPandas` needs to be told which columns are continuous and which are categorical. We can handle that automatically using the helper function `cont_cat_split`:
 
-cont,cat = cont_cat_split(df, 1, dep_var=dep_var)
+cont, cat = cont_cat_split(df, 1, dep_var=dep_var)
 
 to = TabularPandas(df, procs, cat, cont, y_names=dep_var, splits=splits)
 
 # A `TabularPandas` behaves a lot like a fastai `Datasets` object, including providing `train` and `valid` attributes:
 
-len(to.train),len(to.valid)
+len(to.train), len(to.valid)
 
 # We can see that the data is still displayed as strings for categories (we only show a few columns here because the full table is too big to fit on a page):
 
-#hide_output
+# hide_output
 to.show(3)
 
-#hide_input
+# hide_input
 to1 = TabularPandas(df, procs, ['state', 'ProductGroup', 'Drive_System', 'Enclosure'], [], y_names=dep_var, splits=splits)
 to1.show(3)
 
 # However, the underlying items are all numeric:
 
-#hide_output
+# hide_output
 to.items.head(3)
 
-#hide_input
+# hide_input
 to1.items[['state', 'ProductGroup', 'Drive_System', 'Enclosure']].head(3)
 
 # The conversion of categorical columns to numbers is done by simply replacing each unique level with a number. The numbers associated with the levels are chosen consecutively as they are seen in a column, so there's no particular meaning to the numbers in categorical columns after conversion. The exception is if you first convert a column to a Pandas ordered category (as we did for `ProductSize` earlier), in which case the ordering you chose is used. We can see the mapping by looking at the `classes` attribute:
@@ -332,7 +334,7 @@ to.classes['ProductSize']
 
 # Since it takes a minute or so to process the data to get to this point, we should save it—that way in the future we can continue our work from here without rerunning the previous steps. fastai provides a `save` method that uses Python's *pickle* system to save nearly any Python object:
 
-(path/'to.pkl').save(to)
+(path / 'to.pkl').save(to)
 
 # To read this back later, you would type:
 #
@@ -346,16 +348,16 @@ to.classes['ProductSize']
 
 # To begin, we define our independent and dependent variables:
 
-#hide
-to = (path/'to.pkl').load()
+# hide
+to = (path / 'to.pkl').load()
 
-xs,y = to.train.xs,to.train.y
-valid_xs,valid_y = to.valid.xs,to.valid.y
+xs, y = to.train.xs, to.train.y
+valid_xs, valid_y = to.valid.xs, to.valid.y
 
 # Now that our data is all numeric, and there are no missing values, we can create a decision tree:
 
 m = DecisionTreeRegressor(max_leaf_nodes=4)
-m.fit(xs, y);
+m.fit(xs, y)
 
 # To keep it simple, we've told sklearn to just create four *leaf nodes*. To see what it's learned, we can display the tree:
 
@@ -375,13 +377,13 @@ draw_tree(m, xs, size=7, leaves_parallel=True, precision=2)
 
 samp_idx = np.random.permutation(len(y))[:500]
 dtreeviz(m, xs.iloc[samp_idx], y.iloc[samp_idx], xs.columns, dep_var,
-        fontname='DejaVu Sans', scale=1.6, label_fontsize=10,
-        orientation='LR')
+         fontname='DejaVu Sans', scale=1.6, label_fontsize=10,
+         orientation='LR')
 
 # This shows a chart of the distribution of the data for each split point. We can clearly see that there's a problem with our `YearMade` data: there are bulldozers made in the year 1000, apparently! Presumably this is actually just a missing value code (a value that doesn't otherwise appear in the data and that is used as a placeholder in cases where a value is missing). For modeling purposes, 1000 is fine, but as you can see this outlier makes visualization the values we are interested in more difficult. So, let's replace it with 1950:
 
-xs.loc[xs['YearMade']<1900, 'YearMade'] = 1950
-valid_xs.loc[valid_xs['YearMade']<1900, 'YearMade'] = 1950
+xs.loc[xs['YearMade'] < 1900, 'YearMade'] = 1950
+valid_xs.loc[valid_xs['YearMade'] < 1900, 'YearMade'] = 1950
 
 # That change makes the split much clearer in the tree visualization, even although it doesn't actually change the result of the model in any significant way. This is a great example of how resilient decision trees are to data issues!
 
@@ -389,19 +391,19 @@ valid_xs.loc[valid_xs['YearMade']<1900, 'YearMade'] = 1950
 m = DecisionTreeRegressor(max_leaf_nodes=4).fit(xs, y)
 
 dtreeviz(m, xs.iloc[samp_idx], y.iloc[samp_idx], xs.columns, dep_var,
-        fontname='DejaVu Sans', scale=1.6, label_fontsize=10,
-        orientation='LR')
+         fontname='DejaVu Sans', scale=1.6, label_fontsize=10,
+         orientation='LR')
 # -
 
 # Let's now have the decision tree algorithm build a bigger tree. Here, we are not passing in any stopping criteria such as `max_leaf_nodes`:
 
 m = DecisionTreeRegressor()
-m.fit(xs, y);
+m.fit(xs, y)
 
 
 # We'll create a little function to check the root mean squared error of our model (`m_rmse`), since that's how the competition was judged:
 
-def r_mse(pred,y): return round(math.sqrt(((pred-y)**2).mean()), 6)
+def r_mse(pred, y): return round(math.sqrt(((pred - y)**2).mean()), 6)
 def m_rmse(m, xs, y): return r_mse(m.predict(xs), y)
 
 
@@ -468,7 +470,7 @@ m.get_n_leaves()
 # In essence a random forest is a model that averages the predictions of a large number of decision trees, which are generated by randomly varying various parameters that specify what data is used to train the tree and other tree parameters. Bagging is a particular approach to "ensembling," or combining the results of multiple models together. To see how it works in practice, let's get started on creating our own random forest!
 
 # +
-#hide
+# hide
 # pip install —pre -f https://sklearn-nightly.scdn8.secure.raxcdn.com scikit-learn —U
 # -
 
@@ -481,11 +483,11 @@ m.get_n_leaves()
 def rf(xs, y, n_estimators=40, max_samples=200_000,
        max_features=0.5, min_samples_leaf=5, **kwargs):
     return RandomForestRegressor(n_jobs=-1, n_estimators=n_estimators,
-        max_samples=max_samples, max_features=max_features,
-        min_samples_leaf=min_samples_leaf, oob_score=True).fit(xs, y)
+                                 max_samples=max_samples, max_features=max_features,
+                                 min_samples_leaf=min_samples_leaf, oob_score=True).fit(xs, y)
 
 
-m = rf(xs, y);
+m = rf(xs, y)
 
 # Our validation RMSE is now much improved over our last result produced by the `DecisionTreeRegressor`, which made just one tree using all the available data:
 
@@ -509,7 +511,7 @@ r_mse(preds.mean(0), valid_y)
 
 # Let's see what happens to the RMSE as we add more and more trees. As you can see, the improvement levels off quite a bit after around 30 trees:
 
-plt.plot([r_mse(preds[:i+1].mean(0), valid_y) for i in range(40)]);
+plt.plot([r_mse(preds[:i + 1].mean(0), valid_y) for i in range(40)])
 
 # The performance on our validation set is worse than on our training set. But is that because we're overfitting, or because the validation set covers a different time period, or a bit of both? With the existing information we've seen, we can't tell. However, random forests have a very clever trick called *out-of-bag* (OOB) error that can help us with this (and more!).
 
@@ -567,8 +569,8 @@ preds_std[:5]
 # It's not normally enough to just to know that a model can make accurate predictions—we also want to know *how* it's making predictions. *feature importance* gives us insight into this. We can get these directly from sklearn's random forest by looking in the `feature_importances_` attribute. Here's a simple function we can use to pop them into a DataFrame and sort them:
 
 def rf_feat_importance(m, df):
-    return pd.DataFrame({'cols':df.columns, 'imp':m.feature_importances_}
-                       ).sort_values('imp', ascending=False)
+    return pd.DataFrame({'cols': df.columns, 'imp': m.feature_importances_}
+                        ).sort_values('imp', ascending=False)
 
 
 # The feature importances for our model show that the first few most important columns have much higher importance scores than the rest, with (not surprisingly) `YearMade` and `ProductSize` being at the top of the list:
@@ -581,9 +583,9 @@ fi[:10]
 
 # +
 def plot_fi(fi):
-    return fi.plot('cols', 'imp', 'barh', figsize=(12,7), legend=False)
+    return fi.plot('cols', 'imp', 'barh', figsize=(12, 7), legend=False)
 
-plot_fi(fi[:30]);
+plot_fi(fi[:30])
 # -
 
 # The way these importances are calculated is quite simple yet elegant. The feature importance algorithm loops through each tree, and then recursively explores each branch. At each branch, it looks to see what feature was used for that split, and how much the model improves as a result of that split. The improvement (weighted by the number of rows in that group) is added to the importance score for that feature. This is summed across all branches of all trees, and finally the scores are normalized such that they add to 1.
@@ -592,7 +594,7 @@ plot_fi(fi[:30]);
 
 # It seems likely that we could use just a subset of the columns by removing the variables of low importance and still get good results. Let's try just keeping those with a feature importance greater than 0.005:
 
-to_keep = fi[fi.imp>0.005].cols
+to_keep = fi[fi.imp > 0.005].cols
 len(to_keep)
 
 # We can retrain our model using just this subset of the columns:
@@ -614,7 +616,7 @@ len(xs.columns), len(xs_imp.columns)
 #
 # This also makes our feature importance plot easier to interpret. Let's look at it again:
 
-plot_fi(rf_feat_importance(m, xs_imp));
+plot_fi(rf_feat_importance(m, xs_imp))
 
 # One thing that makes this harder to interpret is that there seem to be some variables with very similar meanings: for example, `ProductGroup` and `ProductGroupDesc`. Let's try to remove any redundent features.
 
@@ -633,7 +635,7 @@ cluster_columns(xs_imp)
 
 def get_oob(df):
     m = RandomForestRegressor(n_estimators=40, min_samples_leaf=15,
-        max_samples=50000, max_features=0.5, n_jobs=-1, oob_score=True)
+                              max_samples=50000, max_features=0.5, n_jobs=-1, oob_score=True)
     m.fit(df, y)
     return m.oob_score_
 
@@ -644,10 +646,10 @@ get_oob(xs_imp)
 
 # Now we try removing each of our potentially redundant variables, one at a time:
 
-{c:get_oob(xs_imp.drop(c, axis=1)) for c in (
-    'saleYear', 'saleElapsed', 'ProductGroupDesc','ProductGroup',
+{c: get_oob(xs_imp.drop(c, axis=1)) for c in (
+    'saleYear', 'saleElapsed', 'ProductGroupDesc', 'ProductGroup',
     'fiModelDesc', 'fiBaseModel',
-    'Hydraulics_Flow','Grouser_Tracks', 'Coupler_System')}
+    'Hydraulics_Flow', 'Grouser_Tracks', 'Coupler_System')}
 
 # Now let's try dropping multiple variables. We'll drop one from each of the tightly aligned pairs we noticed earlier. Let's see what that does:
 
@@ -659,13 +661,13 @@ get_oob(xs_imp.drop(to_drop, axis=1))
 xs_final = xs_imp.drop(to_drop, axis=1)
 valid_xs_final = valid_xs_imp.drop(to_drop, axis=1)
 
-(path/'xs_final.pkl').save(xs_final)
-(path/'valid_xs_final.pkl').save(valid_xs_final)
+(path / 'xs_final.pkl').save(xs_final)
+(path / 'valid_xs_final.pkl').save(valid_xs_final)
 
 # We can load them back later with:
 
-xs_final = (path/'xs_final.pkl').load()
-valid_xs_final = (path/'valid_xs_final.pkl').load()
+xs_final = (path / 'xs_final.pkl').load()
+valid_xs_final = (path / 'valid_xs_final.pkl').load()
 
 # Now we can check our RMSE again, to confirm that the accuracy hasn't substantially changed.
 
@@ -680,7 +682,7 @@ m_rmse(m, xs_final, y), m_rmse(m, valid_xs_final, valid_y)
 
 p = valid_xs_final['ProductSize'].value_counts(sort=False).plot.barh()
 c = to.classes['ProductSize']
-plt.yticks(range(len(c)), c);
+plt.yticks(range(len(c)), c)
 
 # The largrest group is `#na#`, which is the label fastai applies to missing values.
 #
@@ -703,11 +705,10 @@ ax = valid_xs_final['YearMade'].hist()
 # With these averages, we can then plot each of these years on the x-axis, and each of the predictions on the y-axis. This, finally, is a partial dependence plot. Let's take a look:
 
 # +
-from sklearn.inspection import plot_partial_dependence
 
-fig,ax = plt.subplots(figsize=(12, 4))
-plot_partial_dependence(m, valid_xs_final, ['YearMade','ProductSize'],
-                        grid_resolution=20, ax=ax);
+fig, ax = plt.subplots(figsize=(12, 4))
+plot_partial_dependence(m, valid_xs_final, ['YearMade', 'ProductSize'],
+                        grid_resolution=20, ax=ax)
 # -
 
 # Looking first of all at the `YearMade` plot, and specifically at the section covering the years after 1990 (since as we noted this is where we have the most data), we can see a nearly linear relationship between year and price. Remember that our dependent variable is after taking the logarithm, so this means that in practice there is an exponential increase in price. This is what we would expect: depreciation is generally recognized as being a multiplicative factor over time, so, for a given sale date, varying year made ought to show an exponential relationship with sale price.
@@ -746,17 +747,14 @@ plot_partial_dependence(m, valid_xs_final, ['YearMade','ProductSize'],
 #
 # Thinking back to our bear detector, this mirrors the advice that we provided in <<chapter_production>>—it is often a good idea to build a model first and then do your data cleaning, rather than vice versa. The model can help you identify potentially problematic data issues.
 #
-# It can also help you identifyt which factors influence specific predictions, with tree interpreters.
+# It can also help you identify which factors influence specific predictions, with tree interpreters.
 
 # ### Tree Interpreter
 
 # +
-#hide
-import warnings
+# hide
 warnings.simplefilter('ignore', FutureWarning)
 
-from treeinterpreter import treeinterpreter
-from waterfall_chart import plot as waterfall
 # -
 
 # At the start of this section, we said that we wanted to be able to answer five questions:
@@ -769,8 +767,6 @@ from waterfall_chart import plot as waterfall
 #
 # We've handled four of these already; only the second question remains. To answer this question, we need to use the `treeinterpreter` library. We'll also use the `waterfallcharts` library to draw the chart of the results.
 #
-#     # !pip install treeinterpreter
-#     # !pip install waterfallcharts
 
 # We have already seen how to compute feature importances across the entire random forest. The basic idea was to look at the contribution of each variable to improving the model, at each branch of every tree, and then add up all of these contributions per variable.
 #
@@ -782,7 +778,7 @@ row = valid_xs_final.iloc[:5]
 
 # We can then pass these to `treeinterpreter`:
 
-prediction,bias,contributions = treeinterpreter.predict(m, row.values)
+prediction, bias, contributions = treeinterpreter.predict(m, row.values)
 
 # `prediction` is simply the prediction that the random forest makes. `bias` is the prediction based on taking the mean of the dependent variable (i.e., the *model* that is the root of every tree). `contributions` is the most interesting bit—it tells us the total change in predicition due to each of the independent variables. Therefore, the sum of `contributions` plus `bias` must equal the `prediction`, for each row. Let's look just at the first row:
 
@@ -791,7 +787,7 @@ prediction[0], bias[0], contributions[0].sum()
 # The clearest way to display the contributions is with a *waterfall plot*. This shows how the positive and negative contributions from all the independent variables sum up to create the final prediction, which is the righthand column labeled "net" here:
 
 waterfall(valid_xs_final.columns, contributions[0], threshold=0.08,
-          rotation_value=45,formatting='{:,.3f}');
+          rotation_value=45, formatting='{:,.3f}')
 
 # This kind of information is most useful in production, rather than during model development. You can use it to provide useful information to users of your data product about the underlying reasoning behind the predictions.
 
@@ -803,38 +799,38 @@ waterfall(valid_xs_final.columns, contributions[0], threshold=0.08,
 
 # ### The Extrapolation Problem
 
-#hide
+# hide
 np.random.seed(42)
 
 # Let's consider the simple task of making predictions from 40 data points showing a slightly noisy linear relationship:
 
-x_lin = torch.linspace(0,20, steps=40)
+x_lin = torch.linspace(0, 20, steps=40)
 y_lin = x_lin + torch.randn_like(x_lin)
-plt.scatter(x_lin, y_lin);
+plt.scatter(x_lin, y_lin)
 
 # Although we only have a single independent variable, sklearn expects a matrix of independent variables, not a single vector. So we have to turn our vector into a matrix with one column. In other words, we have to change the *shape* from `[40]` to `[40,1]`. One way to do that is with the `unsqueeze` method, which adds a new unit axis to a tensor at the requested dimension:
 
 xs_lin = x_lin.unsqueeze(1)
-x_lin.shape,xs_lin.shape
+x_lin.shape, xs_lin.shape
 
 # A more flexible approach is to slice an array or tensor with the special value `None`, which introduces an additional unit axis at that location:
 
-x_lin[:,None].shape
+x_lin[:, None].shape
 
 # We can now create a random forest for this data. We'll use only the first 30 rows to train the model:
 
-m_lin = RandomForestRegressor().fit(xs_lin[:30],y_lin[:30])
+m_lin = RandomForestRegressor().fit(xs_lin[:30], y_lin[:30])
 
 # Then we'll test the model on the full dataset. The blue dots are the training data, and the red dots are the predictions:
 
 plt.scatter(x_lin, y_lin, 20)
-plt.scatter(x_lin, m_lin.predict(xs_lin), color='red', alpha=0.5);
+plt.scatter(x_lin, m_lin.predict(xs_lin), color='red', alpha=0.5)
 
 # We have a big problem! Our predictions outside of the domain that our training data covered are all too low. Why do you suppose this is?
 #
 # Remember, a random forest just averages the predictions of a number of trees. And a tree simply predicts the average value of the rows in a leaf. Therefore, a tree and a random forest can never predict values outside of the range of the training data. This is particularly problematic for data where there is a trend over time, such as inflation, and you wish to make predictions for a future time.. Your predictions will be systematically too low.
 #
-# But the problem iextends beyond time variables. Random forests are not able to extrapolate outside of the types of data they have seen, in a more general sense. That's why we need to make sure our validation set does not contain out-of-domain data.
+# But the problem extends beyond time variables. Random forests are not able to extrapolate outside of the types of data they have seen, in a more general sense. That's why we need to make sure our validation set does not contain out-of-domain data.
 
 # ### Finding Out-of-Domain Data
 
@@ -844,7 +840,7 @@ plt.scatter(x_lin, m_lin.predict(xs_lin), color='red', alpha=0.5);
 
 # +
 df_dom = pd.concat([xs_final, valid_xs_final])
-is_valid = np.array([0]*len(xs_final) + [1]*len(valid_xs_final))
+is_valid = np.array([0] * len(xs_final) + [1] * len(valid_xs_final))
 
 m = rf(df_dom, is_valid)
 rf_feat_importance(m, df_dom)[:6]
@@ -858,15 +854,15 @@ rf_feat_importance(m, df_dom)[:6]
 m = rf(xs_final, y)
 print('orig', m_rmse(m, valid_xs_final, valid_y))
 
-for c in ('SalesID','saleElapsed','MachineID'):
-    m = rf(xs_final.drop(c,axis=1), y)
-    print(c, m_rmse(m, valid_xs_final.drop(c,axis=1), valid_y))
+for c in ('SalesID', 'saleElapsed', 'MachineID'):
+    m = rf(xs_final.drop(c, axis=1), y)
+    print(c, m_rmse(m, valid_xs_final.drop(c, axis=1), valid_y))
 # -
 
 # It looks like we should be able to remove `SalesID` and `MachineID` without losing any accuracy. Let's check:
 
 # +
-time_vars = ['SalesID','MachineID']
+time_vars = ['SalesID', 'MachineID']
 xs_final_time = xs_final.drop(time_vars, axis=1)
 valid_xs_time = valid_xs_final.drop(time_vars, axis=1)
 
@@ -874,15 +870,15 @@ m = rf(xs_final_time, y)
 m_rmse(m, valid_xs_time, valid_y)
 # -
 
-# Removing these variables has slightly improved the model's accuracy; but more importantly, it should make it more resilient over time, and easier to maintain and understand. We recommend that for all datasets you try building a model where your dependent variable is `is_valid`, like we did heree. It can often uncover subtle *domain shift* issues that you may otherwise miss.
+# Removing these variables has slightly improved the model's accuracy; but more importantly, it should make it more resilient over time, and easier to maintain and understand. We recommend that for all datasets you try building a model where your dependent variable is `is_valid`, like we did here. It can often uncover subtle *domain shift* issues that you may otherwise miss.
 #
 # One thing that might help in our case is to simply avoid using old data. Often, old data shows relationships that just aren't valid any more. Let's try just using the most recent few years of the data:
 
-xs['saleYear'].hist();
+xs['saleYear'].hist()
 
 # Here's the result of training on this subset:
 
-filt = xs['saleYear']>2004
+filt = xs['saleYear'] > 2004
 xs_filt = xs_final_time[filt]
 y_filt = y[filt]
 
@@ -897,7 +893,7 @@ m_rmse(m, xs_filt, y_filt), m_rmse(m, valid_xs_time, valid_y)
 
 # We can use the same approach to build a neural network model. Let's first replicate the steps we took to set up the `TabularPandas` object:
 
-df_nn = pd.read_csv(path/'TrainAndValid.csv', low_memory=False)
+df_nn = pd.read_csv(path / 'TrainAndValid.csv', low_memory=False)
 df_nn['ProductSize'] = df_nn['ProductSize'].astype('category')
 df_nn['ProductSize'].cat.set_categories(sizes, ordered=True, inplace=True)
 df_nn[dep_var] = np.log(df_nn[dep_var])
@@ -909,7 +905,7 @@ df_nn_final = df_nn[list(xs_final_time.columns) + [dep_var]]
 
 # Categorical columns are handled very differently in neural networks, compared to decision tree approaches. As we saw in <<chapter_collab>>, in a neural net a great way to handle categorical variables is by using embeddings. To create embeddings, fastai needs to determine which columns should be treated as categorical variables. It does this by comparing the number of distinct levels in the variable to the value of the `max_card` parameter. If it's lower, fastai will treat the variable as categorical. Embedding sizes larger than 10,000 should generally only be used after you've tested whether there are better ways to group the variable, so we'll use 9,000 as our `max_card`:
 
-cont_nn,cat_nn = cont_cat_split(df_nn_final, max_card=9000, dep_var=dep_var)
+cont_nn, cat_nn = cont_cat_split(df_nn_final, max_card=9000, dep_var=dep_var)
 
 # In this case, however, there's one variable that we absolutely do not want to treat as categorical: the `saleElapsed` variable. A categorical variable cannot, by definition, extrapolate outside the range of values that it has seen, but we want to be able to predict auction sale prices in the future. Therefore, we need to make this a continuous variable:
 
@@ -925,7 +921,7 @@ df_nn_final[cat_nn].nunique()
 xs_filt2 = xs_filt.drop('fiModelDescriptor', axis=1)
 valid_xs_time2 = valid_xs_time.drop('fiModelDescriptor', axis=1)
 m2 = rf(xs_filt2, y_filt)
-m_rmse(m, xs_filt2, y_filt), m_rmse(m2, valid_xs_time2, valid_y)
+m_rmse(m2, xs_filt2, y_filt), m_rmse(m2, valid_xs_time2, valid_y)
 
 # There's minimal impact, so we will remove it as a predictor for our neural network:
 
@@ -944,15 +940,14 @@ dls = to_nn.dataloaders(1024)
 # As we've discussed, it's a good idea to set `y_range` for regression models, so let's find the min and max of our dependent variable:
 
 y = to_nn.train.y
-y.min(),y.max()
+y.min(), y.max()
 
 # We can now create the `Learner` to create this tabular model. As usual, we use the application-specific learner function, to take advantage of its application-customized defaults. We set the loss function to MSE, since that's what this competition uses.
 #
 # By default, for tabular data fastai creates a neural network with two hidden layers, with 200 and 100 activations, respectively. This works quite well for small datasets, but here we've got quite a large dataset, so we increase the layer sizes to 500 and 250:
 
-from fastai.tabular.all import *
 
-learn = tabular_learner(dls, y_range=(8,12), layers=[500,250],
+learn = tabular_learner(dls, y_range=(8, 12), layers=[500, 250],
                         n_out=1, loss_func=F.mse_loss)
 
 learn.lr_find()
@@ -963,8 +958,8 @@ learn.fit_one_cycle(5, 1e-2)
 
 # We can use our `r_mse` function to compare the result to the random forest result we got earlier:
 
-preds,targs = learn.get_preds()
-r_mse(preds,targs)
+preds, targs = learn.get_preds()
+r_mse(preds, targs)
 
 # It's quite a bit better than the random forest (although it took longer to train, and it's fussier about hyperparameter tuning).
 #
@@ -995,11 +990,11 @@ learn.save('nn')
 # One minor issue we have to be aware of is that our PyTorch model and our sklearn model create data of different types: PyTorch gives us a rank-2 tensor (i.e, a column matrix), whereas NumPy gives us a rank-1 array (a vector). `squeeze` removes any unit axes from a tensor, and `to_np` converts it into a NumPy array:
 
 rf_preds = m.predict(valid_xs_time)
-ens_preds = (to_np(preds.squeeze()) + rf_preds) /2
+ens_preds = (to_np(preds.squeeze()) + rf_preds) / 2
 
 # This gives us a better result than either model achieved on its own:
 
-r_mse(ens_preds,valid_y)
+r_mse(ens_preds, valid_y)
 
 # In fact, this result is better than any score shown on the Kaggle leaderboard. It's not directly comparable, however, because the Kaggle leaderboard uses a separate dataset that we do not have access to. Kaggle does not allow us to submit to this old competition to find out how we would done, but our results certainly look very encouraging!
 
@@ -1093,6 +1088,6 @@ r_mse(ens_preds,valid_y)
 # ### Further Research
 
 # 1. Pick a competition on Kaggle with tabular data (current or past) and try to adapt the techniques seen in this chapter to get the best possible results. Compare your results to the private leaderboard.
-# 1. Implement the decision tree algorithm in this chapter from scratch yourself, and try it on the datase you used in the first exercise.
+# 1. Implement the decision tree algorithm in this chapter from scratch yourself, and try it on the dataset you used in the first exercise.
 # 1. Use the embeddings from the neural net in this chapter in a random forest, and see if you can improve on the random forest results we saw.
 # 1. Explain what each line of the source of `TabularModel` does (with the exception of the `BatchNorm1d` and `Dropout` layers).
