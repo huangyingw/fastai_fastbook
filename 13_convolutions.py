@@ -15,15 +15,15 @@
 #     name: python3
 # ---
 
-#hide
-# !pip install -Uqq fastbook
+# hide
+from fastai.callback.hook import *
+from fastbook import *
+from fastai.vision.all import *
 import fastbook
 fastbook.setup_book()
 
 # +
-#hide
-from fastai.vision.all import *
-from fastbook import *
+# hide
 
 matplotlib.rc('image', cmap='Greys')
 
@@ -55,42 +55,42 @@ matplotlib.rc('image', cmap='Greys')
 #
 # Let's do this with code. First, we create a little 3×3 matrix like so:
 
-top_edge = tensor([[-1,-1,-1],
-                   [ 0, 0, 0],
-                   [ 1, 1, 1]]).float()
+top_edge = tensor([[-1, -1, -1],
+                   [0, 0, 0],
+                   [1, 1, 1]]).float()
 
 # We're going to call this our kernel (because that's what fancy computer vision researchers call these). And we'll need an image, of course:
 
 path = untar_data(URLs.MNIST_SAMPLE)
 
-#hide
+# hide
 Path.BASE_PATH = path
 
-im3 = Image.open(path/'train'/'3'/'12.png')
-show_image(im3);
+im3 = Image.open(path / 'train' / '3' / '12.png')
+show_image(im3)
 
 # Now we're going to take the top 3×3-pixel square of our image, and multiply each of those values by each item in our kernel. Then we'll add them up, like so:
 
 im3_t = tensor(im3)
-im3_t[0:3,0:3] * top_edge
+im3_t[0:3, 0:3] * top_edge
 
-(im3_t[0:3,0:3] * top_edge).sum()
+(im3_t[0:3, 0:3] * top_edge).sum()
 
 # Not very interesting so far—all the pixels in the top-left corner are white. But let's pick a couple of more interesting spots:
 
-#hide_output
-df = pd.DataFrame(im3_t[:10,:20])
-df.style.set_properties(**{'font-size':'6pt'}).background_gradient('Greys')
+# hide_output
+df = pd.DataFrame(im3_t[:10, :20])
+df.style.set_properties(**{'font-size': '6pt'}).background_gradient('Greys')
 
 # <img alt="Top section of a digit" width="490" src="images/att_00059.png">
 
 # There's a top edge at cell 5,7. Let's repeat our calculation there:
 
-(im3_t[4:7,6:9] * top_edge).sum()
+(im3_t[4:7, 6:9] * top_edge).sum()
 
 # There's a right edge at cell 8,18. What does that give us?:
 
-(im3_t[7:10,17:20] * top_edge).sum()
+(im3_t[7:10, 17:20] * top_edge).sum()
 
 
 # As you can see, this little calculation is returning a high number where the 3×3-pixel square represents a top edge (i.e., where there are low values at the top of the square, and high values immediately underneath). That's because the `-1` values in our kernel have little impact in that case, but the `1` values have a lot.
@@ -106,10 +106,10 @@ df.style.set_properties(**{'font-size':'6pt'}).background_gradient('Greys')
 # Let's create a function to do this for one location, and check it matches our result from before:
 
 def apply_kernel(row, col, kernel):
-    return (im3_t[row-1:row+2,col-1:col+2] * kernel).sum()
+    return (im3_t[row - 1:row + 2, col - 1:col + 2] * kernel).sum()
 
 
-apply_kernel(5,7,top_edge)
+apply_kernel(5, 7, top_edge)
 
 # But note that we can't apply it to the corner (e.g., location 0,0), since there isn't a complete 3×3 square there.
 
@@ -121,17 +121,17 @@ apply_kernel(5,7,top_edge)
 
 # To get a grid of coordinates we can use a *nested list comprehension*, like so:
 
-[[(i,j) for j in range(1,5)] for i in range(1,5)]
+[[(i, j) for j in range(1, 5)] for i in range(1, 5)]
 
 # > note: Nested List Comprehensions: Nested list comprehensions are used a lot in Python, so if you haven't seen them before, take a few minutes to make sure you understand what's happening here, and experiment with writing your own nested list comprehensions.
 
 # Here's the result of applying our kernel over a coordinate grid:
 
 # +
-rng = range(1,27)
-top_edge3 = tensor([[apply_kernel(i,j,top_edge) for j in rng] for i in rng])
+rng = range(1, 27)
+top_edge3 = tensor([[apply_kernel(i, j, top_edge) for j in rng] for i in rng])
 
-show_image(top_edge3);
+show_image(top_edge3)
 # -
 
 # Looking good! Our top edges are black, and bottom edges are white (since they are the *opposite* of top edges). Now that our image contains negative numbers too, `matplotlib` has automatically changed our colors so that white is the smallest number in the image, black the highest, and zeros appear as gray.
@@ -139,16 +139,16 @@ show_image(top_edge3);
 # We can try the same thing for left edges:
 
 # +
-left_edge = tensor([[-1,1,0],
-                    [-1,1,0],
-                    [-1,1,0]]).float()
+left_edge = tensor([[-1, 1, 0],
+                    [-1, 1, 0],
+                    [-1, 1, 0]]).float()
 
-left_edge3 = tensor([[apply_kernel(i,j,left_edge) for j in rng] for i in rng])
+left_edge3 = tensor([[apply_kernel(i, j, left_edge) for j in rng] for i in rng])
 
-show_image(left_edge3);
+show_image(left_edge3)
 # -
 
-# As we mentioned before, a convolution is the operation of applying such a kernel over a grid in this way. In the paper ["A Guide to Convolution Arithmetic for Deep Learning"](https://arxiv.org/abs/1603.07285) there are many great diagrams showing how image kernels can be applied. Here's an example from the paper showing (at the bottom) a light blue 4×4 image, with a dark blue 3×3 kernel being applied, creating a 2×2 green output activation map at the top. 
+# As we mentioned before, a convolution is the operation of applying such a kernel over a grid in this way. In the paper ["A Guide to Convolution Arithmetic for Deep Learning"](https://arxiv.org/abs/1603.07285) there are many great diagrams showing how image kernels can be applied. Here's an example from the paper showing (at the bottom) a light blue 4×4 image, with a dark blue 3×3 kernel being applied, creating a 2×2 green output activation map at the top.
 
 # <img alt="Result of applying a 3×3 kernel to a 4×4 image" width="782" caption="Result of applying a 3×3 kernel to a 4×4 image (courtesy of Vincent Dumoulin and Francesco Visin)" id="three_ex_four_conv" src="images/att_00028.png">
 
@@ -170,12 +170,12 @@ show_image(left_edge3);
 # The second trick is that PyTorch can apply multiple kernels at the same time. So let's create the diagonal-edge kernels too, and then stack all four of our edge kernels into a single tensor:
 
 # +
-diag1_edge = tensor([[ 0,-1, 1],
+diag1_edge = tensor([[0, -1, 1],
                      [-1, 1, 0],
-                     [ 1, 0, 0]]).float()
-diag2_edge = tensor([[ 1,-1, 0],
-                     [ 0, 1,-1],
-                     [ 0, 0, 1]]).float()
+                     [1, 0, 0]]).float()
+diag2_edge = tensor([[1, -1, 0],
+                     [0, 1, -1],
+                     [0, 0, 1]]).float()
 
 edge_kernels = torch.stack([left_edge, top_edge, diag1_edge, diag2_edge])
 edge_kernels.shape
@@ -184,25 +184,25 @@ edge_kernels.shape
 # To test this, we'll need a `DataLoader` and a sample mini-batch. Let's use the data block API:
 
 # +
-mnist = DataBlock((ImageBlock(cls=PILImageBW), CategoryBlock), 
-                  get_items=get_image_files, 
+mnist = DataBlock((ImageBlock(cls=PILImageBW), CategoryBlock),
+                  get_items=get_image_files,
                   splitter=GrandparentSplitter(),
                   get_y=parent_label)
 
 dls = mnist.dataloaders(path)
-xb,yb = first(dls.valid)
+xb, yb = first(dls.valid)
 xb.shape
 # -
 
 # By default, fastai puts data on the GPU when using data blocks. Let's move it to the CPU for our examples:
 
-xb,yb = to_cpu(xb),to_cpu(yb)
+xb, yb = to_cpu(xb), to_cpu(yb)
 
 # One batch contains 64 images, each of 1 channel, with 28×28 pixels. `F.conv2d` can handle multichannel (i.e., color) images too. A *channel* is a single basic color in an image—for regular full-color images there are three channels, red, green, and blue. PyTorch represents an image as a rank-3 tensor, with dimensions `[channels, rows, columns]`.
 #
 # We'll see how to handle more than one channel later in this chapter. Kernels passed to `F.conv2d` need to be rank-4 tensors: `[channels_in, features_out, rows, columns]`. `edge_kernels` is currently missing one of these. We need to tell PyTorch that the number of input channels in the kernel is one, which we can do by inserting an axis of size one (this is known as a *unit axis*) in the first location, where the PyTorch docs show `in_channels` is expected. To insert a unit axis into a tensor, we use the `unsqueeze` method:
 
-edge_kernels.shape,edge_kernels.unsqueeze(1).shape
+edge_kernels.shape, edge_kernels.unsqueeze(1).shape
 
 # This is now the correct shape for `edge_kernels`. Let's pass this all to `conv2d`:
 
@@ -213,11 +213,11 @@ batch_features.shape
 
 # The output shape shows we gave 64 images in the mini-batch, 4 kernels, and 26×26 edge maps (we started with 28×28 images, but lost one pixel from each side as discussed earlier). We can see we get the same results as when we did this manually:
 
-show_image(batch_features[0,0]);
+show_image(batch_features[0, 0])
 
 # The most important trick that PyTorch has up its sleeve is that it can use the GPU to do all this work in parallel—that is, applying multiple kernels, to multiple images, across multiple channels. Doing lots of work in parallel is critical to getting GPUs to work efficiently; if we did each of these operations one at a time, we'd often run hundreds of times slower (and if we used our manual convolution loop from the previous section, we'd be millions of times slower!). Therefore, to become a strong deep learning practitioner, one skill to practice is giving your GPU plenty of work to do at a time.
 
-# It would be nice to not lose those two pixels on each axis. The way we do that is to add *padding*, which is simply additional pixels added around the outside of our image. Most commonly, pixels of zeros are added. 
+# It would be nice to not lose those two pixels on each axis. The way we do that is to add *padding*, which is simply additional pixels added around the outside of our image. Most commonly, pixels of zeros are added.
 
 # ### Strides and Padding
 
@@ -289,9 +289,9 @@ show_image(batch_features[0,0]);
 # Let's go back to the  basic neural network we had in <<chapter_mnist_basics>>. It was defined like this:
 
 simple_net = nn.Sequential(
-    nn.Linear(28*28,30),
+    nn.Linear(28 * 28, 30),
     nn.ReLU(),
-    nn.Linear(30,1)
+    nn.Linear(30, 1)
 )
 
 # We can view a model's definition:
@@ -303,9 +303,9 @@ simple_net
 # Here's a possible architecture:
 
 broken_cnn = sequential(
-    nn.Conv2d(1,30, kernel_size=3, padding=1),
+    nn.Conv2d(1, 30, kernel_size=3, padding=1),
     nn.ReLU(),
-    nn.Conv2d(30,1, kernel_size=3, padding=1)
+    nn.Conv2d(30, 1, kernel_size=3, padding=1)
 )
 
 # One thing to note here is that we didn't need to specify 28×28 as the input size. That's because a linear layer needs a weight in the weight matrix for every pixel, so it needs to know how many pixels there are, but a convolution is applied over each pixel automatically. The weights only depend on the number of input and output channels and the kernel size, as we saw in the previous section.
@@ -320,8 +320,9 @@ broken_cnn(xb).shape
 # Let's try that now. First, we'll define a function with the basic parameters we'll use in each convolution:
 
 def conv(ni, nf, ks=3, act=True):
-    res = nn.Conv2d(ni, nf, stride=2, kernel_size=ks, padding=ks//2)
-    if act: res = nn.Sequential(res, nn.ReLU())
+    res = nn.Conv2d(ni, nf, stride=2, kernel_size=ks, padding=ks // 2)
+    if act:
+        res = nn.Sequential(res, nn.ReLU())
     return res
 
 
@@ -334,11 +335,11 @@ def conv(ni, nf, ks=3, act=True):
 # Here is how we can build a simple CNN:
 
 simple_cnn = sequential(
-    conv(1 ,4),            #14x14
-    conv(4 ,8),            #7x7
-    conv(8 ,16),           #4x4
-    conv(16,32),           #2x2
-    conv(32,2, act=False), #1x1
+    conv(1, 4),  # 14x14
+    conv(4, 8),  # 7x7
+    conv(8, 16),  # 4x4
+    conv(16, 32),  # 2x2
+    conv(32, 2, act=False),  # 1x1
     Flatten(),
 )
 
@@ -438,13 +439,13 @@ m[0].bias.shape
 im = image2tensor(Image.open(image_bear()))
 im.shape
 
-show_image(im);
+show_image(im)
 
 # The first axis contains the channels, red, green, and blue:
 
-_,axs = subplots(1,3)
-for bear,ax,color in zip(im,axs,('Reds','Greens','Blues')):
-    show_image(255-bear, ax=ax, cmap=color)
+_, axs = subplots(1, 3)
+for bear, ax, color in zip(im, axs, ('Reds', 'Greens', 'Blues')):
+    show_image(255 - bear, ax=ax, cmap=color)
 
 # We saw what the convolution operation was for one filter on one channel of the image (our examples were done on a square). A convolutional layer will take an image with a certain number of channels (three for the first layer for regular RGB color images) and output an image with a different number of channels. Like our hidden size that represented the numbers of neurons in a linear layer, we can decide to have as many filters as we want, and each of them will be able to specialize, some to detect horizontal edges, others to detect vertical edges and so forth, to give something like we studied in <<chapter_production>>.
 #
@@ -480,20 +481,20 @@ for bear,ax,color in zip(im,axs,('Reds','Greens','Blues')):
 
 path = untar_data(URLs.MNIST)
 
-#hide
+# hide
 Path.BASE_PATH = path
 
 path.ls()
 
 
-# The data is in two folders named *training* and *testing*, so we have to tell `GrandparentSplitter` about that (it defaults to `train` and `valid`). We de do that in the `get_dls` function, which we create to make it easy to change our batch size later:
+# The data is in two folders named *training* and *testing*, so we have to tell `GrandparentSplitter` about that (it defaults to `train` and `valid`). We did do that in the `get_dls` function, which we create to make it easy to change our batch size later:
 
 # +
 def get_dls(bs=64):
     return DataBlock(
-        blocks=(ImageBlock(cls=PILImageBW), CategoryBlock), 
-        get_items=get_image_files, 
-        splitter=GrandparentSplitter('training','testing'),
+        blocks=(ImageBlock(cls=PILImageBW), CategoryBlock),
+        get_items=get_image_files,
+        splitter=GrandparentSplitter('training', 'testing'),
         get_y=parent_label,
         batch_tfms=Normalize()
     ).dataloaders(path, bs=bs)
@@ -503,7 +504,7 @@ dls = get_dls()
 
 # Remember, it's always a good idea to look at your data before you use it:
 
-dls.show_batch(max_n=9, figsize=(4,4))
+dls.show_batch(max_n=9, figsize=(4, 4))
 
 
 # Now that we have our data ready, we can train a simple model on it.
@@ -513,8 +514,9 @@ dls.show_batch(max_n=9, figsize=(4,4))
 # Earlier in this chapter, we built a model based on a `conv` function like this:
 
 def conv(ni, nf, ks=3, act=True):
-    res = nn.Conv2d(ni, nf, stride=2, kernel_size=ks, padding=ks//2)
-    if act: res = nn.Sequential(res, nn.ReLU())
+    res = nn.Conv2d(ni, nf, stride=2, kernel_size=ks, padding=ks // 2)
+    if act:
+        res = nn.Sequential(res, nn.ReLU())
     return res
 
 
@@ -528,18 +530,17 @@ def conv(ni, nf, ks=3, act=True):
 
 def simple_cnn():
     return sequential(
-        conv(1 ,8, ks=5),        #14x14
-        conv(8 ,16),             #7x7
-        conv(16,32),             #4x4
-        conv(32,64),             #2x2
-        conv(64,10, act=False),  #1x1
+        conv(1, 8, ks=5),  # 14x14
+        conv(8, 16),  # 7x7
+        conv(16, 32),  # 4x4
+        conv(32, 64),  # 2x2
+        conv(64, 10, act=False),  # 1x1
         Flatten(),
     )
 
 
 # As you'll see in a moment, we can look inside our models while they're training in order to try to find ways to make them train better. To do this we use the `ActivationStats` callback, which records the mean, standard deviation, and histogram of activations of every trainable layer (as we've seen, callbacks are used to add behavior to the training loop; we'll explore how they work in <<chapter_accel_sgd>>):
 
-from fastai.callback.hook import *
 
 
 # We want to train quickly, so that means training at a high learning rate. Let's see how we go at 0.06:
@@ -680,9 +681,10 @@ learn.activation_stats.color_dim(-2)
 # Let's add a batchnorm layer to `conv`:
 
 def conv(ni, nf, ks=3, act=True):
-    layers = [nn.Conv2d(ni, nf, stride=2, kernel_size=ks, padding=ks//2)]
+    layers = [nn.Conv2d(ni, nf, stride=2, kernel_size=ks, padding=ks // 2)]
     layers.append(nn.BatchNorm2d(nf))
-    if act: layers.append(nn.ReLU())
+    if act:
+        layers.append(nn.ReLU())
     return nn.Sequential(*layers)
 
 
@@ -764,5 +766,3 @@ learn = fit(5, lr=0.1)
 # 1. What features other than edge detectors have been used in computer vision (especially before deep learning became popular)?
 # 1. There are other normalization layers available in PyTorch. Try them out and see what works best. Learn about why other normalization layers have been developed, and how they differ from batch normalization.
 # 1. Try moving the activation function after the batch normalization layer in `conv`. Does it make a difference? See what you can find out about what order is recommended, and why.
-
-
