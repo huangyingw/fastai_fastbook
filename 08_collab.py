@@ -15,13 +15,14 @@
 #     name: python3
 # ---
 
-#hide
-# !pip install -Uqq fastbook
+# hide
+from fastai.tabular.all import *
+from fastai.collab import *
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-#hide
-from fastbook import *
+# hide
 
 # + active=""
 # [[chapter_collab]]
@@ -45,14 +46,12 @@ from fastbook import *
 
 # The dataset is available through the usual fastai function:
 
-from fastai.collab import *
-from fastai.tabular.all import *
 path = untar_data(URLs.ML_100k)
 
 # According to the *README*, the main table is in the file *u.data*. It is tab-separated and the columns are, respectively user, movie, rating, and timestamp. Since those names are not encoded, we need to indicate them when reading the file with Pandas. Here is a way to open this table and take a look:
 
-ratings = pd.read_csv(path/'u.data', delimiter='\t', header=None,
-                      names=['user','movie','rating','timestamp'])
+ratings = pd.read_csv(path / 'u.data', delimiter='\t', header=None,
+                      names=['user', 'movie', 'rating', 'timestamp'])
 ratings.head()
 
 # Although this has all the information we need, it is not a particularly helpful way for humans to look at this data. <<movie_xtab>> shows the same data cross-tabulated into a human-friendly table.
@@ -63,15 +62,15 @@ ratings.head()
 #
 # If we knew for each user to what degree they liked each important category that a movie might fall into, such as genre, age, preferred directors and actors, and so forth, and we knew the same information about each movie, then a simple way to fill in this table would be to multiply this information together for each movie and use a combination. For instance, assuming these factors range between -1 and +1, with positive numbers indicating stronger matches and negative numbers weaker ones, and the categories are science-fiction, action, and old movies, then we could represent the movie *The Last Skywalker* as:
 
-last_skywalker = np.array([0.98,0.9,-0.9])
+last_skywalker = np.array([0.98, 0.9, -0.9])
 
 # Here, for instance, we are scoring *very science-fiction* as 0.98, and *very not old* as -0.9. We could represent a user who likes modern sci-fi action movies as:
 
-user1 = np.array([0.9,0.8,-0.6])
+user1 = np.array([0.9, 0.8, -0.6])
 
 # and we can now calculate the match between this combination:
 
-(user1*last_skywalker).sum()
+(user1 * last_skywalker).sum()
 
 # When we multiply two vectors together and add up the results, this is known as the *dot product*. It is used a lot in machine learning, and forms the basis of matrix multiplication. We will be looking a lot more at matrix multiplication and dot products in <<chapter_foundations>>.
 
@@ -79,11 +78,11 @@ user1 = np.array([0.9,0.8,-0.6])
 
 # On the other hand, we might represent the movie *Casablanca* as:
 
-casablanca = np.array([-0.99,-0.3,0.8])
+casablanca = np.array([-0.99, -0.3, 0.8])
 
 # The match between this combination is:
 
-(user1*casablanca).sum()
+(user1 * casablanca).sum()
 
 # Since we don't know what the latent factors actually are, and we don't know how to score them for each user and movie, we should learn them.
 
@@ -107,8 +106,8 @@ casablanca = np.array([-0.99,-0.3,0.8])
 
 # When showing the data, we would rather see movie titles than their IDs. The table `u.item` contains the correspondence of IDs to titles:
 
-movies = pd.read_csv(path/'u.item',  delimiter='|', encoding='latin-1',
-                     usecols=(0,1), names=('movie','title'), header=None)
+movies = pd.read_csv(path / 'u.item', delimiter='|', encoding='latin-1',
+                     usecols=(0, 1), names=('movie', 'title'), header=None)
 movies.head()
 
 # We can merge this with our `ratings` table to get the user ratings by title:
@@ -126,7 +125,7 @@ dls.show_batch()
 dls.classes
 
 # +
-n_users  = len(dls.classes['user'])
+n_users = len(dls.classes['user'])
 n_movies = len(dls.classes['title'])
 n_factors = 5
 
@@ -153,7 +152,7 @@ user_factors[3]
 
 # In computer vision, we have a very easy way to get all the information of a pixel through its RGB values: each pixel in a colored image is represented by three numbers. Those three numbers give us the redness, the greenness and the blueness, which is enough to get our model to work afterward.
 #
-# For the problem at hand, we don't have the same easy way to characterize a user or a movie. There are probably relations with genres: if a given user likes romance, they are likely to give higher scores to romance movies. Other factors might be whether the movie is more action-oriented versus heavy on dialogue, or the presence of a specific actor that a user might particularly like. 
+# For the problem at hand, we don't have the same easy way to characterize a user or a movie. There are probably relations with genres: if a given user likes romance, they are likely to give higher scores to romance movies. Other factors might be whether the movie is more action-oriented versus heavy on dialogue, or the presence of a specific actor that a user might particularly like.
 #
 # How do we determine numbers to characterize those? The answer is, we don't. We will let our model *learn* them. By analyzing the existing relations between users and movies, our model can figure out itself the features that seem important or not.
 #
@@ -171,7 +170,7 @@ user_factors[3]
 
 class Example:
     def __init__(self, a): self.a = a
-    def say(self,x): return f'Hello {self.a}, {x}.'
+    def say(self, x): return f'Hello {self.a}, {x}.'
 
 
 # The most important piece of this is the special method called `__init__` (pronounced *dunder init*). In Python, any method surrounded in double underscores like this is considered special. It indicates that there is some extra behavior associated with this method name. In the case of `__init__`, this is the method Python will call when your new object is created. So, this is where you can set up any state that needs to be initialized upon object creation. Any parameters included when the user constructs an instance of your class will be passed to the `__init__` method as parameters. Note that the first parameter to any method defined inside a class is `self`, so you can use this to set and get any attributes that you will need:
@@ -188,10 +187,10 @@ class DotProduct(Module):
     def __init__(self, n_users, n_movies, n_factors):
         self.user_factors = Embedding(n_users, n_factors)
         self.movie_factors = Embedding(n_movies, n_factors)
-        
+
     def forward(self, x):
-        users = self.user_factors(x[:,0])
-        movies = self.movie_factors(x[:,1])
+        users = self.user_factors(x[:, 0])
+        movies = self.movie_factors(x[:, 1])
         return (users * movies).sum(dim=1)
 
 
@@ -199,7 +198,7 @@ class DotProduct(Module):
 #
 # Note that the input of the model is a tensor of shape `batch_size x 2`, where the first column (`x[:, 0]`) contains the user IDs and the second column (`x[:, 1]`) contains the movie IDs. As explained before, we use the *embedding* layers to represent our matrices of user and movie latent factors:
 
-x,y = dls.one_batch()
+x, y = dls.one_batch()
 x.shape
 
 # Now that we have defined our architecture, and created our parameter matrices, we need to create a `Learner` to optimize our model. In the past we have used special functions, such as `cnn_learner`, which set up everything for us for a particular application. Since we are doing things from scratch here, we will use the plain `Learner` class:
@@ -215,14 +214,14 @@ learn.fit_one_cycle(5, 5e-3)
 # The first thing we can do to make this model a little bit better is to force those predictions to be between 0 and 5. For this, we just need to use `sigmoid_range`, like in <<chapter_multicat>>. One thing we discovered empirically is that it's better to have the range go a little bit over 5, so we use `(0, 5.5)`:
 
 class DotProduct(Module):
-    def __init__(self, n_users, n_movies, n_factors, y_range=(0,5.5)):
+    def __init__(self, n_users, n_movies, n_factors, y_range=(0, 5.5)):
         self.user_factors = Embedding(n_users, n_factors)
         self.movie_factors = Embedding(n_movies, n_factors)
         self.y_range = y_range
-        
+
     def forward(self, x):
-        users = self.user_factors(x[:,0])
-        movies = self.movie_factors(x[:,1])
+        users = self.user_factors(x[:, 0])
+        movies = self.movie_factors(x[:, 1])
         return sigmoid_range((users * movies).sum(dim=1), *self.y_range)
 
 
@@ -231,23 +230,23 @@ learn = Learner(dls, model, loss_func=MSELossFlat())
 learn.fit_one_cycle(5, 5e-3)
 
 
-# This is a reasonable start, but we can do better. One obvious missing piece is that some users are just more positive or negative in their recommendations than others, and some movies are just plain better or worse than others. But in our dot product representation we do not have any way to encode either of these things. If all you can say about a movie is, for instance, that it is very sci-fi, very action-oriented, and very not old, then you don't really have any way to say whether most people like it. 
+# This is a reasonable start, but we can do better. One obvious missing piece is that some users are just more positive or negative in their recommendations than others, and some movies are just plain better or worse than others. But in our dot product representation we do not have any way to encode either of these things. If all you can say about a movie is, for instance, that it is very sci-fi, very action-oriented, and very not old, then you don't really have any way to say whether most people like it.
 #
 # That's because at this point we only have weights; we do not have biases. If we have a single number for each user that we can add to our scores, and ditto for each movie, that will handle this missing piece very nicely. So first of all, let's adjust our model architecture:
 
 class DotProductBias(Module):
-    def __init__(self, n_users, n_movies, n_factors, y_range=(0,5.5)):
+    def __init__(self, n_users, n_movies, n_factors, y_range=(0, 5.5)):
         self.user_factors = Embedding(n_users, n_factors)
         self.user_bias = Embedding(n_users, 1)
         self.movie_factors = Embedding(n_movies, n_factors)
         self.movie_bias = Embedding(n_movies, 1)
         self.y_range = y_range
-        
+
     def forward(self, x):
-        users = self.user_factors(x[:,0])
-        movies = self.movie_factors(x[:,1])
+        users = self.user_factors(x[:, 0])
+        movies = self.movie_factors(x[:, 1])
         res = (users * movies).sum(dim=1, keepdim=True)
-        res += self.user_bias(x[:,0]) + self.movie_bias(x[:,1])
+        res += self.user_bias(x[:, 0]) + self.movie_bias(x[:, 1])
         return sigmoid_range(res, *self.y_range)
 
 
@@ -266,15 +265,16 @@ learn.fit_one_cycle(5, 5e-3)
 # Why would it prevent overfitting? The idea is that the larger the coefficients are, the sharper canyons we will have in the loss function. If we take the basic example of a parabola, `y = a * (x**2)`, the larger `a` is, the more *narrow* the parabola is (<<parabolas>>).
 
 # + hide_input=true
-#hide_input
-#id parabolas
-x = np.linspace(-2,2,100)
-a_s = [1,2,5,10,50] 
+# hide_input
+# id parabolas
+x = np.linspace(-2, 2, 100)
+a_s = [1, 2, 5, 10, 50]
 ys = [a * x**2 for a in a_s]
-_,ax = plt.subplots(figsize=(8,6))
-for a,y in zip(a_s,ys): ax.plot(x,y, label=f'a={a}')
-ax.set_ylim([0,5])
-ax.legend();
+_, ax = plt.subplots(figsize=(8, 6))
+for a, y in zip(a_s, ys):
+    ax.plot(x, y, label=f'a={a}')
+ax.set_ylim([0, 5])
+ax.legend()
 # -
 
 # So, letting our model learn high parameters might cause it to fit all the data points in the training set with an overcomplex function that has very sharp changes, which will lead to overfitting.
@@ -346,18 +346,18 @@ def create_params(size):
 # Let's use this to create `DotProductBias` again, but without `Embedding`:
 
 class DotProductBias(Module):
-    def __init__(self, n_users, n_movies, n_factors, y_range=(0,5.5)):
+    def __init__(self, n_users, n_movies, n_factors, y_range=(0, 5.5)):
         self.user_factors = create_params([n_users, n_factors])
         self.user_bias = create_params([n_users])
         self.movie_factors = create_params([n_movies, n_factors])
         self.movie_bias = create_params([n_movies])
         self.y_range = y_range
-        
+
     def forward(self, x):
-        users = self.user_factors[x[:,0]]
-        movies = self.movie_factors[x[:,1]]
-        res = (users*movies).sum(dim=1)
-        res += self.user_bias[x[:,0]] + self.movie_bias[x[:,1]]
+        users = self.user_factors[x[:, 0]]
+        movies = self.movie_factors[x[:, 1]]
+        res = (users * movies).sum(dim=1)
+        res += self.user_bias[x[:, 0]] + self.movie_bias[x[:, 1]]
         return sigmoid_range(res, *self.y_range)
 
 
@@ -387,24 +387,23 @@ idxs = movie_bias.argsort(descending=True)[:5]
 # It is not quite so easy to directly interpret the embedding matrices. There are just too many factors for a human to look at. But there is a technique that can pull out the most important underlying *directions* in such a matrix, called *principal component analysis* (PCA). We will not be going into this in detail in this book, because it is not particularly important for you to understand to be a deep learning practitioner, but if you are interested then we suggest you check out the fast.ai course [Computational Linear Algebra for Coders](https://github.com/fastai/numerical-linear-algebra). <<img_pca_movie>> shows what our movies look like based on two of the strongest PCA components.
 
 # + hide_input=true
-#hide_input
-#id img_pca_movie
-#caption Representation of movies based on two strongest PCA components
-#alt Representation of movies based on two strongest PCA components
+# hide_input
+# id img_pca_movie
+# caption Representation of movies based on two strongest PCA components
+# alt Representation of movies based on two strongest PCA components
 g = ratings.groupby('title')['rating'].count()
 top_movies = g.sort_values(ascending=False).index.values[:1000]
 top_idxs = tensor([learn.dls.classes['title'].o2i[m] for m in top_movies])
 movie_w = learn.model.movie_factors[top_idxs].cpu().detach()
 movie_pca = movie_w.pca(3)
-fac0,fac1,fac2 = movie_pca.t()
-idxs = np.random.choice(len(top_movies), 50, replace=False)
+fac0, fac1, fac2 = movie_pca.t()
 idxs = list(range(50))
 X = fac0[idxs]
 Y = fac2[idxs]
-plt.figure(figsize=(12,12))
+plt.figure(figsize=(12, 12))
 plt.scatter(X, Y)
 for i, x, y in zip(top_movies[idxs], X, Y):
-    plt.text(x,y,i, color=np.random.rand(3)*0.7, fontsize=11)
+    plt.text(x, y, i, color=np.random.rand(3) * 0.7, fontsize=11)
 plt.show()
 # -
 
@@ -477,17 +476,17 @@ embs
 # Let's implement this class:
 
 class CollabNN(Module):
-    def __init__(self, user_sz, item_sz, y_range=(0,5.5), n_act=100):
+    def __init__(self, user_sz, item_sz, y_range=(0, 5.5), n_act=100):
         self.user_factors = Embedding(*user_sz)
         self.item_factors = Embedding(*item_sz)
         self.layers = nn.Sequential(
-            nn.Linear(user_sz[1]+item_sz[1], n_act),
+            nn.Linear(user_sz[1] + item_sz[1], n_act),
             nn.ReLU(),
             nn.Linear(n_act, 1))
         self.y_range = y_range
-        
+
     def forward(self, x):
-        embs = self.user_factors(x[:,0]),self.item_factors(x[:,1])
+        embs = self.user_factors(x[:, 0]), self.item_factors(x[:, 1])
         x = self.layers(torch.cat(embs, dim=1))
         return sigmoid_range(x, *self.y_range)
 
@@ -505,7 +504,7 @@ learn.fit_one_cycle(5, 5e-3, wd=0.01)
 
 # fastai provides this model in `fastai.collab` if you pass `use_nn=True` in your call to `collab_learner` (including calling `get_emb_sz` for you), and it lets you easily create more layers. For instance, here we're creating two hidden layers, of size 100 and 50, respectively:
 
-learn = collab_learner(dls, use_nn=True, y_range=(0, 5.5), layers=[100,50])
+learn = collab_learner(dls, use_nn=True, y_range=(0, 5.5), layers=[100, 50])
 learn.fit_one_cycle(5, 5e-3, wd=0.1)
 
 
@@ -532,7 +531,7 @@ class EmbeddingNN(TabularModel):
 
 # ## Conclusion
 
-# For our first non-computer vision application, we looked at recommendation systems and saw how gradient descent can learn intrinsic factors or biases about items from a history of ratings. Those can then give us information about the data. 
+# For our first non-computer vision application, we looked at recommendation systems and saw how gradient descent can learn intrinsic factors or biases about items from a history of ratings. Those can then give us information about the data.
 #
 # We also built our first model in PyTorch. We will do a lot more of this in the next section of the book, but first, let's finish our dive into the other general applications of deep learning, continuing with tabular data.
 
@@ -553,7 +552,7 @@ class EmbeddingNN(TabularModel):
 # 1. Create a class (without peeking, if possible!) and use it.
 # 1. What does `x[:,0]` return?
 # 1. Rewrite the `DotProduct` class (without peeking, if possible!) and train a model with it.
-# 1. What is a good loss function to use for MovieLens? Why? 
+# 1. What is a good loss function to use for MovieLens? Why?
 # 1. What would happen if we used cross-entropy loss with MovieLens? How would we need to change the model?
 # 1. What is the use of bias in a dot product model?
 # 1. What is another name for weight decay?
@@ -576,5 +575,3 @@ class EmbeddingNN(TabularModel):
 # 1. Find three other areas where collaborative filtering is being used, and find out what the pros and cons of this approach are in those areas.
 # 1. Complete this notebook using the full MovieLens dataset, and compare your results to online benchmarks. See if you can improve your accuracy. Look on the book's website and the fast.ai forum for ideas. Note that there are more columns in the full dataset—see if you can use those too (the next chapter might give you ideas).
 # 1. Create a model for MovieLens that works with cross-entropy loss, and compare it to the model in this chapter.
-
-
