@@ -15,15 +15,14 @@
 #     name: python3
 # ---
 
-#hide
-# !pip install -Uqq fastbook
+# hide
+from fastbook import *
+from fastai.vision.all import *
 import fastbook
 fastbook.setup_book()
 
 # +
-#hide
-from fastai.vision.all import *
-from fastbook import *
+# hide
 
 matplotlib.rc('image', cmap='Greys')
 
@@ -61,7 +60,7 @@ matplotlib.rc('image', cmap='Greys')
 
 path = untar_data(URLs.MNIST_SAMPLE)
 
-#hide
+# hide
 Path.BASE_PATH = path
 
 # We can see what's in this directory by using `ls`, a method added by fastai. This method returns an object of a special fastai class called `L`, which has all the same functionality of Python's built-in `list`, plus a lot more. One of its handy features is that, when printed, it displays the count of items, before listing the items themselves (if there are more than 10 items, it just shows the first few):
@@ -70,12 +69,12 @@ path.ls()
 
 # The MNIST dataset follows a common layout for machine learning datasets: separate folders for the training set and the validation set (and/or test set). Let's see what's inside the training set:
 
-(path/'train').ls()
+(path / 'train').ls()
 
 # There's a folder of 3s, and a folder of 7s. In machine learning parlance, we say that "3" and "7" are the *labels* (or targets) in this dataset. Let's take a look in one of these folders (using `sorted` to ensure we all get the same order of files):
 
-threes = (path/'train'/'3').ls().sorted()
-sevens = (path/'train'/'7').ls().sorted()
+threes = (path / 'train' / '3').ls().sorted()
+sevens = (path / 'train' / '7').ls().sorted()
 threes
 
 # As we might expect, it's full of image files. Let’s take a look at one now. Here’s an image of a handwritten number 3, taken from the famous MNIST dataset of handwritten numbers:
@@ -88,18 +87,18 @@ im3
 #
 # In a computer, everything is represented as a number. To view the numbers that make up this image, we have to convert it to a *NumPy array* or a *PyTorch tensor*. For instance, here's what a section of the image looks like, converted to a NumPy array:
 
-array(im3)[4:10,4:10]
+array(im3)[4:10, 4:10]
 
 # The `4:10` indicates we requested the rows from index 4 (included) to 10 (not included) and the same for the columns. NumPy indexes from top to bottom and left to right, so this section is located in the top-left corner of the image. Here's the same thing as a PyTorch tensor:
 
-tensor(im3)[4:10,4:10]
+tensor(im3)[4:10, 4:10]
 
 # We can slice the array to pick just the part with the top of the digit in it, and then use a Pandas DataFrame to color-code the values using a gradient, which shows us clearly how the image is created from the pixel values:
 
-#hide_output
+# hide_output
 im3_t = tensor(im3)
-df = pd.DataFrame(im3_t[4:15,4:22])
-df.style.set_properties(**{'font-size':'6pt'}).background_gradient('Greys')
+df = pd.DataFrame(im3_t[4:15, 4:22])
+df.style.set_properties(**{'font-size': '6pt'}).background_gradient('Greys')
 
 # <img width="453" id="output_pd_pixels" src="images/att_00058.png">
 
@@ -123,13 +122,13 @@ df.style.set_properties(**{'font-size':'6pt'}).background_gradient('Greys')
 
 seven_tensors = [tensor(Image.open(o)) for o in sevens]
 three_tensors = [tensor(Image.open(o)) for o in threes]
-len(three_tensors),len(seven_tensors)
+len(three_tensors), len(seven_tensors)
 
 # > note: List Comprehensions: List and dictionary comprehensions are a wonderful feature of Python. Many Python programmers use them every day, including the authors of this book—they are part of "idiomatic Python." But programmers coming from other languages may have never seen them before. There are a lot of great tutorials just a web search away, so we won't spend a long time discussing them now. Here is a quick explanation and example to get you started. A list comprehension looks like this: `new_list = [f(o) for o in a_list if o>0]`. This will return every element of `a_list` that is greater than 0, after passing it to the function `f`. There are three parts here: the collection you are iterating over (`a_list`), an optional filter (`if o>0`), and something to do to each element (`f(o)`). It's not only shorter to write but way faster than the alternative ways of creating the same list with a loop.
 
 # We'll also check that one of the images looks okay. Since we now have tensors (which Jupyter by default will print as values), rather than PIL images (which Jupyter by default will display as images), we need to use fastai's `show_image` function to display it:
 
-show_image(three_tensors[1]);
+show_image(three_tensors[1])
 
 # For every pixel position, we want to compute the average over all the images of the intensity of that pixel. To do this we first combine all the images in this list into a single three-dimensional tensor. The most common way to describe such a tensor is to call it a *rank-3 tensor*. We often need to stack up individual tensors in a collection into a single tensor. Unsurprisingly, PyTorch comes with a function called `stack` that we can use for this purpose.
 #
@@ -137,8 +136,8 @@ show_image(three_tensors[1]);
 #
 # Generally when images are floats, the pixel values are expected to be between 0 and 1, so we will also divide by 255 here:
 
-stacked_sevens = torch.stack(seven_tensors).float()/255
-stacked_threes = torch.stack(three_tensors).float()/255
+stacked_sevens = torch.stack(seven_tensors).float() / 255
+stacked_threes = torch.stack(three_tensors).float() / 255
 stacked_threes.shape
 
 # Perhaps the most important attribute of a tensor is its *shape*. This tells you the length of each axis. In this case, we can see that we have 6,131 images, each of size 28×28 pixels. There is nothing specifically about this tensor that says that the first axis is the number of images, the second is the height, and the third is the width—the semantics of a tensor are entirely up to us, and how we construct it. As far as PyTorch is concerned, it is just a bunch of numbers in memory.
@@ -160,14 +159,14 @@ stacked_threes.ndim
 # In other words, for every pixel position, this will compute the average of that pixel over all images. The result will be one value for every pixel position, or a single image. Here it is:
 
 mean3 = stacked_threes.mean(0)
-show_image(mean3);
+show_image(mean3)
 
 # According to this dataset, this is the ideal number 3! (You may not like it, but this is what peak number 3 performance looks like.) You can see how it's very dark where all the images agree it should be dark, but it becomes wispy and blurry where the images disagree.
 #
 # Let's do the same thing for the 7s, but put all the steps together at once to save some time:
 
 mean7 = stacked_sevens.mean(0)
-show_image(mean7);
+show_image(mean7)
 
 # Let's now pick an arbitrary 3 and measure its *distance* from our "ideal digits."
 #
@@ -176,7 +175,7 @@ show_image(mean7);
 # Here's a sample 3:
 
 a_3 = stacked_threes[1]
-show_image(a_3);
+show_image(a_3)
 
 # How can we determine its distance from our ideal 3? We can't just add up the differences between the pixels of this image and the ideal digit. Some differences will be positive while others will be negative, and these differences will cancel out, resulting in a situation where an image that is too dark in some places and too light in others might be shown as having zero total differences from the ideal. That would be misleading!
 #
@@ -191,17 +190,17 @@ show_image(a_3);
 
 dist_3_abs = (a_3 - mean3).abs().mean()
 dist_3_sqr = ((a_3 - mean3)**2).mean().sqrt()
-dist_3_abs,dist_3_sqr
+dist_3_abs, dist_3_sqr
 
 dist_7_abs = (a_3 - mean7).abs().mean()
 dist_7_sqr = ((a_3 - mean7)**2).mean().sqrt()
-dist_7_abs,dist_7_sqr
+dist_7_abs, dist_7_sqr
 
 # In both cases, the distance between our 3 and the "ideal" 3 is less than the distance to the ideal 7. So our simple model will give the right prediction in this case.
 
 # PyTorch already provides both of these as *loss functions*. You'll find these inside `torch.nn.functional`, which the PyTorch team recommends importing as `F` (and is available by default under that name in fastai):
 
-F.l1_loss(a_3.float(),mean7), F.mse_loss(a_3,mean7).sqrt()
+F.l1_loss(a_3.float(), mean7), F.mse_loss(a_3, mean7).sqrt()
 
 # Here `mse` stands for *mean squared error*, and `l1` refers to the standard mathematical jargon for *mean absolute value* (in math it's called the *L1 norm*).
 
@@ -233,8 +232,8 @@ F.l1_loss(a_3.float(),mean7), F.mse_loss(a_3,mean7).sqrt()
 
 # To create an array or tensor, pass a list (or list of lists, or list of lists of lists, etc.) to `array()` or `tensor()`:
 
-data = [[1,2,3],[4,5,6]]
-arr = array (data)
+data = [[1, 2, 3], [4, 5, 6]]
+arr = array(data)
 tns = tensor(data)
 
 arr  # numpy
@@ -249,15 +248,15 @@ tns[1]
 
 # or a column, by using `:` to indicate *all of the first axis* (we sometimes refer to the dimensions of tensors/arrays as *axes*):
 
-tns[:,1]
+tns[:, 1]
 
 # You can combine these with Python slice syntax (`[start:end]` with `end` being excluded) to select part of a row or column:
 
-tns[1,1:3]
+tns[1, 1:3]
 
 # And you can use the standard operators such as `+`, `-`, `*`, `/`:
 
-tns+1
+tns + 1
 
 # Tensors have a type:
 
@@ -265,7 +264,7 @@ tns.type()
 
 # And will automatically change type as needed, for example from `int` to `float`:
 
-tns*1.5
+tns * 1.5
 
 # So, is our baseline model any good? To quantify this, we must define a metric.
 
@@ -280,12 +279,12 @@ tns*1.5
 # So to start with, let's create tensors for our 3s and 7s from that directory. These are the tensors we will use to calculate a metric measuring the quality of our first-try model, which measures distance from an ideal image:
 
 valid_3_tens = torch.stack([tensor(Image.open(o))
-                            for o in (path/'valid'/'3').ls()])
-valid_3_tens = valid_3_tens.float()/255
+                            for o in (path / 'valid' / '3').ls()])
+valid_3_tens = valid_3_tens.float() / 255
 valid_7_tens = torch.stack([tensor(Image.open(o))
-                            for o in (path/'valid'/'7').ls()])
-valid_7_tens = valid_7_tens.float()/255
-valid_3_tens.shape,valid_7_tens.shape
+                            for o in (path / 'valid' / '7').ls()])
+valid_7_tens = valid_7_tens.float() / 255
+valid_3_tens.shape, valid_7_tens.shape
 
 
 # It's good to get in the habit of checking shapes as you go. Here we see two tensors, one representing the 3s validation set of 1,010 images of size 28×28, and one representing the 7s validation set of 1,028 images of size 28×28.
@@ -294,7 +293,7 @@ valid_3_tens.shape,valid_7_tens.shape
 #
 # We can write a simple function that calculates the mean absolute error using an experssion very similar to the one we wrote in the last section:
 
-def mnist_distance(a,b): return (a-b).abs().mean((-1,-2))
+def mnist_distance(a, b): return (a - b).abs().mean((-1, -2))
 mnist_distance(a_3, mean3)
 
 # This is the same value we previously calculated for the distance between these two images, the ideal 3 `mean_3` and the arbitrary sample 3 `a_3`, which are both single-image tensors with a shape of `[28,28]`.
@@ -312,11 +311,11 @@ valid_3_dist, valid_3_dist.shape
 #
 # After broadcasting so the two argument tensors have the same rank, PyTorch applies its usual logic for two tensors of the same rank: it performs the operation on each corresponding element of the two tensors, and returns the tensor result. For instance:
 
-tensor([1,2,3]) + tensor([1,1,1])
+tensor([1, 2, 3]) + tensor([1, 1, 1])
 
 # So in this case, PyTorch treats `mean3`, a rank-2 tensor representing a single image, as if it were 1,010 copies of the same image, and then subtracts each of those copies from each 3 in our validation set. What shape would you expect this tensor to have? Try to figure it out yourself before you look at the answer below:
 
-(valid_3_tens-mean3).shape
+(valid_3_tens - mean3).shape
 
 
 # We are calculating the difference between our "ideal 3" and each of the 1,010 3s in the validation set, for each of 28×28 images, resulting in the shape `[1010,28,28]`.
@@ -336,7 +335,7 @@ tensor([1,2,3]) + tensor([1,1,1])
 #
 # We can use `mnist_distance` to figure out whether an image is a 3 or not by using the following logic: if the distance between the digit in question and the ideal 3 is less than the distance to the ideal 7, then it's a 3. This function will automatically do broadcasting and be applied elementwise, just like all PyTorch functions and operators:
 
-def is_3(x): return mnist_distance(x,mean3) < mnist_distance(x,mean7)
+def is_3(x): return mnist_distance(x, mean3) < mnist_distance(x, mean7)
 
 
 # Let's test it on our example case:
@@ -350,10 +349,10 @@ is_3(valid_3_tens)
 # Now we can calculate the accuracy for each of the 3s and 7s by taking the average of that function for all 3s and its inverse for all 7s:
 
 # +
-accuracy_3s =      is_3(valid_3_tens).float() .mean()
+accuracy_3s = is_3(valid_3_tens).float() .mean()
 accuracy_7s = (1 - is_3(valid_7_tens).float()).mean()
 
-accuracy_3s,accuracy_7s,(accuracy_3s+accuracy_7s)/2
+accuracy_3s, accuracy_7s, (accuracy_3s + accuracy_7s) / 2
 # -
 
 # This looks like a pretty good start! We're getting over 90% accuracy on both 3s and 7s, and we've seen how to define a metric conveniently using broadcasting.
@@ -393,9 +392,9 @@ accuracy_3s,accuracy_7s,(accuracy_3s+accuracy_7s)/2
 # These seven steps, illustrated in <<gradient_descent>>, are the key to the training of all deep learning models. That deep learning turns out to rely entirely on these steps is extremely surprising and counterintuitive. It's amazing that this process can solve such complex problems. But, as you'll see, it really does!
 
 # + hide_input=true
-#id gradient_descent
-#caption The gradient descent process
-#alt Graph showing the steps for Gradient Descent
+# id gradient_descent
+# caption The gradient descent process
+# alt Graph showing the steps for Gradient Descent
 gv('''
 init->predict->loss->gradient->step->stop
 step->predict[label=repeat]
@@ -423,7 +422,7 @@ plot_function(f, 'x', 'x**2')
 # The sequence of steps we described earlier starts by picking some random value for a parameter, and calculating the value of the loss:
 
 plot_function(f, 'x', 'x**2')
-plt.scatter(-1.5, f(-1.5), color='red');
+plt.scatter(-1.5, f(-1.5), color='red')
 
 # Now we look to see what would happen if we increased or decreased our parameter by a little bit—the *adjustment*. This is simply the slope at a particular point:
 
@@ -474,7 +473,7 @@ xt.grad
 #
 # Now we'll repeat the preceding steps, but with a vector argument for our function:
 
-xt = tensor([3.,4.,10.]).requires_grad_()
+xt = tensor([3., 4., 10.]).requires_grad_()
 xt
 
 
@@ -524,10 +523,11 @@ xt.grad
 #
 # Let's start with a simple, synthetic, example model. Imagine you were measuring the speed of a roller coaster as it went over the top of a hump. It would start fast, and then get slower as it went up the hill; it would be slowest at the top, and it would then speed up again as it went downhill. You want to build a model of how the speed changes over time. If you were measuring the speed manually every second for 20 seconds, it might look something like this:
 
-time = torch.arange(0,20).float(); time
+time = torch.arange(0, 20).float()
+time
 
-speed = torch.randn(20)*3 + 0.75*(time-9.5)**2 + 1
-plt.scatter(time,speed);
+speed = torch.randn(20) * 3 + 0.75 * (time - 9.5)**2 + 1
+plt.scatter(time, speed)
 
 
 # We've added a bit of random noise, since measuring things manually isn't precise. This means it's not that easy to answer the question: what was the roller coaster's speed? Using SGD we can try to find a function that matches our observations. We can't consider every possible function, so let's use a guess that it will be quadratic; i.e., a function of the form `a*(time**2)+(b*time)+c`.
@@ -535,8 +535,8 @@ plt.scatter(time,speed);
 # We want to distinguish clearly between the function's input (the time when we are measuring the coaster's speed) and its parameters (the values that define *which* quadratic we're trying). So, let's collect the parameters in one argument and thus separate the input, `t`, and the parameters, `params`, in the function's signature:
 
 def f(t, params):
-    a,b,c = params
-    return a*(t**2) + (b*t) + c
+    a, b, c = params
+    return a * (t**2) + (b * t) + c
 
 
 # In other words, we've restricted the problem of finding the best imaginable function that fits the data, to finding the best *quadratic* function. This greatly simplifies the problem, since every quadratic function is fully defined by the three parameters `a`, `b`, and `c`. Thus, to find the best quadratic function, we only need to find the best values for `a`, `b`, and `c`.
@@ -545,7 +545,7 @@ def f(t, params):
 #
 # We need to define first what we mean by "best." We define this precisely by choosing a *loss function*, which will return a value based on a prediction and a target, where lower values of the function correspond to "better" predictions. For continuous data, it's common to use *mean squared error*:
 
-def mse(preds, targets): return ((preds-targets)**2).mean()
+def mse(preds, targets): return ((preds - targets)**2).mean()
 
 
 # Now, let's work through our 7 step process.
@@ -556,7 +556,7 @@ def mse(preds, targets): return ((preds-targets)**2).mean()
 
 params = torch.randn(3).requires_grad_()
 
-#hide
+# hide
 orig_params = params.clone()
 
 # #### Step 2: Calculate the predictions
@@ -569,10 +569,11 @@ preds = f(time, params)
 # Let's create a little function to see how close our predictions are to our targets, and take a look:
 
 def show_preds(preds, ax=None):
-    if ax is None: ax=plt.subplots()[1]
+    if ax is None:
+        ax = plt.subplots()[1]
     ax.scatter(time, speed)
     ax.scatter(time, to_np(preds), color='red')
-    ax.set_ylim(-300,100)
+    ax.set_ylim(-300, 100)
 
 
 show_preds(preds)
@@ -613,7 +614,7 @@ params.grad = None
 
 # Let's see if the loss has improved:
 
-preds = f(time,params)
+preds = f(time, params)
 mse(preds, speed)
 
 # And take a look at the plot:
@@ -629,7 +630,8 @@ def apply_step(params, prn=True):
     loss.backward()
     params.data -= lr * params.grad.data
     params.grad = None
-    if prn: print(loss.item())
+    if prn:
+        print(loss.item())
     return preds
 
 
@@ -637,15 +639,17 @@ def apply_step(params, prn=True):
 
 # Now we iterate. By looping and performing many improvements, we hope to reach a good result:
 
-for i in range(10): apply_step(params)
+for i in range(10):
+    apply_step(params)
 
-#hide
+# hide
 params = orig_params.detach().requires_grad_()
 
 # The loss is going down, just as we hoped! But looking only at these loss numbers disguises the fact that each iteration represents an entirely different quadratic function being tried, on the way to finding the best possible quadratic function. We can see this process visually if, instead of printing out the loss function, we plot the function at every step. Then we can see how the shape is approaching the best possible quadratic function for our data:
 
-_,axs = plt.subplots(1,4,figsize=(12,3))
-for ax in axs: show_preds(apply_step(params, False), ax)
+_, axs = plt.subplots(1, 4, figsize=(12, 3))
+for ax in axs:
+    show_preds(apply_step(params, False), ax)
 plt.tight_layout()
 
 # #### Step 7: stop
@@ -655,10 +659,10 @@ plt.tight_layout()
 # ### Summarizing Gradient Descent
 
 # + hide_input=false
-#hide_input
-#id gradient_descent
-#caption The gradient descent process
-#alt Graph showing the steps for Gradient Descent
+# hide_input
+# id gradient_descent
+# caption The gradient descent process
+# alt Graph showing the steps for Gradient Descent
 gv('''
 init->predict->loss->gradient->step->stop
 step->predict[label=repeat]
@@ -677,30 +681,30 @@ step->predict[label=repeat]
 
 # We already have our dependent variables `x`—these are the images themselves. We'll concatenate them all into a single tensor, and also change them from a list of matrices (a rank-3 tensor) to a list of vectors (a rank-2 tensor). We can do this using `view`, which is a PyTorch method that changes the shape of a tensor without changing its contents. `-1` is a special parameter to `view` that means "make this axis as big as necessary to fit all the data":
 
-train_x = torch.cat([stacked_threes, stacked_sevens]).view(-1, 28*28)
+train_x = torch.cat([stacked_threes, stacked_sevens]).view(-1, 28 * 28)
 
 # We need a label for each image. We'll use `1` for 3s and `0` for 7s:
 
-train_y = tensor([1]*len(threes) + [0]*len(sevens)).unsqueeze(1)
-train_x.shape,train_y.shape
+train_y = tensor([1] * len(threes) + [0] * len(sevens)).unsqueeze(1)
+train_x.shape, train_y.shape
 
 # A `Dataset` in PyTorch is required to return a tuple of `(x,y)` when indexed. Python provides a `zip` function which, when combined with `list`, provides a simple way to get this functionality:
 
-dset = list(zip(train_x,train_y))
-x,y = dset[0]
-x.shape,y
+dset = list(zip(train_x, train_y))
+x, y = dset[0]
+x.shape, y
 
-valid_x = torch.cat([valid_3_tens, valid_7_tens]).view(-1, 28*28)
-valid_y = tensor([1]*len(valid_3_tens) + [0]*len(valid_7_tens)).unsqueeze(1)
-valid_dset = list(zip(valid_x,valid_y))
+valid_x = torch.cat([valid_3_tens, valid_7_tens]).view(-1, 28 * 28)
+valid_y = tensor([1] * len(valid_3_tens) + [0] * len(valid_7_tens)).unsqueeze(1)
+valid_dset = list(zip(valid_x, valid_y))
 
 
 # Now we need an (initially random) weight for every pixel (this is the *initialize* step in our seven-step process):
 
-def init_params(size, std=1.0): return (torch.randn(size)*std).requires_grad_()
+def init_params(size, std=1.0): return (torch.randn(size) * std).requires_grad_()
 
 
-weights = init_params((28*28,1))
+weights = init_params((28 * 28, 1))
 
 # The function `weights*pixels` won't be flexible enough—it is always equal to 0 when the pixels are equal to 0 (i.e., its *intercept* is 0). You might remember from high school math that the formula for a line is `y=w*x+b`; we still need the `b`. We'll initialize it to a random number too:
 
@@ -712,7 +716,7 @@ bias = init_params(1)
 
 # We can now calculate a prediction for one image:
 
-(train_x[0]*weights.T).sum() + bias
+(train_x[0] * weights.T).sum() + bias
 
 
 # While we could use a Python `for` loop to calculate the prediction for each image, that would be very slow. Because Python loops don't run on the GPU, and because Python is a slow language for loops in general, we need to represent as much of the computation in a model as possible using higher-level functions.
@@ -733,7 +737,7 @@ preds
 
 # Let's check our accuracy. To decide if an output represents a 3 or a 7, we can just check whether it's greater than 0, so our accuracy for each item can be calculated (using broadcasting, so no loops!) with:
 
-corrects = (preds>0.0).float() == train_y
+corrects = (preds > 0.0).float() == train_y
 corrects
 
 corrects.float().mean().item()
@@ -743,7 +747,7 @@ corrects.float().mean().item()
 weights[0] *= 1.0001
 
 preds = linear1(train_x)
-((preds>0.0).float() == train_y).float().mean().item()
+((preds > 0.0).float() == train_y).float().mean().item()
 
 # As we've seen, we need gradients in order to improve our model using SGD, and in order to calculate gradients we need some *loss function* that represents how good our model is. That is because the gradients are a measure of how that loss function changes with small tweaks to the weights.
 #
@@ -765,14 +769,14 @@ preds = linear1(train_x)
 #
 # So, for instance, suppose we had three images which we knew were a 3, a 7, and a 3. And suppose our model predicted with high confidence (`0.9`) that the first was a 3, with slight confidence (`0.4`) that the second was a 7, and with fair confidence (`0.2`), but incorrectly, that the last was a 7. This would mean our loss function would receive these values as its inputs:
 
-trgts  = tensor([1,0,1])
-prds   = tensor([0.9, 0.4, 0.2])
+trgts = tensor([1, 0, 1])
+prds = tensor([0.9, 0.4, 0.2])
 
 
 # Here's a first try at a loss function that measures the distance between `predictions` and `targets`:
 
 def mnist_loss(predictions, targets):
-    return torch.where(targets==1, 1-predictions, predictions).mean()
+    return torch.where(targets == 1, 1 - predictions, predictions).mean()
 
 
 # We're using a new function, `torch.where(a,b,c)`. This is the same as running the list comprehension `[b[i] if a[i] else c[i] for i in range(len(a))]`, except it works on tensors, at C/CUDA speed. In plain English, this function will measure how distant each prediction is from 1 if it should be 1, and how distant it is from 0 if it should be 0, and then it will take the mean of all those distances.
@@ -781,15 +785,15 @@ def mnist_loss(predictions, targets):
 
 # Let's try it on our `prds` and `trgts`:
 
-torch.where(trgts==1, 1-prds, prds)
+torch.where(trgts == 1, 1 - prds, prds)
 
 # You can see that this function returns a lower number when predictions are more accurate, when accurate predictions are more confident (higher absolute values), and when inaccurate predictions are less confident. In PyTorch, we always assume that a lower value of a loss function is better. Since we need a scalar for the final loss, `mnist_loss` takes the mean of the previous tensor:
 
-mnist_loss(prds,trgts)
+mnist_loss(prds, trgts)
 
 # For instance, if we change our prediction for the one "false" target from `0.2` to `0.8` the loss will go down, indicating that this is a better prediction:
 
-mnist_loss(tensor([0.9, 0.4, 0.8]),trgts)
+mnist_loss(tensor([0.9, 0.4, 0.8]), trgts)
 
 
 # One problem with `mnist_loss` as currently defined is that it assumes that predictions are always between 0 and 1. We need to ensure, then, that this is actually the case! As it happens, there is a function that does exactly that—let's take a look.
@@ -798,7 +802,7 @@ mnist_loss(tensor([0.9, 0.4, 0.8]),trgts)
 
 # The `sigmoid` function always outputs a number between 0 and 1. It's defined as follows:
 
-def sigmoid(x): return 1/(1+torch.exp(-x))
+def sigmoid(x): return 1 / (1 + torch.exp(-x))
 
 
 # Pytorch defines an accelerated version for us, so we don’t really need our own. This is an important function in deep learning, since we often want to ensure values are between 0 and 1. This is what it looks like:
@@ -812,7 +816,7 @@ plot_function(torch.sigmoid, title='Sigmoid', min=-4, max=4)
 
 def mnist_loss(predictions, targets):
     predictions = predictions.sigmoid()
-    return torch.where(targets==1, 1-predictions, predictions).mean()
+    return torch.where(targets == 1, 1 - predictions, predictions).mean()
 
 
 # Now we can be confident our loss function will work, even if the predictions are not between 0 and 1. All that is required is that a higher prediction corresponds to higher confidence an image is a 3.
@@ -867,14 +871,14 @@ list(dl)
 
 # First, let's re-initialize our parameters:
 
-weights = init_params((28*28,1))
+weights = init_params((28 * 28, 1))
 bias = init_params(1)
 
 # A `DataLoader` can be created from a `Dataset`:
 
 dl = DataLoader(dset, batch_size=256)
-xb,yb = first(dl)
-xb.shape,yb.shape
+xb, yb = first(dl)
+xb.shape, yb.shape
 
 # We'll do the same for the validation set:
 
@@ -894,7 +898,7 @@ loss
 # Now we can calculate the gradients:
 
 loss.backward()
-weights.grad.shape,weights.grad.mean(),bias.grad
+weights.grad.shape, weights.grad.mean(), bias.grad
 
 
 # Let's put that all in a function:
@@ -908,17 +912,17 @@ def calc_grad(xb, yb, model):
 # and test it:
 
 calc_grad(batch, train_y[:4], linear1)
-weights.grad.mean(),bias.grad
+weights.grad.mean(), bias.grad
 
 # But look what happens if we call it twice:
 
 calc_grad(batch, train_y[:4], linear1)
-weights.grad.mean(),bias.grad
+weights.grad.mean(), bias.grad
 
 # The gradients have changed! The reason for this is that `loss.backward` actually *adds* the gradients of `loss` to any gradients that are currently stored. So, we have to set the current gradients to 0 first:
 
 weights.grad.zero_()
-bias.grad.zero_();
+bias.grad.zero_()
 
 
 # > note: Inplace Operations: Methods in PyTorch whose names end in an underscore modify their objects _in place_. For instance, `bias.zero_()` sets all elements of the tensor `bias` to 0.
@@ -926,23 +930,23 @@ bias.grad.zero_();
 # Our only remaining step is to update the weights and biases based on the gradient and learning rate. When we do so, we have to tell PyTorch not to take the gradient of this step too—otherwise things will get very confusing when we try to compute the derivative at the next batch! If we assign to the `data` attribute of a tensor then PyTorch will not take the gradient of that step. Here's our basic training loop for an epoch:
 
 def train_epoch(model, lr, params):
-    for xb,yb in dl:
+    for xb, yb in dl:
         calc_grad(xb, yb, model)
         for p in params:
-            p.data -= p.grad*lr
+            p.data -= p.grad * lr
             p.grad.zero_()
 
 
 # We also want to check how we're doing, by looking at the accuracy of the validation set. To decide if an output represents a 3 or a 7, we can just check whether it's greater than 0. So our accuracy for each item can be calculated (using broadcasting, so no loops!) with:
 
-(preds>0.0).float() == train_y[:4]
+(preds > 0.0).float() == train_y[:4]
 
 
 # That gives us this function to calculate our validation accuracy:
 
 def batch_accuracy(xb, yb):
     preds = xb.sigmoid()
-    correct = (preds>0.5) == yb
+    correct = (preds > 0.5) == yb
     return correct.float().mean()
 
 
@@ -954,7 +958,7 @@ batch_accuracy(linear1(batch), train_y[:4])
 # and then put the batches together:
 
 def validate_epoch(model):
-    accs = [batch_accuracy(model(xb), yb) for xb,yb in valid_dl]
+    accs = [batch_accuracy(model(xb), yb) for xb, yb in valid_dl]
     return round(torch.stack(accs).mean().item(), 4)
 
 
@@ -963,7 +967,7 @@ validate_epoch(linear1)
 # That's our starting point. Let's train for one epoch, and see if the accuracy improves:
 
 lr = 1.
-params = weights,bias
+params = weights, bias
 train_epoch(linear1, lr, params)
 validate_epoch(linear1)
 
@@ -981,24 +985,26 @@ for i in range(20):
 #
 # `nn.Linear` does the same thing as our `init_params` and `linear` together. It contains both the *weights* and *biases* in a single class. Here's how we replicate our model from the previous section:
 
-linear_model = nn.Linear(28*28,1)
+linear_model = nn.Linear(28 * 28, 1)
 
 # Every PyTorch module knows what parameters it has that can be trained; they are available through the `parameters` method:
 
-w,b = linear_model.parameters()
-w.shape,b.shape
+w, b = linear_model.parameters()
+w.shape, b.shape
 
 
 # We can use this information to create an optimizer:
 
 class BasicOptim:
-    def __init__(self,params,lr): self.params,self.lr = list(params),lr
+    def __init__(self, params, lr): self.params, self.lr = list(params), lr
 
     def step(self, *args, **kwargs):
-        for p in self.params: p.data -= p.grad.data * self.lr
+        for p in self.params:
+            p.data -= p.grad.data * self.lr
 
     def zero_grad(self, *args, **kwargs):
-        for p in self.params: p.grad = None
+        for p in self.params:
+            p.grad = None
 
 
 # We can create our optimizer by passing in the model's parameters:
@@ -1009,7 +1015,7 @@ opt = BasicOptim(linear_model.parameters(), lr)
 # Our training loop can now be simplified to:
 
 def train_epoch(model):
-    for xb,yb in dl:
+    for xb, yb in dl:
         calc_grad(xb, yb, model)
         opt.step()
         opt.zero_grad()
@@ -1034,7 +1040,7 @@ train_model(linear_model, 20)
 
 # fastai provides the `SGD` class which, by default, does the same thing as our `BasicOptim`:
 
-linear_model = nn.Linear(28*28,1)
+linear_model = nn.Linear(28 * 28, 1)
 opt = SGD(linear_model.parameters(), lr)
 train_model(linear_model, 20)
 
@@ -1044,7 +1050,7 @@ dls = DataLoaders(dl, valid_dl)
 
 # To create a `Learner` without using an application (such as `cnn_learner`) we need to pass in all the elements that we've created in this chapter: the `DataLoaders`, the model, the optimization function (which will be passed the parameters), the loss function, and optionally any metrics to print:
 
-learn = Learner(dls, nn.Linear(28*28,1), opt_func=SGD,
+learn = Learner(dls, nn.Linear(28 * 28, 1), opt_func=SGD,
                 loss_func=mnist_loss, metrics=batch_accuracy)
 
 # Now we can call `fit`:
@@ -1073,9 +1079,9 @@ def simple_net(xb):
 #
 # Here, `w1` and `w2` are weight tensors, and `b1` and `b2` are bias tensors; that is, parameters that are initially randomly initialized, just like we did in the previous section:
 
-w1 = init_params((28*28,30))
+w1 = init_params((28 * 28, 30))
 b1 = init_params(30)
-w2 = init_params((30,1))
+w2 = init_params((30, 1))
 b2 = init_params(1)
 
 # The key point about this is that `w1` has 30 output activations (which means that `w2` must have 30 input activations, so they match). That means that the first layer can construct 30 different features, each representing some different mix of pixels. You can change that `30` to anything you like, to make the model more or less complex.
@@ -1097,9 +1103,9 @@ plot_function(F.relu)
 # Just like in the previous section, we can replace this code with something a bit simpler, by taking advantage of PyTorch:
 
 simple_net = nn.Sequential(
-    nn.Linear(28*28,30),
+    nn.Linear(28 * 28, 30),
     nn.ReLU(),
-    nn.Linear(30,1)
+    nn.Linear(30, 1)
 )
 
 # `nn.Sequential` creates a module that will call each of the listed layers or functions in turn.
@@ -1111,12 +1117,12 @@ simple_net = nn.Sequential(
 learn = Learner(dls, simple_net, opt_func=SGD,
                 loss_func=mnist_loss, metrics=batch_accuracy)
 
-#hide_output
+# hide_output
 learn.fit(40, 0.1)
 
 # We're not showing the 40 lines of output here to save room; the training process is recorded in `learn.recorder`, with the table of output stored in the `values` attribute, so we can plot the accuracy over training as:
 
-plt.plot(L(learn.recorder.values).itemgot(2));
+plt.plot(L(learn.recorder.values).itemgot(2))
 
 # And we can view the final accuracy:
 
@@ -1180,7 +1186,7 @@ learn.fit_one_cycle(1, 0.1)
 # |Forward pass | Applying the model to some input and computing the predictions.
 # |Loss | A value that represents how well (or badly) our model is doing.
 # |Gradient | The derivative of the loss with respect to some parameter of the model.
-# |Backard pass | Computing the gradients of the loss with respect to all model parameters.
+# |Backward pass | Computing the gradients of the loss with respect to all model parameters.
 # |Gradient descent | Taking a step in the directions opposite to the gradients to make the model parameters a little bit better.
 # |Learning rate | The size of the step we take when applying SGD to update the parameters of the model.
 # |=====
