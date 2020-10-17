@@ -15,14 +15,13 @@
 #     name: python3
 # ---
 
-#hide
-# !pip install -Uqq fastbook
+# hide
+from fastai.vision.widgets import *
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-#hide
-from fastbook import *
-from fastai.vision.widgets import *
+# hide
 
 # + active=""
 # [[chapter_production]]
@@ -36,7 +35,7 @@ from fastai.vision.widgets import *
 
 # ## The Practice of Deep Learning
 
-# We've seen that deep learning can solve a lot of challenging problems quickly and with little code. As a beginner, there's a sweet spot of problems that are similar enough to our example problems that you can very quickly get extremely useful results. However, deep learning isn't magic! The same 6 lines of code won't work for every problem anyone can think of today. Underestimating the constraints and overestimating the capabilities of deep learning may lead to frustratingly poor results, at least until you gain some experience and can solve the problems that arise. Conversely, overestimating the constraints and underestimating the capabilities of deep learning may mean you do not attempt a solvable problem because you talk yourself out of it. 
+# We've seen that deep learning can solve a lot of challenging problems quickly and with little code. As a beginner, there's a sweet spot of problems that are similar enough to our example problems that you can very quickly get extremely useful results. However, deep learning isn't magic! The same 6 lines of code won't work for every problem anyone can think of today. Underestimating the constraints and overestimating the capabilities of deep learning may lead to frustratingly poor results, at least until you gain some experience and can solve the problems that arise. Conversely, overestimating the constraints and underestimating the capabilities of deep learning may mean you do not attempt a solvable problem because you talk yourself out of it.
 #
 # We often talk to people who underestimate both the constraints and the capabilities of deep learning. Both of these can be problems: underestimating the capabilities means that you might not even try things that could be very beneficial, and underestimating the constraints might mean that you fail to consider and react to important issues.
 #
@@ -52,7 +51,7 @@ from fastai.vision.widgets import *
 
 # As you work through this book, we suggest that you complete lots of small experiments, by running and adjusting the notebooks we provide, at the same time that you gradually develop your own projects. That way, you will be getting experience with all of the tools and techniques that we're explaining, as we discuss them.
 #
-# > s: To make the most of this book, take the time to experiment between each chapter, be it on your own project or by exploring the notebooks we provide. Then try rewriting those notebooks from scratch on a new dataset. It's only by practicing (and failing) a lot that you will get an intuition of how to train a model.  
+# > s: To make the most of this book, take the time to experiment between each chapter, be it on your own project or by exploring the notebooks we provide. Then try rewriting those notebooks from scratch on a new dataset. It's only by practicing (and failing) a lot that you will get an intuition of how to train a model.
 #
 # By using the end-to-end iteration approach you will also get a better understanding of how much data you really need. For instance, you may find you can only easily get 200 labeled data items, and you can't really know until you try whether that's enough to get the performance you need for your application to work well in practice.
 #
@@ -154,7 +153,7 @@ len(ims)
 # We've successfully downloaded the URLs of 150 grizzly bears (or, at least, images that Bing Image Search finds for that search term). Let's look at one:
 
 # + hide_input=true
-#hide
+# hide
 ims = ['http://3.bp.blogspot.com/-S1scRCkI3vY/UHzV2kucsPI/AAAAAAAAA-k/YQ5UzHEm9Ss/s1600/Grizzly%2BBear%2BWildlife.jpg']
 # -
 
@@ -162,17 +161,17 @@ dest = 'images/grizzly.jpg'
 download_url(ims[0], dest)
 
 im = Image.open(dest)
-im.to_thumb(128,128)
+im.to_thumb(128, 128)
 
 # This seems to have worked nicely, so let's use fastai's `download_images` to download all the URLs for each of our search terms. We'll put each in a separate folder:
 
-bear_types = 'grizzly','black','teddy'
+bear_types = 'grizzly', 'black', 'teddy'
 path = Path('bears')
 
 if not path.exists():
     path.mkdir()
     for o in bear_types:
-        dest = (path/o)
+        dest = (path / o)
         dest.mkdir(exist_ok=True)
         results = search_images_bing(key, f'{o} bear')
         download_images(dest, urls=results.attrgot('content_url'))
@@ -191,7 +190,7 @@ failed
 
 # To remove all the failed images, you can use `unlink` on each of them. Note that, like most fastai functions that return a collection, `verify_images` returns an object of type `L`, which includes the `map` method. This calls the passed function on each element of the collection:
 
-failed.map(Path.unlink);
+failed.map(Path.unlink)
 
 # ### Sidebar: Getting Help in Jupyter Notebooks
 
@@ -202,7 +201,7 @@ failed.map(Path.unlink);
 # a window will pop up with:
 # ```
 # Signature: verify_images(fns)
-# Source:   
+# Source:
 # def verify_images(fns):
 #     "Find images in `fns` that can't be opened"
 #     return L(fns[i] for i,o in
@@ -256,13 +255,13 @@ failed.map(Path.unlink);
 # So far we have seen a number of *factory methods* for particular combinations of these things, which are convenient when you have an application and data structure that happen to fit into those predefined methods. For when you don't, fastai has an extremely flexible system called the *data block API*. With this API you can fully customize every stage of the creation of your `DataLoaders`. Here is what we need to create a `DataLoaders` for the dataset that we just downloaded:
 
 bears = DataBlock(
-    blocks=(ImageBlock, CategoryBlock), 
-    get_items=get_image_files, 
+    blocks=(ImageBlock, CategoryBlock),
+    get_items=get_image_files,
     splitter=RandomSplitter(valid_pct=0.2, seed=42),
     get_y=parent_label,
     item_tfms=Resize(128))
 
-# Let's look at each of these arguments in turn. First we provide a tuple where we specify what types we want for the independent and dependent variables: 
+# Let's look at each of these arguments in turn. First we provide a tuple where we specify what types we want for the independent and dependent variables:
 #
 # ```python
 # blocks=(ImageBlock, CategoryBlock)
@@ -374,14 +373,14 @@ interp.plot_top_losses(5, nrows=1)
 #
 # fastai includes a handy GUI for data cleaning called `ImageClassifierCleaner` that allows you to choose a category and the training versus validation set and view the highest-loss images (in order), along with menus to allow images to be selected for removal or relabeling:
 
-#hide_output
+# hide_output
 cleaner = ImageClassifierCleaner(learn)
 cleaner
 
 # <img alt="Cleaner widget" width="700" src="images/att_00007.png">
 
 # +
-#hide
+# hide
 # for idx in cleaner.delete(): cleaner.fns[idx].unlink()
 # for idx,cat in cleaner.change(): shutil.move(str(cleaner.fns[idx]), path/cat)
 # -
@@ -429,7 +428,7 @@ path.ls(file_exts='.pkl')
 #
 # When we use a model for getting predictions, instead of training, we call it *inference*. To create our inference learner from the exported file, we use `load_learner` (in this case, this isn't really necessary, since we already have a working `Learner` in our notebook; we're just doing it here so you can see the whole process end-to-end):
 
-learn_inf = load_learner(path/'export.pkl')
+learn_inf = load_learner(path / 'export.pkl')
 
 # When we're doing inference, we're generally just getting predictions for one image at a time. To do this, pass a filename to `predict`:
 
@@ -458,7 +457,7 @@ learn_inf.dls.vocab
 #
 # But we still have the advantage of developing in a notebook, so with ipywidgets, we can build up our GUI step by step. We will use this approach to create a simple image classifier. First, we need a file upload widget:
 
-#hide_output
+# hide_output
 btn_upload = widgets.FileUpload()
 btn_upload
 
@@ -467,9 +466,9 @@ btn_upload
 # Now we can grab the image:
 
 # + hide_input=true
-#hide
+# hide
 # For the book, we can't actually click an upload button, so we fake it
-btn_upload = SimpleNamespace(data = ['images/grizzly.jpg'])
+btn_upload = SimpleNamespace(data=['images/grizzly.jpg'])
 # -
 
 img = PILImage.create(btn_upload.data[-1])
@@ -478,21 +477,22 @@ img = PILImage.create(btn_upload.data[-1])
 
 # We can use an `Output` widget to display it:
 
-#hide_output
+# hide_output
 out_pl = widgets.Output()
 out_pl.clear_output()
-with out_pl: display(img.to_thumb(128,128))
+with out_pl:
+    display(img.to_thumb(128, 128))
 out_pl
 
 # <img alt="Output widget representing the image" width="117" src="images/att_00009.png">
 #
 # Then we can get our predictions:
 
-pred,pred_idx,probs = learn_inf.predict(img)
+pred, pred_idx, probs = learn_inf.predict(img)
 
 # and use a `Label` to display them:
 
-#hide_output
+# hide_output
 lbl_pred = widgets.Label()
 lbl_pred.value = f'Prediction: {pred}; Probability: {probs[pred_idx]:.04f}'
 lbl_pred
@@ -501,7 +501,7 @@ lbl_pred
 #
 # We'll need a button to do the classification. It looks exactly like the upload button:
 
-#hide_output
+# hide_output
 btn_run = widgets.Button(description='Classify')
 btn_run
 
@@ -512,8 +512,9 @@ btn_run
 def on_click_classify(change):
     img = PILImage.create(btn_upload.data[-1])
     out_pl.clear_output()
-    with out_pl: display(img.to_thumb(128,128))
-    pred,pred_idx,probs = learn_inf.predict(img)
+    with out_pl:
+        display(img.to_thumb(128, 128))
+    pred, pred_idx, probs = learn_inf.predict(img)
     lbl_pred.value = f'Prediction: {pred}; Probability: {probs[pred_idx]:.04f}'
 
 btn_run.on_click(on_click_classify)
@@ -523,12 +524,12 @@ btn_run.on_click(on_click_classify)
 #
 # We can now put them all in a vertical box (`VBox`) to complete our GUI:
 
-#hide
-#Putting back btn_upload to a widget for next cell
+# hide
+# Putting back btn_upload to a widget for next cell
 btn_upload = widgets.FileUpload()
 
-#hide_output
-VBox([widgets.Label('Select your bear!'), 
+# hide_output
+VBox([widgets.Label('Select your bear!'),
       btn_upload, btn_run, out_pl, lbl_pred])
 
 # <img alt="The whole widget" width="233" src="images/att_00011.png">
@@ -538,8 +539,7 @@ VBox([widgets.Label('Select your bear!'),
 # ### Turning Your Notebook into a Real App
 
 # +
-#hide
-# # !pip install voila
+# hide
 # # !jupyter serverextension enable voila —sys-prefix
 # -
 
@@ -547,7 +547,6 @@ VBox([widgets.Label('Select your bear!'),
 #
 # Next, install Voilà if you haven't already, by copying these lines into a notebook cell and executing it:
 #
-#     # !pip install voila
 #     # !jupyter serverextension enable voila —sys-prefix
 #
 # Cells that begin with a `!` do not contain Python code, but instead contain code that is passed to your shell (bash, Windows PowerShell, etc.). If you are comfortable using the command line, which we'll discuss more later in this book, you can of course simply type these two lines (without the `!` prefix) directly into your terminal. In this case, the first line installs the `voila` library and application, and the second connects it to your existing Jupyter notebook.
@@ -575,7 +574,7 @@ VBox([widgets.Label('Select your bear!'),
 # 2. Paste the URL of that repo into Binder's URL, as shown in <<deploy-binder>>.
 # 3. Change the File dropdown to instead select URL.
 # 4. In the "URL to open" field, enter `/voila/render/name.ipynb` (replacing `name` with the name of for your notebook).
-# 5. Click the clickboard button at the bottom right to copyt the URL and paste it somewhere safe. 
+# 5. Click the clickboard button at the bottom right to copyt the URL and paste it somewhere safe.
 # 6. Click Launch.
 
 # <img alt="Deploying to Binder" width="800" caption="Deploying to Binder" id="deploy-binder" src="images/att_00001.png">
@@ -658,7 +657,7 @@ VBox([widgets.Label('Select your bear!'),
 # ____
 # ```
 #
-# Perhaps her most important tip is this: 
+# Perhaps her most important tip is this:
 #
 # > : You are best positioned to help people one step behind you. The material is still fresh in your mind. Many experts have forgotten what it was like to be a beginner (or an intermediate) and have forgotten why the topic is hard to understand when you first hear it. The context of your particular background, your particular style, and your knowledge level will give a different twist to what you’re writing about.
 #
@@ -700,5 +699,3 @@ VBox([widgets.Label('Select your bear!'),
 # 1. When might it be best to avoid certain types of data augmentation?
 # 1. For a project you're interested in applying deep learning to, consider the thought experiment "What would happen if it went really, really well?"
 # 1. Start a blog, and write your first blog post. For instance, write about what you think deep learning might be useful for in a domain you're interested in.
-
-
