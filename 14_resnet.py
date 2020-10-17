@@ -15,14 +15,13 @@
 #     name: python3
 # ---
 
-#hide
-# !pip install -Uqq fastbook
+# hide
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
 # + hide_input=false
-#hide
-from fastbook import *
+# hide
 
 
 # + active=""
@@ -44,7 +43,7 @@ from fastbook import *
 def get_data(url, presize, resize):
     path = untar_data(url)
     return DataBlock(
-        blocks=(ImageBlock, CategoryBlock), get_items=get_image_files, 
+        blocks=(ImageBlock, CategoryBlock), get_items=get_image_files,
         splitter=GrandparentSplitter(valid_name='val'),
         get_y=parent_label, item_tfms=Resize(presize),
         batch_tfms=[*aug_transforms(min_scale=0.5, size=resize),
@@ -68,7 +67,7 @@ dls.show_batch(max_n=4)
 #
 # This problem was solved through the creation of *fully convolutional networks*. The trick in fully convolutional networks is to take the average of activations across a convolutional grid. In other words, we can simply use this function:
 
-def avg_pool(x): return x.mean((2,3))
+def avg_pool(x): return x.mean((2, 3))
 
 
 # As you see, it is taking the mean over the x- and y-axes. This function will always convert a grid of activations into a single activation per image. PyTorch provides a slightly more versatile module called `nn.AdaptiveAvgPool2d`, which averages a grid of activations into whatever sized destination you require (although we nearly always use a size of 1).
@@ -92,7 +91,7 @@ def get_model():
 
 # > stop: Consider this question: would this approach makes sense for an optical character recognition (OCR) problem such as MNIST? The vast majority of practitioners tackling OCR and similar problems tend to use fully convolutional networks, because that's what nearly everybody learns nowadays. But it really doesn't make any sense! You can't decide, for instance, whether a number is a 3 or an 8 by slicing it into small pieces, jumbling them up, and deciding whether on average each piece looks like a 3 or an 8. But that's what adaptive average pooling effectively does! Fully convolutional networks are only really a good choice for objects that don't have a single correct orientation or size (e.g., like most natural photos).
 
-# Once we are done with our convolutional layers, we will get activations of size `bs x ch x h x w` (batch size, a certain number of channels, height, and width). We want to convert this to a tensor of size `bs x ch`, so we take the average over the last two dimensions and flatten the trailing 1×1 dimension like we did in our previous model. 
+# Once we are done with our convolutional layers, we will get activations of size `bs x ch x h x w` (batch size, a certain number of channels, height, and width). We want to convert this to a tensor of size `bs x ch`, so we take the average over the last two dimensions and flatten the trailing 1×1 dimension like we did in our previous model.
 #
 # This is different from regular pooling in the sense that those layers will generally take the average (for average pooling) or the maximum (for max pooling) of a window of a given size. For instance, max pooling layers of size 2, which were very popular in older CNNs, reduce the size of our image by half on each dimension by taking the maximum of each 2×2 window (with a stride of 2).
 #
@@ -101,7 +100,7 @@ def get_model():
 # +
 def get_learner(m):
     return Learner(dls, m, loss_func=nn.CrossEntropyLoss(), metrics=accuracy
-                  ).to_fp16()
+                   ).to_fp16()
 
 learn = get_learner(get_model())
 # -
@@ -164,9 +163,9 @@ learn.fit_one_cycle(5, 3e-3)
 class ResBlock(Module):
     def __init__(self, ni, nf):
         self.convs = nn.Sequential(
-            ConvLayer(ni,nf),
-            ConvLayer(nf,nf, norm_type=NormType.BatchZero))
-        
+            ConvLayer(ni, nf),
+            ConvLayer(nf, nf, norm_type=NormType.BatchZero))
+
     def forward(self, x): return x + self.convs(x)
 
 
@@ -182,7 +181,7 @@ class ResBlock(Module):
 
 # Here's a ResBlock using these tricks to handle changing shape in the skip connection:
 
-def _conv_block(ni,nf,stride):
+def _conv_block(ni, nf, stride):
     return nn.Sequential(
         ConvLayer(ni, nf, stride=stride),
         ConvLayer(nf, nf, act_cls=None, norm_type=NormType.BatchZero))
@@ -190,9 +189,9 @@ def _conv_block(ni,nf,stride):
 
 class ResBlock(Module):
     def __init__(self, ni, nf, stride=1):
-        self.convs = _conv_block(ni,nf,stride)
-        self.idconv = noop if ni==nf else ConvLayer(ni, nf, 1, act_cls=None)
-        self.pool = noop if stride==1 else nn.AvgPool2d(2, ceil_mode=True)
+        self.convs = _conv_block(ni, nf, stride)
+        self.idconv = noop if ni == nf else ConvLayer(ni, nf, 1, act_cls=None)
+        self.pool = noop if stride == 1 else nn.AvgPool2d(2, ceil_mode=True)
 
     def forward(self, x):
         return F.relu(self.convs(x) + self.idconv(self.pool(x)))
@@ -204,7 +203,7 @@ class ResBlock(Module):
 #
 # Let's replace our `block` with `ResBlock`, and try it out:
 
-def block(ni,nf): return ResBlock(ni, nf, stride=2)
+def block(ni, nf): return ResBlock(ni, nf, stride=2)
 learn = get_learner(get_model())
 
 learn.fit_one_cycle(5, 3e-3)
@@ -240,13 +239,13 @@ learn.fit_one_cycle(5, 3e-3)
 
 def _resnet_stem(*sizes):
     return [
-        ConvLayer(sizes[i], sizes[i+1], 3, stride = 2 if i==0 else 1)
-            for i in range(len(sizes)-1)
+        ConvLayer(sizes[i], sizes[i + 1], 3, stride=2 if i == 0 else 1)
+        for i in range(len(sizes) - 1)
     ] + [nn.MaxPool2d(kernel_size=3, stride=2, padding=1)]
 
 
-#hide_output
-_resnet_stem(3,32,32,64)
+# hide_output
+_resnet_stem(3, 32, 32, 64)
 
 
 # ```
@@ -279,19 +278,20 @@ _resnet_stem(3,32,32,64)
 
 class ResNet(nn.Sequential):
     def __init__(self, n_out, layers, expansion=1):
-        stem = _resnet_stem(3,32,32,64)
+        stem = _resnet_stem(3, 32, 32, 64)
         self.block_szs = [64, 64, 128, 256, 512]
-        for i in range(1,5): self.block_szs[i] *= expansion
+        for i in range(1, 5):
+            self.block_szs[i] *= expansion
         blocks = [self._make_layer(*o) for o in enumerate(layers)]
         super().__init__(*stem, *blocks,
                          nn.AdaptiveAvgPool2d(1), Flatten(),
                          nn.Linear(self.block_szs[-1], n_out))
-    
+
     def _make_layer(self, idx, n_layers):
-        stride = 1 if idx==0 else 2
-        ch_in,ch_out = self.block_szs[idx:idx+2]
+        stride = 1 if idx == 0 else 2
+        ch_in, ch_out = self.block_szs[idx:idx + 2]
         return nn.Sequential(*[
-            ResBlock(ch_in if i==0 else ch_out, ch_out, stride if i==0 else 1)
+            ResBlock(ch_in if i == 0 else ch_out, ch_out, stride if i == 0 else 1)
             for i in range(n_layers)
         ])
 
@@ -300,7 +300,7 @@ class ResNet(nn.Sequential):
 #
 # The various versions of the models (ResNet-18, -34, -50, etc.) just change the number of blocks in each of those groups. This is the definition of a ResNet-18:
 
-rn = ResNet(dls.c, [2,2,2,2])
+rn = ResNet(dls.c, [2, 2, 2, 2])
 
 # Let's train it for a little bit and see how it fares compared to the previous model:
 
@@ -310,7 +310,7 @@ learn.fit_one_cycle(5, 3e-3)
 
 # Even though we have more channels (and our model is therefore even more accurate), our training is just as fast as before, thanks to our optimized stem.
 #
-# To make our model deeper without taking too much compute or memory, we can use another kind of layer introduced by the ResNet paper for ResNets with a depth of 50 or more: the bottleneck layer. 
+# To make our model deeper without taking too much compute or memory, we can use another kind of layer introduced by the ResNet paper for ResNets with a depth of 50 or more: the bottleneck layer.
 
 # ### Bottleneck Layers
 
@@ -322,11 +322,11 @@ learn.fit_one_cycle(5, 3e-3)
 #
 # Let's try replacing our `ResBlock` with this bottleneck design:
 
-def _conv_block(ni,nf,stride):
+def _conv_block(ni, nf, stride):
     return nn.Sequential(
-        ConvLayer(ni, nf//4, 1),
-        ConvLayer(nf//4, nf//4, stride=stride), 
-        ConvLayer(nf//4, nf, 1, act_cls=None, norm_type=NormType.BatchZero))
+        ConvLayer(ni, nf // 4, 1),
+        ConvLayer(nf // 4, nf // 4, stride=stride),
+        ConvLayer(nf // 4, nf, 1, act_cls=None, norm_type=NormType.BatchZero))
 
 
 # We'll use this to create a ResNet-50 with group sizes of `(3,4,6,3)`. We now need to pass `4` in to the `expansion` parameter of `ResNet`, since we need to start with four times less channels and we'll end with four times more channels.
@@ -337,7 +337,7 @@ dls = get_data(URLs.IMAGENETTE_320, presize=320, resize=224)
 
 # We don't have to do anything to account for the larger 224-pixel images; thanks to our fully convolutional network, it just works. This is also why we were able to do *progressive resizing* earlier in the book—the models we used were fully convolutional, so we were even able to fine-tune models trained with different sizes. We can now train our model and see the effects:
 
-rn = ResNet(dls.c, [3,4,6,3], 4)
+rn = ResNet(dls.c, [3, 4, 6, 3], 4)
 
 learn = get_learner(rn)
 learn.fit_one_cycle(20, 3e-3)
@@ -381,5 +381,3 @@ learn.fit_one_cycle(20, 3e-3)
 # 1. In <<chapter_foundations>> we introduce *Einstein summation notation*. Skip ahead to see how this works, and then write an implementation of the 1×1 convolution operation using `torch.einsum`. Compare it to the same operation using `torch.conv2d`.
 # 1. Write a "top-5 accuracy" function using plain PyTorch or plain Python.
 # 1. Train a model on Imagenette for more epochs, with and without label smoothing. Take a look at the Imagenette leaderboards and see how close you can get to the best results shown. Read the linked pages describing the leading approaches.
-
-
