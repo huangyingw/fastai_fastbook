@@ -15,13 +15,16 @@
 #     name: python3
 # ---
 
-#hide
-# !pip install -Uqq fastbook
+# hide
+from fastai.collab import *
+from fastai.tabular.all import *
+from fastai.text.all import *
+from fastai.vision.all import *
+from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-#hide
-from fastbook import *
+# hide
 
 # + active=""
 # [[chapter_intro]]
@@ -85,18 +88,18 @@ from fastbook import *
 #
 # > : People are smarter than today's computers because the brain employs a basic computational architecture that is more suited to deal with a central aspect of the natural information processing tasks that people are so good at. ...We will introduce a computational framework for modeling cognitive processes that seems… closer than other frameworks to the style of computation as it might be done by the brain.
 #
-# The premise that PDP is using here is that traditional computer programs work very differently to brains, and that might be why computer programs had been (at that point) so bad at doing things that brains find easy (such as recognizing objects in pictures). The authors claimed that the PDP approach was "closer 
+# The premise that PDP is using here is that traditional computer programs work very differently to brains, and that might be why computer programs had been (at that point) so bad at doing things that brains find easy (such as recognizing objects in pictures). The authors claimed that the PDP approach was "closer
 # than other frameworks" to how the brain works, and therefore it might be better able to handle these kinds of tasks.
 #
 # In fact, the approach laid out in PDP is very similar to the approach used in today's neural networks. The book defined parallel distributed processing as requiring:
 #
 # 1. A set of *processing units*
 # 1. A *state of activation*
-# 1. An *output function* for each unit 
-# 1. A *pattern of connectivity* among units 
-# 1. A *propagation rule* for propagating patterns of activities through the network of connectivities 
+# 1. An *output function* for each unit
+# 1. A *pattern of connectivity* among units
+# 1. A *propagation rule* for propagating patterns of activities through the network of connectivities
 # 1. An *activation rule* for combining the inputs impinging on a unit with the current state of that unit to produce an output for the unit
-# 1. A *learning rule* whereby patterns of connectivity are modified by experience 
+# 1. A *learning rule* whereby patterns of connectivity are modified by experience
 # 1. An *environment* within which the system must operate
 #
 # We will see in this book that modern neural networks handle each of these requirements.
@@ -105,7 +108,7 @@ from fastbook import *
 #
 # Although researchers showed 30 years ago that to get practical good performance you need to use even more layers of neurons, it is only in the last decade that this principle has been more widely appreciated and applied. Neural networks are now finally living up to their potential, thanks to the use of more layers, coupled with the capacity to do so due to improvements in computer hardware, increases in data availability, and algorithmic tweaks that allow neural networks to be trained faster and more easily. We now have what Rosenblatt promised: "a machine capable of perceiving, recognizing, and identifying its surroundings without any human training or control."
 #
-# This is what you will learn how to build in this book. But first, since we are going to be spending a lot of time together, let's get to know each other a bit… 
+# This is what you will learn how to build in this book. But first, since we are going to be spending a lot of time together, let's get to know each other a bit…
 
 # ## Who We Are
 
@@ -240,11 +243,10 @@ from fastbook import *
 # The first two steps only need to be run once on your GPU server. If you run the cell again, it will use the dataset and model that have already been downloaded, rather than downloading them again. Let's take a look at the contents of the cell, and the results (<<first_training>>):
 
 # +
-#id first_training
-#caption Results from the first training
+# id first_training
+# caption Results from the first training
 # CLICK ME
-from fastai.vision.all import *
-path = untar_data(URLs.PETS)/'images'
+path = untar_data(URLs.PETS) / 'images'
 
 def is_cat(x): return x[0].isupper()
 dls = ImageDataLoaders.from_name_func(
@@ -265,7 +267,7 @@ learn.fine_tune(1)
 
 # You just saw how a cell that outputs a table looks inside the book. Here is an example of a cell that outputs text:
 
-1+1
+1 + 1
 
 # Jupyter will always print or show the result of the last line (if there is one). For instance, here is an example of a cell that outputs an image:
 
@@ -278,7 +280,7 @@ img.to_thumb(192)
 #
 # Finally, let's check that this model actually works. Go and get a photo of a dog, or a cat; if you don't have one handy, just search Google Images and download an image that you find there. Now execute the cell with `uploader` defined. It will output a button you can click, so you can select the image you want to classify:
 
-#hide_output
+# hide_output
 uploader = widgets.FileUpload()
 uploader
 
@@ -287,19 +289,19 @@ uploader
 # Now you can pass the uploaded file to the model. Make sure that it is a clear photo of a single dog or a cat, and not a line drawing, cartoon, or similar. The notebook will tell you whether it thinks it is a dog or a cat, and how confident it is. Hopefully, you'll find that your model did a great job:
 
 # + hide_input=true
-#hide
+# hide
 # For the book, we can't actually click an upload button, so we fake it
 # uploader = SimpleNamespace(data = ['images/chapter1_cat_example.jpg'])
 # -
 
 img = PILImage.create(uploader.data[0])
-is_cat,_,probs = learn.predict(img)
+is_cat, _, probs = learn.predict(img)
 print(f"Is this a cat?: {is_cat}.")
 print(f"Probability it's a cat: {probs[1].item():.6f}")
 
 # Congratulations on your first classifier!
 #
-# But what does this mean? What did you actually do? In order to explain this, let's zoom out again to take in the big picture. 
+# But what does this mean? What did you actually do? In order to explain this, let's zoom out again to take in the big picture.
 
 # ### What Is Machine Learning?
 
@@ -314,10 +316,10 @@ print(f"Probability it's a cat: {probs[1].item():.6f}")
 # Normally, it's easy enough for us to write down the steps to complete a task when we're writing a program. We just think about the steps we'd take if we had to do the task by hand, and then we translate them into code. For instance, we can write a function that sorts a list. In general, we'd write a function that looks something like <<basic_program>> (where *inputs* might be an unsorted list, and *results* a sorted list).
 
 # + hide_input=false
-#hide_input
-#caption A traditional program
-#id basic_program
-#alt Pipeline inputs, program, results
+# hide_input
+# caption A traditional program
+# id basic_program
+# alt Pipeline inputs, program, results
 gv('''program[shape=box3d width=1 height=0.7]
 inputs->program->results''')
 # -
@@ -332,11 +334,11 @@ inputs->program->results''')
 
 # > : Suppose we arrange for some automatic means of testing the effectiveness of any current weight assignment in terms of actual performance and provide a mechanism for altering the weight assignment so as to maximize the performance. We need not go into the details of such a procedure to see that it could be made entirely automatic and to see that a machine so programmed would "learn" from its experience.
 
-# There are a number of powerful concepts embedded in this short statement: 
+# There are a number of powerful concepts embedded in this short statement:
 #
-# - The idea of a "weight assignment" 
+# - The idea of a "weight assignment"
 # - The fact that every weight assignment has some "actual performance"
-# - The requirement that there be an "automatic means" of testing that performance,  
+# - The requirement that there be an "automatic means" of testing that performance,
 # - The need for a "mechanism" (i.e., another automatic process) for improving the performance by changing the weight assignments
 #
 # Let us take these concepts one by one, in order to understand how they fit together in practice. First, we need to understand what Samuel means by a *weight assignment*.
@@ -346,14 +348,14 @@ inputs->program->results''')
 # Since they will affect the program they are in a sense another kind of input, so we will update our basic picture in <<basic_program>> and replace it with <<weight_assignment>> in order to take this into account.
 
 # + hide_input=true
-#hide_input
-#caption A program using weight assignment
-#id weight_assignment
+# hide_input
+# caption A program using weight assignment
+# id weight_assignment
 gv('''model[shape=box3d width=1 height=0.7]
 inputs->model->results; weights->model''')
 # -
 
-# We've changed the name of our box from *program* to *model*. This is to follow modern terminology and to reflect that the *model* is a special kind of program: it's one that can do *many different things*, depending on the *weights*. It can be implemented in many different ways. For instance, in Samuel's checkers program, different values of the weights would result in different checkers-playing strategies. 
+# We've changed the name of our box from *program* to *model*. This is to follow modern terminology and to reflect that the *model* is a special kind of program: it's one that can do *many different things*, depending on the *weights*. It can be implemented in many different ways. For instance, in Samuel's checkers program, different values of the weights would result in different checkers-playing strategies.
 #
 # (By the way, what Samuel called "weights" are most generally referred to as model *parameters* these days, in case you have encountered that term. The term *weights* is reserved for a particular type of model parameter.)
 #
@@ -366,26 +368,26 @@ inputs->model->results; weights->model''')
 # <<training_loop>> shows the full picture of Samuel's idea of training a machine learning model.
 
 # + hide_input=true
-#hide_input
-#caption Training a machine learning model
-#id training_loop
-#alt The basic training loop
+# hide_input
+# caption Training a machine learning model
+# id training_loop
+# alt The basic training loop
 gv('''ordering=in
 model[shape=box3d width=1 height=0.7]
 inputs->model->results; weights->model; results->performance
 performance->weights[constraint=false label=update]''')
 # -
 
-# Notice the distinction between the model's *results*  (e.g., the moves in a checkers game) and its *performance* (e.g., whether it wins the game, or how quickly it wins). 
+# Notice the distinction between the model's *results*  (e.g., the moves in a checkers game) and its *performance* (e.g., whether it wins the game, or how quickly it wins).
 #
 # Also note that once the model is trained—that is, once we've chosen our final, best, favorite weight assignment—then we can think of the weights as being *part of the model*, since we're not varying them any more.
 #
 # Therefore, actually *using* a model after it's trained looks like <<using_model>>.
 
 # + hide_input=true
-#hide_input
-#caption Using a trained model as a program
-#id using_model
+# hide_input
+# caption Using a trained model as a program
+# id using_model
 gv('''model[shape=box3d width=1 height=0.7]
 inputs->model->results''')
 # -
@@ -430,9 +432,9 @@ inputs->model->results''')
 # After making these changes, our diagram in <<training_loop>> looks like <<detailed_loop>>.
 
 # + hide_input=true
-#hide_input
-#caption Detailed training loop
-#id detailed_loop
+# hide_input
+# caption Detailed training loop
+# id detailed_loop
 gv('''ordering=in
 model[shape=box3d width=1 height=0.7 label=architecture]
 inputs->model->predictions; parameters->model; labels->loss; predictions->loss
@@ -505,7 +507,7 @@ loss->parameters[constraint=false label=update]''')
 #
 # Finally, we define the `Transform`s that we need. A `Transform` contains code that is applied automatically during training; fastai includes many predefined `Transform`s, and adding new ones is as simple as creating a Python function. There are two kinds: `item_tfms` are applied to each item (in this case, each item is resized to a 224-pixel square), while `batch_tfms` are applied to a *batch* of items at a time using the GPU, so they're particularly fast (we'll see many examples of these throughout this book).
 #
-# Why 224 pixels? This is the standard size for historical reasons (old pretrained models require this size exactly), but you can pass pretty much anything. If you increase the size, you'll often get a model with better results (since it will be able to focus on more details), but at the price of speed and memory consumption; the opposite is true if you decrease the size. 
+# Why 224 pixels? This is the standard size for historical reasons (old pretrained models require this size exactly), but you can pass pretty much anything. If you increase the size, you'll often get a model with better results (since it will be able to focus on more details), but at the price of speed and memory consumption; the opposite is true if you decrease the size.
 
 # > Note: Classification and Regression: _classification_ and _regression_ have very specific meanings in machine learning. These are the two main types of model that we will be investigating in this book. A classification model is one which attempts to predict a class, or category. That is, it's predicting from a number of discrete possibilities, such as "dog" or "cat." A regression model is one which attempts to predict one or more numeric quantities, such as a temperature or a location. Sometimes people use the word _regression_ to refer to a particular kind of model called a _linear regression model_; this is a bad practice, and we won't be using that terminology in this book!
 
@@ -594,9 +596,9 @@ loss->parameters[constraint=false label=update]''')
 
 # <img src="images/chapter2_layer4and5.PNG" alt="Activations of layers 4 and 5 of a CNN" width="800" caption="Activations of layers 4 and 5 of a CNN (courtesy of Matthew D. Zeiler and Rob Fergus)" id="img_layer4">
 
-# This article was studying an older model called *AlexNet* that only contained five layers. Networks developed since then can have hundreds of layers—so you can imagine how rich the features developed by these models can be! 
+# This article was studying an older model called *AlexNet* that only contained five layers. Networks developed since then can have hundreds of layers—so you can imagine how rich the features developed by these models can be!
 #
-# When we fine-tuned our pretrained model earlier, we adapted what those last layers focus on (flowers, humans, animals) to specialize on the cats versus dogs problem. More generally, we could specialize such a pretrained model on many different tasks. Let's have a look at some examples. 
+# When we fine-tuned our pretrained model earlier, we adapted what those last layers focus on (flowers, humans, animals) to specialize on the cats versus dogs problem. More generally, we could specialize such a pretrained model on many different tasks. Let's have a look at some examples.
 
 # ### Image Recognizers Can Tackle Non-Image Tasks
 
@@ -675,9 +677,9 @@ loss->parameters[constraint=false label=update]''')
 # +
 path = untar_data(URLs.CAMVID_TINY)
 dls = SegmentationDataLoaders.from_label_func(
-    path, bs=8, fnames = get_image_files(path/"images"),
-    label_func = lambda o: path/'labels'/f'{o.stem}_P{o.suffix}',
-    codes = np.loadtxt(path/'codes.txt', dtype=str)
+    path, bs=8, fnames=get_image_files(path / "images"),
+    label_func=lambda o: path / 'labels' / f'{o.stem}_P{o.suffix}',
+    codes=np.loadtxt(path / 'codes.txt', dtype=str)
 )
 
 learn = unet_learner(dls, resnet34)
@@ -688,12 +690,11 @@ learn.fine_tune(8)
 #
 # We can visualize how well it achieved its task, by asking the model to color-code each pixel of an image. As you can see, it nearly perfectly classifies every pixel in every object. For instance, notice that all of the cars are overlaid with the same color and all of the trees are overlaid with the same color (in each pair of images, the lefthand image is the ground truth label and the right is the prediction from the model):
 
-learn.show_results(max_n=6, figsize=(7,8))
+learn.show_results(max_n=6, figsize=(7, 8))
 
 # One other area where deep learning has dramatically improved in the last couple of years is natural language processing (NLP). Computers can now generate text, translate automatically from one language to another, analyze comments, label words in sentences, and much more. Here is all of the code necessary to train a model that can classify the sentiment of a movie review better than anything that existed in the world just five years ago:
 
 # +
-from fastai.text.all import *
 
 dls = TextDataLoaders.from_folder(untar_data(URLs.IMDB), valid='test')
 learn = text_classifier_learner(dls, AWD_LSTM, drop_mult=0.5, metrics=accuracy)
@@ -717,9 +718,9 @@ learn.fine_tune(4, 1e-2)
 
 learn.predict("I really liked that movie!")
 
-# Here we can see the model has considered the review to be positive. The second part of the result is the index of "pos" in our data vocabulary and the last part is the probabilities attributed to each class (99.6% for "pos" and 0.4% for "neg"). 
+# Here we can see the model has considered the review to be positive. The second part of the result is the index of "pos" in our data vocabulary and the last part is the probabilities attributed to each class (99.6% for "pos" and 0.4% for "neg").
 #
-# Now it's your turn! Write your own mini movie review, or copy one from the internet, and you can see what this model thinks about it. 
+# Now it's your turn! Write your own mini movie review, or copy one from the internet, and you can see what this model thinks about it.
 
 # ### Sidebar: The Order Matters
 
@@ -729,14 +730,14 @@ learn.predict("I really liked that movie!")
 # from fastai.text.all import *
 #
 # dls = TextDataLoaders.from_folder(untar_data(URLs.IMDB), valid='test')
-# learn = text_classifier_learner(dls, AWD_LSTM, drop_mult=0.5, 
+# learn = text_classifier_learner(dls, AWD_LSTM, drop_mult=0.5,
 #                                 metrics=accuracy)
 # learn.fine_tune(4, 1e-2)
 # ```
 #
 # The outputs themselves can be deceiving, because they include the results of the last time the cell was executed; if you change the code inside a cell without executing it, the old (misleading) results will remain.
 #
-# Except when we mention it explicitly, the notebooks provided on the [book website](https://book.fast.ai/) are meant to be run in order, from top to bottom. In general, when experimenting, you will find yourself executing cells in any order to go fast (which is a super neat feature of Jupyter Notebook), but once you have explored and arrived at the final version of your code, make sure you can run the cells of your notebooks in order (your future self won't necessarily remember the convoluted path you took otherwise!). 
+# Except when we mention it explicitly, the notebooks provided on the [book website](https://book.fast.ai/) are meant to be run in order, from top to bottom. In general, when experimenting, you will find yourself executing cells in any order to go fast (which is a super neat feature of Jupyter Notebook), but once you have explored and arrived at the final version of your code, make sure you can run the cells of your notebooks in order (your future self won't necessarily remember the convoluted path you took otherwise!).
 #
 # In command mode, pressing `0` twice will restart the *kernel* (which is the engine powering your notebook). This will wipe your state clean and make it as if you had just started in the notebook. Choose Run All Above from the Cell menu to run all cells above the point where you are. We have found this to be very useful when developing the fastai library.
 
@@ -761,14 +762,13 @@ learn.predict("I really liked that movie!")
 # It turns out that looks very similar too. Here is the code necessary to train a model that will predict whether a person is a high-income earner, based on their socioeconomic background:
 
 # +
-from fastai.tabular.all import *
 path = untar_data(URLs.ADULT_SAMPLE)
 
-dls = TabularDataLoaders.from_csv(path/'adult.csv', path=path, y_names="salary",
-    cat_names = ['workclass', 'education', 'marital-status', 'occupation',
-                 'relationship', 'race'],
-    cont_names = ['age', 'fnlwgt', 'education-num'],
-    procs = [Categorify, FillMissing, Normalize])
+dls = TabularDataLoaders.from_csv(path / 'adult.csv', path=path, y_names="salary",
+                                  cat_names=['workclass', 'education', 'marital-status', 'occupation',
+                                             'relationship', 'race'],
+                                  cont_names=['age', 'fnlwgt', 'education-num'],
+                                  procs=[Categorify, FillMissing, Normalize])
 
 learn = tabular_learner(dls, metrics=accuracy)
 # -
@@ -783,10 +783,9 @@ learn.fit_one_cycle(3)
 
 # Let's look at one more. Recommendation systems are very important, particularly in e-commerce. Companies like Amazon and Netflix try hard to recommend products or movies that users might like. Here's how to train a model that will predict movies people might like, based on their previous viewing habits, using the [MovieLens dataset](https://doi.org/10.1145/2827872):
 
-from fastai.collab import *
 path = untar_data(URLs.ML_SAMPLE)
-dls = CollabDataLoaders.from_csv(path/'ratings.csv')
-learn = collab_learner(dls, y_range=(0.5,5.5))
+dls = CollabDataLoaders.from_csv(path / 'ratings.csv')
+learn = collab_learner(dls, y_range=(0.5, 5.5))
 learn.fine_tune(10)
 
 # This model is predicting movie ratings on a scale of 0.5 to 5.0 to within around 0.6 average error. Since we're predicting a continuous number, rather than a category, we have to tell fastai what range our target has, using the `y_range` parameter.
@@ -891,7 +890,7 @@ learn.show_results()
 #    - Lots of data T / F
 #    - Lots of expensive computers T / F
 #    - A PhD T / F
-#    
+#
 # 1. Name five areas where deep learning is now the best in the world.
 # 1. What was the name of the first device that was based on the principle of the artificial neuron?
 # 1. Based on the book of the same name, what are the requirements for parallel distributed processing (PDP)?
@@ -931,5 +930,3 @@ learn.show_results()
 
 # 1. Why is a GPU useful for deep learning? How is a CPU different, and why is it less effective for deep learning?
 # 1. Try to think of three areas where feedback loops might impact the use of machine learning. See if you can find documented examples of that happening in practice.
-
-
