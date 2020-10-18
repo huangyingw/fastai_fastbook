@@ -6,4 +6,4 @@
 	url = git@github.com:pytorch/vision.git
 [submodule "fastai"]
 	path = fastai
-	url = git@github.com:fastai/fastai.git
+	url = git@github.com:huangyingw/fastai_fastai.git 
