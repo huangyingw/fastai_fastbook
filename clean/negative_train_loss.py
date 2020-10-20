@@ -26,8 +26,6 @@ path = untar_data(URLs.MNIST_SAMPLE)
 
 Path.BASE_PATH = path
 
-(path / 'train').ls()
-
 threes = (path / 'train' / '3').ls().sorted()
 sevens = (path / 'train' / '7').ls().sorted()
 threes
@@ -35,8 +33,6 @@ threes
 im3_path = threes[1]
 im3 = Image.open(im3_path)
 im3
-
-
 
 seven_tensors = [tensor(Image.open(o)) for o in sevens]
 three_tensors = [tensor(Image.open(o)) for o in threes]
