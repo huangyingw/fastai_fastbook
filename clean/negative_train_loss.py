@@ -21,23 +21,11 @@ from fastai.vision.all import *
 import fastbook
 fastbook.setup_book()
 
-# +
-# hide
 
 matplotlib.rc('image', cmap='Greys')
-# -
-
-# # Under the Hood: Training a Digit Classifier
-
-# ## Pixels: The Foundations of Computer Vision
-
-# ## Sidebar: Tenacity and Deep Learning
-
-# ## End sidebar
 
 path = untar_data(URLs.MNIST_SAMPLE)
 
-# hide
 Path.BASE_PATH = path
 
 path.ls()
@@ -80,6 +68,7 @@ dls = DataLoaders(dl, valid_dl)
 lr = 1.
 linear_model = nn.Linear(28 * 28, 1)
 opt = SGD(linear_model.parameters(), lr)
+
 def mnist_loss(predictions, targets):
     return torch.where(targets == 1, 1 - predictions, predictions).mean()
 
