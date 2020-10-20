@@ -22,13 +22,9 @@ import fastbook
 fastbook.setup_book()
 
 
-matplotlib.rc('image', cmap='Greys')
-
 path = untar_data(URLs.MNIST_SAMPLE)
 
 Path.BASE_PATH = path
-
-path.ls()
 
 (path / 'train').ls()
 
@@ -66,8 +62,6 @@ valid_dl = DataLoader(valid_dset, batch_size=256)
 dls = DataLoaders(dl, valid_dl)
 
 lr = 1.
-linear_model = nn.Linear(28 * 28, 1)
-opt = SGD(linear_model.parameters(), lr)
 
 def mnist_loss(predictions, targets):
     return torch.where(targets == 1, 1 - predictions, predictions).mean()
