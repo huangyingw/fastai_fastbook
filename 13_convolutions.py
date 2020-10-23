@@ -84,7 +84,7 @@ df.style.set_properties(**{'font-size': '6pt'}).background_gradient('Greys')
 
 # <img alt="Top section of a digit" width="490" src="images/att_00059.png">
 
-# There's a top edge at cell 5,7. Let's repeat our calculation there:
+# There's a top edge at cell 5,8. Let's repeat our calculation there:
 
 (im3_t[4:7, 6:9] * top_edge).sum()
 
