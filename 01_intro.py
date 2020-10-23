@@ -753,7 +753,7 @@ learn.predict("I really liked that movie!")
 #
 # <img src="images/doc_ex.png" width="600">
 
-# A brief one-line explanation is provided by `doc`. The "Show in docs" link take you to the full documentation, where you'll find all the details and lots of examples. Also, most of fastai's methods are just a handful of lines, so you can click the "source" link to see exactly what's going on behind the scenes.
+# A brief one-line explanation is provided by `doc`. The "Show in docs" link takes you to the full documentation, where you'll find all the details and lots of examples. Also, most of fastai's methods are just a handful of lines, so you can click the "source" link to see exactly what's going on behind the scenes.
 #
 # Let's move on to something much less sexy, but perhaps significantly more widely commercially useful: building models from plain *tabular* data.
 
