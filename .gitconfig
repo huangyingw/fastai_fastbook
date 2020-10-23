@@ -42,6 +42,7 @@
     ignore = app_blog.py
     ignore = app_jupyter.py
     ignore = clean/*.py
+    ignore = exercise/*
     ignore = fastai
     ignore = pytorch
     ignore = vision
