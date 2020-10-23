@@ -356,7 +356,7 @@ fastbook.setup_book()
 
 # #### Ethical lenses
 
-# Another useful resource from the Markkula Center is its [Conceptual Frameworks in Technology and Engineering Practice](https://www.scu.edu/ethics-in-technology-practice/conceptual-frameworks/). This considers how different foundational ethical lenses can help identify concrete issues, and lays out the following approaches and key questions:
+# Another useful resource from the Markkula Center is its [Conceptual Frameworks in Technology and Engineering Practice](https://www.scu.edu/ethics-in-technology-practice/ethical-lenses/). This considers how different foundational ethical lenses can help identify concrete issues, and lays out the following approaches and key questions:
 #
 #   - The rights approach:: Which option best respects the rights of all who have a stake?
 #   - The justice approach:: Which option treats people equally or proportionately?
