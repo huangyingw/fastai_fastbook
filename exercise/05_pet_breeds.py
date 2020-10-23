@@ -74,7 +74,6 @@ TensorImage(x[0]).show(ctx=axs[0])
 TensorImage(x1[0]).show(ctx=axs[1])
 # -
 
-
 # ### Checking and Debugging a DataBlock
 
 dls.show_batch(nrows=1, ncols=3)
@@ -82,7 +81,6 @@ dls.show_batch(nrows=1, ncols=3)
 pets1 = DataBlock(blocks=(ImageBlock, CategoryBlock),
                   get_items=get_image_files,
                   splitter=RandomSplitter(seed=42),
-                  item_tfms=Resize(460),
                   get_y=using_attr(RegexLabeller(r'(.+)_\d+.jpg$'), 'name'))
 pets1.summary(path / "images")
 
