@@ -18,6 +18,7 @@
     remote = origin
     merge = refs/heads/master
 [gdif]
+    ignore = .gitignore
     ignore = .gitmodules
     ignore = 01_intro.py
     ignore = 02_production.py
