@@ -76,14 +76,6 @@ targ = tensor([0, 1, 0, 1, 1, 0])
 
 plot_function(torch.log, min=0, max=4)
 
-loss_func = nn.CrossEntropyLoss()
-
-loss_func(acts, targ)
-
-F.cross_entropy(acts, targ)
-
-nn.CrossEntropyLoss(reduction='none')(acts, targ)
-
 
 learn = cnn_learner(dls, resnet34, metrics=error_rate)
 lr_min, lr_steep = learn.lr_find()
