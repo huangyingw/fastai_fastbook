@@ -52,29 +52,7 @@ dls = pets.dataloaders(path / "images")
 dls.show_batch(nrows=1, ncols=3)
 
 
-# ### Softmax
-
-plot_function(torch.sigmoid, min=-4, max=4)
-
-# hide
-torch.random.manual_seed(42)
-
-acts = torch.randn((6, 2)) * 2
-acts
-
-acts.sigmoid()
-
-(acts[:, 0] - acts[:, 1]).sigmoid()
-
-
-# ### Log Likelihood
-
-targ = tensor([0, 1, 0, 1, 1, 0])
-
-
 # ### Taking the Log
-
-plot_function(torch.log, min=0, max=4)
 
 
 learn = cnn_learner(dls, resnet34, metrics=error_rate)
