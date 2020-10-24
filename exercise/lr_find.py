@@ -16,7 +16,6 @@
 
 # hide
 from fastai.callback.fp16 import *
-from IPython.display import HTML
 from fastai.vision.all import *
 from fastbook import *
 import fastbook
@@ -79,7 +78,6 @@ TensorImage(x1[0]).show(ctx=axs[1])
 dls.show_batch(nrows=1, ncols=3)
 
 
-
 # ## Cross-Entropy Loss
 
 # ### Viewing Activations and Labels
@@ -101,21 +99,11 @@ acts.sigmoid()
 
 (acts[:, 0] - acts[:, 1]).sigmoid()
 
-sm_acts = torch.softmax(acts, dim=1)
-sm_acts
 
 # ### Log Likelihood
 
 targ = tensor([0, 1, 0, 1, 1, 0])
 
-sm_acts
-
-idx = range(6)
-sm_acts[idx, targ]
-
--sm_acts[idx, targ]
-
-F.nll_loss(sm_acts, targ, reduction='none')
 
 # ### Taking the Log
 
