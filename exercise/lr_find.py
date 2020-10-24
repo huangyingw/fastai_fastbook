@@ -48,42 +48,9 @@ pets = DataBlock(blocks=(ImageBlock, CategoryBlock),
                  batch_tfms=aug_transforms(size=224, min_scale=0.75))
 dls = pets.dataloaders(path / "images")
 
-# ## Presizing
-
-# +
-dblock1 = DataBlock(blocks=(ImageBlock(), CategoryBlock()),
-                    get_y=parent_label,
-                    item_tfms=Resize(460))
-dls1 = dblock1.dataloaders([(Path.cwd() / 'images' / 'grizzly.jpg')] * 100, bs=8)
-dls1.train.get_idxs = lambda: Inf.ones
-x, y = dls1.valid.one_batch()
-_, axs = subplots(1, 2)
-
-x1 = TensorImage(x.clone())
-x1 = x1.affine_coord(sz=224)
-x1 = x1.rotate(draw=30, p=1.)
-x1 = x1.zoom(draw=1.2, p=1.)
-x1 = x1.warp(draw_x=-0.2, draw_y=0.2, p=1.)
-
-tfms = setup_aug_tfms([Rotate(draw=30, p=1, size=224), Zoom(draw=1.2, p=1., size=224),
-                       Warp(draw_x=-0.2, draw_y=0.2, p=1., size=224)])
-x = Pipeline(tfms)(x)
-#x.affine_coord(coord_tfm=coord_tfm, sz=size, mode=mode, pad_mode=pad_mode)
-TensorImage(x[0]).show(ctx=axs[0])
-TensorImage(x1[0]).show(ctx=axs[1])
-# -
-
-# ### Checking and Debugging a DataBlock
 
 dls.show_batch(nrows=1, ncols=3)
 
-
-# ## Cross-Entropy Loss
-
-# ### Viewing Activations and Labels
-
-x, y = dls.one_batch()
-y
 
 # ### Softmax
 
