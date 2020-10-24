@@ -32,13 +32,6 @@ path = untar_data(URLs.PETS)
 # hide
 Path.BASE_PATH = path
 
-path.ls()
-
-(path / "images").ls()
-
-fname = (path / "images").ls()[0]
-
-re.findall(r'(.+)_\d+.jpg$', fname.name)
 
 pets = DataBlock(blocks=(ImageBlock, CategoryBlock),
                  get_items=get_image_files,
@@ -50,9 +43,6 @@ dls = pets.dataloaders(path / "images")
 
 
 dls.show_batch(nrows=1, ncols=3)
-
-
-# ### Taking the Log
 
 
 learn = cnn_learner(dls, resnet34, metrics=error_rate)
