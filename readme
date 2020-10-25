@@ -1,0 +1,3 @@
+from nbdev.export import notebook2script
+# hide
+notebook2script()
