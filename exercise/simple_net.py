@@ -57,15 +57,6 @@ opt = BasicOptim(linear_model.parameters(), lr)
 dl = DataLoader(dset, batch_size=256)
 
 
-# ## Adding a Nonlinearity
-
-def simple_net(xb):
-    res = xb @ w1 + b1
-    res = res.max(tensor(0.0))
-    res = res @ w2 + b2
-    return res
-
-
 def init_params(size, std=1.0): return (torch.randn(size) * std).requires_grad_()
 
 
