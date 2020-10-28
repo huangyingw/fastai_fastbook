@@ -47,6 +47,8 @@ def avg_pool(x): return x.mean((2, 3))
 
 
 def block(ni, nf): return ConvLayer(ni, nf, stride=2)
+
+
 def get_model():
     return nn.Sequential(
         block(3, 16),
@@ -63,6 +65,7 @@ def get_model():
 def get_learner(m):
     return Learner(dls, m, loss_func=nn.CrossEntropyLoss(), metrics=accuracy
                    ).to_fp16()
+
 
 learn = get_learner(get_model())
 # -
@@ -102,6 +105,8 @@ class ResBlock(Module):
 
 
 def block(ni, nf): return ResBlock(ni, nf, stride=2)
+
+
 learn = get_learner(get_model())
 
 learn.fit_one_cycle(5, 3e-3)
