@@ -1,4 +1,3 @@
-
 from fastbook import *
 from fastai.vision.all import *
 import fastbook
@@ -20,8 +19,6 @@ train_y = tensor([1] * len(threes) + [0] * len(sevens)).unsqueeze(1)
 train_x.shape, train_y.shape
 
 dset = list(zip(train_x, train_y))
-x, y = dset[0]
-x.shape, y
 
 valid_3_tens = torch.stack([tensor(Image.open(o))
                             for o in (path / 'valid' / '3').ls()])
@@ -114,45 +111,3 @@ learn = Learner(dls, nn.Linear(28 * 28, 1), opt_func=SGD,
                 loss_func=mnist_loss, metrics=batch_accuracy)
 
 learn.fit(10, lr=lr)
-
-
-# ## Adding a Nonlinearity
-
-def simple_net(xb):
-    res = xb @ w1 + b1
-    res = res.max(tensor(0.0))
-    res = res @ w2 + b2
-    return res
-
-
-def init_params(size, std=1.0): return (torch.randn(size) * std).requires_grad_()
-
-
-w1 = init_params((28 * 28, 30))
-b1 = init_params(30)
-w2 = init_params((30, 1))
-b2 = init_params(1)
-
-plot_function(F.relu)
-
-simple_net = nn.Sequential(
-    nn.Linear(28 * 28, 30),
-    nn.ReLU(),
-    nn.Linear(30, 1)
-)
-
-learn = Learner(dls, simple_net, opt_func=SGD,
-                loss_func=mnist_loss, metrics=batch_accuracy)
-
-learn.fit(40, 0.1)
-
-plt.plot(L(learn.recorder.values).itemgot(2))
-
-learn.recorder.values[-1][2]
-
-# ### Going Deeper
-
-dls = ImageDataLoaders.from_folder(path)
-learn = cnn_learner(dls, resnet18, pretrained=False,
-                    loss_func=F.cross_entropy, metrics=accuracy)
-learn.fit_one_cycle(1, 0.1)
