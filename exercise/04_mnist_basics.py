@@ -446,12 +446,54 @@ params = weights, bias
 train_epoch(linear1, lr, params)
 validate_epoch(linear1)
 
+for i in range(20):
+    train_epoch(linear1, lr, params)
+    print(validate_epoch(linear1), end=' ')
+
 # ### Creating an Optimizer
 
 linear_model = nn.Linear(28 * 28, 1)
 
 w, b = linear_model.parameters()
 w.shape, b.shape
+
+
+class BasicOptim:
+    def __init__(self, params, lr): self.params, self.lr = list(params), lr
+
+    def step(self, *args, **kwargs):
+        for p in self.params:
+            p.data -= p.grad.data * self.lr
+
+    def zero_grad(self, *args, **kwargs):
+        for p in self.params:
+            p.grad = None
+
+
+opt = BasicOptim(linear_model.parameters(), lr)
+
+
+def train_epoch(model):
+    for xb, yb in dl:
+        calc_grad(xb, yb, model)
+        opt.step()
+        opt.zero_grad()
+
+
+validate_epoch(linear_model)
+
+
+def train_model(model, epochs):
+    for i in range(epochs):
+        train_epoch(model)
+        print(validate_epoch(model), end=' ')
+
+
+train_model(linear_model, 20)
+
+linear_model = nn.Linear(28 * 28, 1)
+opt = SGD(linear_model.parameters(), lr)
+train_model(linear_model, 20)
 
 dls = DataLoaders(dl, valid_dl)
 
