@@ -137,6 +137,8 @@ dsets.train[0]
 
 def get_x(r): return r['fname']
 def get_y(r): return r['labels']
+
+
 dblock = DataBlock(get_x=get_x, get_y=get_y)
 dsets = dblock.datasets(df)
 dsets.train[0]
@@ -148,6 +150,8 @@ dsets.train[0]
 
 def get_x(r): return path / 'train' / r['fname']
 def get_y(r): return r['labels'].split(' ')
+
+
 dblock = DataBlock(get_x=get_x, get_y=get_y)
 dsets = dblock.datasets(df)
 dsets.train[0]
@@ -178,6 +182,7 @@ def splitter(df):
     train = df.index[~df['is_valid']].tolist()
     valid = df.index[df['is_valid']].tolist()
     return train, valid
+
 
 dblock = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
                    splitter=splitter,
@@ -278,6 +283,8 @@ loss
 # If we pass `accuracy_multi` directly as a metric, it will use the default value for `threshold`, which is 0.5. We might want to adjust that default and create a new version of `accuracy_multi` that has a different default. To help with this, there is a function in Python called `partial`. It allows us to *bind* a function with some arguments or keyword arguments, making a new version of that function that, whenever it is called, always includes those arguments. For instance, here is a simple function taking two arguments:
 
 def say_hello(name, say_what="Hello"): return f"{say_what} {name}."
+
+
 say_hello('Jeremy'), say_hello('Jeremy', 'Ahoy!')
 
 # We can switch to a French version of that function by using `partial`:
@@ -349,6 +356,8 @@ path.ls().sorted()
 
 img_files = get_image_files(path)
 def img2pose(x): return Path(f'{str(x)[:-7]}pose.txt')
+
+
 img2pose(img_files[0])
 
 # Let's take a look at our first image:
@@ -361,6 +370,8 @@ im.to_thumb(160)
 # The Biwi dataset website used to explain the format of the pose text file associated with each image, which shows the location of the center of the head. The details of this aren't important for our purposes, so we'll just show the function we use to extract the head center point:
 
 cal = np.genfromtxt(path / '01' / 'rgb.cal', skip_footer=6)
+
+
 def get_ctr(f):
     ctr = np.genfromtxt(img2pose(f), skip_header=3)
     c1 = ctr[0] * cal[0][0] / ctr[2] + cal[0][2]

@@ -294,6 +294,8 @@ valid_3_tens.shape, valid_7_tens.shape
 # We can write a simple function that calculates the mean absolute error using an experssion very similar to the one we wrote in the last section:
 
 def mnist_distance(a, b): return (a - b).abs().mean((-1, -2))
+
+
 mnist_distance(a_3, mean3)
 
 # This is the same value we previously calculated for the distance between these two images, the ideal 3 `mean_3` and the arbitrary sample 3 `a_3`, which are both single-image tensors with a shape of `[28,28]`.
@@ -481,6 +483,7 @@ xt
 
 # +
 def f(x): return (x**2).sum()
+
 
 yt = f(xt)
 yt
@@ -729,7 +732,9 @@ bias = init_params(1)
 #
 # In Python, matrix multiplication is represented with the `@` operator. Let's try it:
 
-def linear1(xb): return xb@weights + bias
+def linear1(xb): return xb @ weights + bias
+
+
 preds = linear1(train_x)
 preds
 
@@ -1069,9 +1074,9 @@ learn.fit(10, lr=lr)
 # Here is the entire definition of a basic neural network:
 
 def simple_net(xb):
-    res = xb@w1 + b1
+    res = xb @ w1 + b1
     res = res.max(tensor(0.0))
-    res = res@w2 + b2
+    res = res @ w2 + b2
     return res
 
 

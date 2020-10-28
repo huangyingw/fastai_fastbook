@@ -77,6 +77,7 @@ v2i
 class Dataset:
     def __init__(self, fns): self.fns = fns
     def __len__(self): return len(self.fns)
+
     def __getitem__(self, i):
         im = Image.open(self.fns[i]).resize((64, 64)).convert('RGB')
         y = v2i[self.fns[i].parent.name]
@@ -148,6 +149,7 @@ stats
 
 class Normalize:
     def __init__(self, stats): self.stats = stats
+
     def __call__(self, x):
         if x.device != self.stats[0].device:
             self.stats = to_device(self.stats, x.device)
@@ -195,6 +197,7 @@ class Module:
 
     @property
     def training(self): return self._training
+
     @training.setter
     def training(self, v):
         self._training = v
@@ -279,7 +282,7 @@ class Linear(Module):
         self.b = Parameter(torch.zeros(nf))
         nn.init.xavier_normal_(self.w)
 
-    def forward(self, x): return x@self.w.t() + self.b
+    def forward(self, x): return x @ self.w.t() + self.b
 
 
 # and test if it works:
@@ -358,7 +361,9 @@ len(m.parameters())
 # Now we can try adding a hook. Note that we've only left room for one hook in `Module`; you could make it a list, or use something like `Pipeline` to run a few as a single function:
 
 # +
-def print_stats(outp, inp): print (outp.mean().item(), outp.std().item())
+def print_stats(outp, inp): print(outp.mean().item(), outp.std().item())
+
+
 for i in range(4):
     m.layers[i].hook = print_stats
 
@@ -382,6 +387,7 @@ def nll(input, target): return -input[range(target.shape[0]), target].mean()
 # +
 def log_softmax(x): return (x.exp() / (x.exp().sum(-1, keepdim=True))).log()
 
+
 sm = log_softmax(r)
 sm[0][0]
 # -
@@ -399,6 +405,8 @@ loss
 # gives a simplification when we compute the log softmax, which was previously defined as `(x.exp()/(x.exp().sum(-1))).log()`:
 
 def log_softmax(x): return x - x.exp().sum(-1, keepdim=True).log()
+
+
 sm = log_softmax(r)
 sm[0][0]
 
@@ -422,6 +430,7 @@ x.exp().sum().log() == a + (x - a).exp().sum().log()
 def logsumexp(x):
     m = x.max(-1)[0]
     return m + (x - m[:, None]).exp().sum(-1).log()
+
 
 logsumexp(r)[0]
 
@@ -452,6 +461,7 @@ def cross_entropy(preds, yb): return nll(log_softmax(preds), yb).mean()
 
 class SGD:
     def __init__(self, params, lr, wd=0.): store_attr()
+
     def step(self):
         for p in self.params:
             p.data -= (p.grad.data + p.data * self.wd) * self.lr
@@ -463,6 +473,7 @@ class SGD:
 # +
 class DataLoaders:
     def __init__(self, *dls): self.train, self.valid = dls
+
 
 dls = DataLoaders(train_dl, valid_dl)
 
