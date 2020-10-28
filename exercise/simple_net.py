@@ -38,32 +38,11 @@ w, b = linear_model.parameters()
 w.shape, b.shape
 
 
-class BasicOptim:
-    def __init__(self, params, lr): self.params, self.lr = list(params), lr
-
-    def step(self, *args, **kwargs):
-        for p in self.params:
-            p.data -= p.grad.data * self.lr
-
-    def zero_grad(self, *args, **kwargs):
-        for p in self.params:
-            p.grad = None
-
-
-lr = 1.
-opt = BasicOptim(linear_model.parameters(), lr)
-
-
 dl = DataLoader(dset, batch_size=256)
 
 
 def init_params(size, std=1.0): return (torch.randn(size) * std).requires_grad_()
 
-
-w1 = init_params((28 * 28, 30))
-b1 = init_params(30)
-w2 = init_params((30, 1))
-b2 = init_params(1)
 
 plot_function(F.relu)
 
