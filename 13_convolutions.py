@@ -499,6 +499,7 @@ def get_dls(bs=64):
         batch_tfms=Normalize()
     ).dataloaders(path, bs=bs)
 
+
 dls = get_dls()
 # -
 
@@ -540,7 +541,6 @@ def simple_cnn():
 
 
 # As you'll see in a moment, we can look inside our models while they're training in order to try to find ways to make them train better. To do this we use the `ActivationStats` callback, which records the mean, standard deviation, and histogram of activations of every trainable layer (as we've seen, callbacks are used to add behavior to the training loop; we'll explore how they work in <<chapter_accel_sgd>>):
-
 
 
 # We want to train quickly, so that means training at a high learning rate. Let's see how we go at 0.06:

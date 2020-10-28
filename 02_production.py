@@ -517,6 +517,7 @@ def on_click_classify(change):
     pred, pred_idx, probs = learn_inf.predict(img)
     lbl_pred.value = f'Prediction: {pred}; Probability: {probs[pred_idx]:.04f}'
 
+
 btn_run.on_click(on_click_classify)
 # -
 
