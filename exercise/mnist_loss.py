@@ -1,3 +1,18 @@
+# ---
+# jupyter:
+#   jupytext:
+#     split_at_heading: true
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.6.0
+#   kernelspec:
+#     display_name: Python 3
+#     language: python
+#     name: python3
+# ---
+
 from fastbook import *
 from fastai.vision.all import *
 import fastbook
@@ -30,6 +45,7 @@ def init_params(size, std=1.0): return (torch.randn(size) * std).requires_grad_(
 
 trgts = tensor([1, 0, 1])
 prds = tensor([0.9, 0.4, 0.2])
+
 weights = init_params((28 * 28, 1))
 bias = init_params(1)
 
