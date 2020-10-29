@@ -85,7 +85,7 @@ train_model(linear_model, 20)
 
 dls = DataLoaders(dl, valid_dl)
 
-learn = Learner(dls, nn.Linear(28 * 28, 1), opt_func=SGD,
+learn = Learner(dls, linear_model, opt_func=SGD,
                 loss_func=mnist_loss, metrics=batch_accuracy)
 
 learn.fit(10, lr=lr)
