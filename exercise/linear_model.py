@@ -51,8 +51,7 @@ class BasicOptim:
 
 
 lr = 1.
-opt = BasicOptim(linear_model.parameters(), lr)
-
+opt = SGD(linear_model.parameters(), lr)
 
 dl = DataLoader(dset, batch_size=256)
 xb, yb = first(dl)
@@ -102,7 +101,6 @@ def train_model(model, epochs):
 train_model(linear_model, 20)
 
 linear_model = nn.Linear(28 * 28, 1)
-opt = SGD(linear_model.parameters(), lr)
 train_model(linear_model, 20)
 
 dls = DataLoaders(dl, valid_dl)
