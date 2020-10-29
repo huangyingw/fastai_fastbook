@@ -38,7 +38,6 @@ lr = 1.
 opt = SGD(linear_model.parameters(), lr)
 
 dl = DataLoader(dset, batch_size=256)
-xb, yb = first(dl)
 
 
 def mnist_loss(predictions, targets):
