@@ -83,9 +83,6 @@ def train_model(model, epochs):
 
 train_model(linear_model, 20)
 
-linear_model = nn.Linear(28 * 28, 1)
-train_model(linear_model, 20)
-
 dls = DataLoaders(dl, valid_dl)
 
 learn = Learner(dls, nn.Linear(28 * 28, 1), opt_func=SGD,
