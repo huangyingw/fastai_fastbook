@@ -30,24 +30,8 @@ valid_7_tens = valid_7_tens.float() / 255
 valid_x = torch.cat([valid_3_tens, valid_7_tens]).view(-1, 28 * 28)
 valid_y = tensor([1] * len(valid_3_tens) + [0] * len(valid_7_tens)).unsqueeze(1)
 valid_dset = list(zip(valid_x, valid_y))
-# ### Creating an Optimizer
 
 linear_model = nn.Linear(28 * 28, 1)
-
-w, b = linear_model.parameters()
-w.shape, b.shape
-
-
-class BasicOptim:
-    def __init__(self, params, lr): self.params, self.lr = list(params), lr
-
-    def step(self, *args, **kwargs):
-        for p in self.params:
-            p.data -= p.grad.data * self.lr
-
-    def zero_grad(self, *args, **kwargs):
-        for p in self.params:
-            p.grad = None
 
 
 lr = 1.
