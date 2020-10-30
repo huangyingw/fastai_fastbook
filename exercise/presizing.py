@@ -9,14 +9,6 @@ path = untar_data(URLs.PETS)
 
 Path.BASE_PATH = path
 
-path.ls()
-
-(path / "images").ls()
-
-fname = (path / "images").ls()[0]
-
-re.findall(r'(.+)_\d+.jpg$', fname.name)
-
 
 # +
 dblock1 = DataBlock(blocks=(ImageBlock(), CategoryBlock()),
