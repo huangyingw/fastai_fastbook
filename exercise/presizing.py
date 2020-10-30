@@ -12,7 +12,6 @@ fastbook.setup_book()
 
 path = untar_data(URLs.PETS)
 
-# hide
 Path.BASE_PATH = path
 
 path.ls()
