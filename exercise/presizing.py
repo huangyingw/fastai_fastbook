@@ -6,7 +6,6 @@ fastbook.setup_book()
 
 
 path = untar_data(URLs.PETS)
-
 Path.BASE_PATH = path
 
 
@@ -15,8 +14,7 @@ dblock1 = DataBlock(blocks=(ImageBlock(), CategoryBlock()),
                     get_y=parent_label,
                     item_tfms=Resize(460))
 dls1 = dblock1.dataloaders([(Path.cwd() / 'images' / 'grizzly.jpg')] * 100, bs=8)
-dls1.train.get_idxs = lambda: Inf.ones
-x, y = dls1.valid.one_batch()
+x, _ = dls1.valid.one_batch()
 _, axs = subplots(1, 2)
 
 x1 = TensorImage(x.clone())
