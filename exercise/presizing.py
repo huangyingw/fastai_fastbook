@@ -25,7 +25,6 @@ pets = DataBlock(blocks=(ImageBlock, CategoryBlock),
                  batch_tfms=aug_transforms(size=224, min_scale=0.75))
 dls = pets.dataloaders(path / "images")
 
-# ## Presizing
 
 # +
 dblock1 = DataBlock(blocks=(ImageBlock(), CategoryBlock()),
