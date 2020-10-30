@@ -4,11 +4,6 @@ from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-# hide
-
-# # Image Classification
-
-# ## From Dogs and Cats to Pet Breeds
 
 path = untar_data(URLs.PETS)
 
@@ -50,6 +45,5 @@ x1 = x1.warp(draw_x=-0.2, draw_y=0.2, p=1.)
 tfms = setup_aug_tfms([Rotate(draw=30, p=1, size=224), Zoom(draw=1.2, p=1., size=224),
                        Warp(draw_x=-0.2, draw_y=0.2, p=1., size=224)])
 x = Pipeline(tfms)(x)
-#x.affine_coord(coord_tfm=coord_tfm, sz=size, mode=mode, pad_mode=pad_mode)
 TensorImage(x[0]).show(ctx=axs[0])
 TensorImage(x1[0]).show(ctx=axs[1])
