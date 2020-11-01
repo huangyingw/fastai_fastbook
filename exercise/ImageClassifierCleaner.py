@@ -21,8 +21,6 @@ from fastbook import *
 import fastbook
 fastbook.setup_book()
 
-
-
 path = Path('bears')
 
 
