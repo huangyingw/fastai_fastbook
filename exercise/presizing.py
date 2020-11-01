@@ -24,13 +24,11 @@ path = untar_data(URLs.PETS)
 Path.BASE_PATH = path
 
 
-# +
 dblock1 = DataBlock(blocks=(ImageBlock(), CategoryBlock()),
                     get_y=parent_label,
                     item_tfms=Resize(460))
 dls1 = dblock1.dataloaders([(Path.cwd() / 'images' / 'grizzly.jpg')] * 100, bs=8)
 x, _ = dls1.valid.one_batch()
-_, axs = subplots(1, 2)
 
 x1 = TensorImage(x.clone())
 x1 = x1.affine_coord(sz=224)
@@ -41,5 +39,7 @@ x1 = x1.warp(draw_x=-0.2, draw_y=0.2, p=1.)
 tfms = setup_aug_tfms([Rotate(draw=30, p=1, size=224), Zoom(draw=1.2, p=1., size=224),
                        Warp(draw_x=-0.2, draw_y=0.2, p=1., size=224)])
 x = Pipeline(tfms)(x)
+
+_, axs = subplots(1, 2)
 TensorImage(x[0]).show(ctx=axs[0])
 TensorImage(x1[0]).show(ctx=axs[1])
