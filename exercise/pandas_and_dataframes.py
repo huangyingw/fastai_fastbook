@@ -79,3 +79,24 @@ dblock = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
 
 dsets = dblock.datasets(df)
 dsets.train[0]
+
+dblock = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
+                   splitter=splitter,
+                   get_x=get_x,
+                   get_y=get_y,
+                   item_tfms=RandomResizedCrop(128, min_scale=0.35))
+dls = dblock.dataloaders(df)
+
+dls.show_batch(nrows=1, ncols=3)
+
+# ### Binary Cross-Entropy
+
+learn = cnn_learner(dls, resnet18)
+
+dls.train.one_batch()
+
+x, y = to_cpu(dls.train.one_batch())
+activs = learn.model(x)
+activs.shape
+
+activs[0]
