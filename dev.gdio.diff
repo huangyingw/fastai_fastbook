@@ -1,0 +1,26 @@
+diff --git a/readme b/readme
+new file mode 100644
+index 0000000..d9f73d5
+--- /dev/null
++++ ./readme
+@@ -0,0 +1,20 @@
++fastai/nbs/71_callback.tensorboard.py <unknown> 313                splitter=RandomSubsetSplitter(train_sz=0.1, valid_sz=0.01),
++exercise/02_production.py <unknown> 98     splitter=RandomSplitter(valid_pct=0.2, seed=42),
++
++a follow up question:
++for data read from csv, is it possible to do this, I means, to randomly select say, 8% of the train data, and 1% of the valid data to train?
++the following codes are from 06_multicat
++df = pd.read_csv(path / 'train.csv')
++
++def splitter(df):
++    train = df.index[~df['is_valid']].tolist()
++    valid = df.index[df['is_valid']].tolist()
++    return train, valid
++
++
++dblock = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
++                   splitter=splitter,
++                   get_x=get_x,
++                   get_y=get_y,
++                   item_tfms=RandomResizedCrop(128, min_scale=0.35))
++dls = dblock.dataloaders(df)
