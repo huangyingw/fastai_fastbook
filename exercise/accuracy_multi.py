@@ -42,3 +42,9 @@ accuracy_multi(preds, targs, thresh=0.9, sigmoid=False)
 xs = torch.linspace(0.05, 0.95, 29)
 accs = [accuracy_multi(preds, targs, thresh=i, sigmoid=False) for i in xs]
 plt.plot(xs, accs)
+
+accuracy_multi(preds, targs, thresh=0.9, sigmoid=True)
+
+xs = torch.linspace(0.05, 0.95, 29)
+accs = [accuracy_multi(preds, targs, thresh=i, sigmoid=True) for i in xs]
+plt.plot(xs, accs)
