@@ -50,13 +50,6 @@ fastbook.setup_book()
 # # clean
 # To download images with Bing Image Search, sign up at Microsoft for a free account. You will be given a key, which you can copy and enter in a cell as follows (replacing 'XXX' with your key and executing it):
 
-key = os.environ.get('AZURE_SEARCH_KEY', 'XXX')
-
-search_images_bing
-
-results = search_images_bing(key, 'grizzly bear')
-ims = results.attrgot('content_url')
-len(ims)
 
 # hide
 ims = ['http://3.bp.blogspot.com/-S1scRCkI3vY/UHzV2kucsPI/AAAAAAAAA-k/YQ5UzHEm9Ss/s1600/Grizzly%2BBear%2BWildlife.jpg']
