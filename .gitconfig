@@ -46,6 +46,7 @@
     ignore = exercise/*
     ignore = fastai
     ignore = pytorch
+    ignore = readme
     ignore = vision
 [deploy]
 	host = localhost
