@@ -176,10 +176,6 @@ learn.fine_tune(2, base_lr=3e-3)
 
 # ### Unfreezing and Transfer Learning
 
-# +
-# learn.fine_tune??
-# -
-
 learn = cnn_learner(dls, resnet34, metrics=error_rate)
 learn.fit_one_cycle(3, 3e-3)
 
