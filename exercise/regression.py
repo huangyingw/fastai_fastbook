@@ -49,6 +49,7 @@ xb.shape, yb.shape
 
 show_image(xb[0])
 
+
 yb[0]
 
 
