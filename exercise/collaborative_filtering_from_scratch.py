@@ -1,3 +1,26 @@
+from fastai.tabular.all import *
+from fastai.collab import *
+from fastbook import *
+import fastbook
+fastbook.setup_book()
+
+
+ratings = pd.read_csv(path / 'u.data', delimiter='\t', header=None,
+                      names=['user', 'movie', 'rating', 'timestamp'])
+ratings.head()
+
+ratings = ratings.merge(movies)
+ratings.head()
+
+
+dls = CollabDataLoaders.from_df(ratings, item_name='title', bs=64)
+dls.show_batch()
+
+dls.classes
+
+n_users = len(dls.classes['user'])
+n_movies = len(dls.classes['title'])
+n_factors = 5
 
 
 class DotProduct(Module):
