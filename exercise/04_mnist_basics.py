@@ -129,6 +129,8 @@ valid_3_tens.shape, valid_7_tens.shape
 
 
 def mnist_distance(a, b): return (a - b).abs().mean((-1, -2))
+
+
 mnist_distance(a_3, mean3)
 
 valid_3_dist = mnist_distance(valid_3_tens, mean3)
@@ -186,6 +188,7 @@ xt
 
 # +
 def f(x): return (x**2).sum()
+
 
 yt = f(xt)
 yt
@@ -320,7 +323,9 @@ bias = init_params(1)
 (train_x[0] * weights.T).sum() + bias
 
 
-def linear1(xb): return xb@weights + bias
+def linear1(xb): return xb @ weights + bias
+
+
 preds = linear1(train_x)
 preds
 
@@ -446,12 +451,54 @@ params = weights, bias
 train_epoch(linear1, lr, params)
 validate_epoch(linear1)
 
+for i in range(20):
+    train_epoch(linear1, lr, params)
+    print(validate_epoch(linear1), end=' ')
+
 # ### Creating an Optimizer
 
 linear_model = nn.Linear(28 * 28, 1)
 
 w, b = linear_model.parameters()
 w.shape, b.shape
+
+
+class BasicOptim:
+    def __init__(self, params, lr): self.params, self.lr = list(params), lr
+
+    def step(self, *args, **kwargs):
+        for p in self.params:
+            p.data -= p.grad.data * self.lr
+
+    def zero_grad(self, *args, **kwargs):
+        for p in self.params:
+            p.grad = None
+
+
+opt = BasicOptim(linear_model.parameters(), lr)
+
+
+def train_epoch(model):
+    for xb, yb in dl:
+        calc_grad(xb, yb, model)
+        opt.step()
+        opt.zero_grad()
+
+
+validate_epoch(linear_model)
+
+
+def train_model(model, epochs):
+    for i in range(epochs):
+        train_epoch(model)
+        print(validate_epoch(model), end=' ')
+
+
+train_model(linear_model, 20)
+
+linear_model = nn.Linear(28 * 28, 1)
+opt = SGD(linear_model.parameters(), lr)
+train_model(linear_model, 20)
 
 dls = DataLoaders(dl, valid_dl)
 
@@ -464,9 +511,9 @@ learn.fit(10, lr=lr)
 # ## Adding a Nonlinearity
 
 def simple_net(xb):
-    res = xb@w1 + b1
+    res = xb @ w1 + b1
     res = res.max(tensor(0.0))
-    res = res@w2 + b2
+    res = res @ w2 + b2
     return res
 
 

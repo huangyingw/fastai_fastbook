@@ -112,6 +112,7 @@ create_head(20, 2)
 path = untar_data(URLs.PETS)
 files = get_image_files(path / "images")
 
+
 class SiameseImage(fastuple):
     def show(self, ctx=None, **kwargs):
         img1, img2, same_breed = self
@@ -126,8 +127,10 @@ class SiameseImage(fastuple):
         return show_image(torch.cat([t1, line, t2], dim=2),
                           title=same_breed, ctx=ctx)
 
+
 def label_func(fname):
     return re.match(r'^(.*)_\d+.jpg$', fname.name).groups()[0]
+
 
 class SiameseTransform(Transform):
     def __init__(self, files, label_func, splits):
@@ -147,6 +150,7 @@ class SiameseTransform(Transform):
         if not same:
             cls = random.choice(L(l for l in self.labels if l != cls))
         return random.choice(self.lbl2files[cls]), same
+
 
 splits = RandomSplitter()(files)
 tfm = SiameseTransform(files, label_func, splits)

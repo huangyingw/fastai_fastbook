@@ -129,6 +129,8 @@ valid_3_tens.shape, valid_7_tens.shape
 
 
 def mnist_distance(a, b): return (a - b).abs().mean((-1, -2))
+
+
 mnist_distance(a_3, mean3)
 
 valid_3_dist = mnist_distance(valid_3_tens, mean3)
@@ -186,6 +188,7 @@ xt
 
 # +
 def f(x): return (x**2).sum()
+
 
 yt = f(xt)
 yt
@@ -320,7 +323,9 @@ bias = init_params(1)
 (train_x[0] * weights.T).sum() + bias
 
 
-def linear1(xb): return xb@weights + bias
+def linear1(xb): return xb @ weights + bias
+
+
 preds = linear1(train_x)
 preds
 
@@ -506,9 +511,9 @@ learn.fit(10, lr=lr)
 # ## Adding a Nonlinearity
 
 def simple_net(xb):
-    res = xb@w1 + b1
+    res = xb @ w1 + b1
     res = res.max(tensor(0.0))
-    res = res@w2 + b2
+    res = res @ w2 + b2
     return res
 
 

@@ -166,6 +166,7 @@ learn.fit_one_cycle(5, 5e-3, wd=0.1)
 class T(Module):
     def __init__(self): self.a = torch.ones(3)
 
+
 L(T().parameters())
 
 
@@ -173,12 +174,14 @@ L(T().parameters())
 class T(Module):
     def __init__(self): self.a = nn.Parameter(torch.ones(3))
 
+
 L(T().parameters())
 
 
 # +
 class T(Module):
     def __init__(self): self.a = nn.Linear(1, 3, bias=False)
+
 
 t = T()
 L(t.parameters())

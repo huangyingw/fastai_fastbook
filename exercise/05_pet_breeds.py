@@ -43,7 +43,7 @@ re.findall(r'(.+)_\d+.jpg$', fname.name)
 
 pets = DataBlock(blocks=(ImageBlock, CategoryBlock),
                  get_items=get_image_files,
-                 splitter=RandomSplitter(seed=42),
+                 splitter=RandomSubsetSplitter(train_sz=0.05, valid_sz=0.01, seed=42),
                  get_y=using_attr(RegexLabeller(r'(.+)_\d+.jpg$'), 'name'),
                  item_tfms=Resize(460),
                  batch_tfms=aug_transforms(size=224, min_scale=0.75))
@@ -80,9 +80,9 @@ dls.show_batch(nrows=1, ncols=3)
 
 pets1 = DataBlock(blocks=(ImageBlock, CategoryBlock),
                   get_items=get_image_files,
-                  splitter=RandomSplitter(seed=42),
+                  splitter=RandomSubsetSplitter(train_sz=0.05, valid_sz=0.01, seed=42),
                   get_y=using_attr(RegexLabeller(r'(.+)_\d+.jpg$'), 'name'))
-pets1.summary(path / "images")
+# pets1.summary(path / "images")
 
 learn = cnn_learner(dls, resnet34, metrics=error_rate)
 learn.fine_tune(2)
@@ -175,10 +175,6 @@ learn = cnn_learner(dls, resnet34, metrics=error_rate)
 learn.fine_tune(2, base_lr=3e-3)
 
 # ### Unfreezing and Transfer Learning
-
-# +
-# learn.fine_tune??
-# -
 
 learn = cnn_learner(dls, resnet34, metrics=error_rate)
 learn.fit_one_cycle(3, 3e-3)

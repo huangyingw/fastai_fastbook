@@ -558,6 +558,7 @@ learn.fit_one_cycle(15, 1e-2)
 
 class Dropout(Module):
     def __init__(self, p): self.p = p
+
     def forward(self, x):
         if not self.training:
             return x

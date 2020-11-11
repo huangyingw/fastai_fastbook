@@ -97,7 +97,6 @@ fastbook.setup_book()
 # Let's write a function that computes the matrix product of two tensors, before we allow ourselves to use the PyTorch version of it. We will only use the indexing in PyTorch tensors:
 
 
-
 # We'll need three nested `for` loops: one for the row indices, one for the column indices, and one for the inner sum. `ac` and `ar` stand for number of columns of `a` and number of rows of `a`, respectively (the same convention is followed for `b`), and we make sure calculating the matrix product is possible by checking that `a` has as many columns as `b` has rows:
 
 def matmul(a, b):
@@ -637,7 +636,7 @@ class Lin():
 
     def __call__(self, inp):
         self.inp = inp
-        self.out = inp@self.w + self.b
+        self.out = inp @ self.w + self.b
         return self.out
 
     def backward(self):
@@ -714,7 +713,7 @@ class Relu(LayerFunction):
 class Lin(LayerFunction):
     def __init__(self, w, b): self.w, self.b = w, b
 
-    def forward(self, inp): return inp@self.w + self.b
+    def forward(self, inp): return inp @ self.w + self.b
 
     def bwd(self, out, inp):
         inp.g = out.g @ self.w.t()
@@ -724,6 +723,7 @@ class Lin(LayerFunction):
 
 class Mse(LayerFunction):
     def forward(self, inp, targ): return (inp.squeeze() - targ).pow(2).mean()
+
     def bwd(self, out, inp, targ):
         inp.g = 2 * (inp.squeeze() - targ).unsqueeze(-1) / targ.shape[0]
 
@@ -733,6 +733,7 @@ class Mse(LayerFunction):
 # Writing one of these is (almost) as easy as writing our original classes. The difference is that we choose what to save and what to put in a context variable (so that we make sure we don't save anything we don't need), and we return the gradients in the `backward` pass. It's very rare to have to write your own `Function` but if you ever need something exotic or want to mess with the gradients of a regular function, here is how to write one:
 
 # +
+
 
 class MyRelu(Function):
     @staticmethod
@@ -760,6 +761,7 @@ class MyRelu(Function):
 # As an example, here is the linear layer from scratch:
 
 # +
+
 
 class LinearLayer(nn.Module):
     def __init__(self, n_in, n_out):

@@ -249,6 +249,7 @@ def rms_prop_step(p, lr, sqr_avg, eps, grad_avg=None, **kwargs):
     denom = sqr_avg.sqrt().add_(eps)
     p.data.addcdiv_(-lr, p.grad, denom)
 
+
 opt_func = partial(Optimizer, cbs=[average_sqr_grad, rms_prop_step],
                    sqr_mom=0.99, eps=1e-7)
 # -
@@ -461,6 +462,7 @@ class RNNRegularizer(Callback):
 
 class TerminateOnNaNCallback(Callback):
     run_before = Recorder
+
     def after_batch(self):
         if torch.isinf(self.loss) or torch.isnan(self.loss):
             raise CancelFitException

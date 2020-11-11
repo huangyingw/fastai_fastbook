@@ -37,7 +37,6 @@ fastbook.setup_book()
 # ### Matrix Multiplication from Scratch
 
 
-
 def matmul(a, b):
     ar, ac = a.shape  # n_rows * n_cols
     br, bc = b.shape
@@ -319,7 +318,7 @@ class Lin():
 
     def __call__(self, inp):
         self.inp = inp
-        self.out = inp@self.w + self.b
+        self.out = inp @ self.w + self.b
         return self.out
 
     def backward(self):
@@ -384,7 +383,7 @@ class Relu(LayerFunction):
 class Lin(LayerFunction):
     def __init__(self, w, b): self.w, self.b = w, b
 
-    def forward(self, inp): return inp@self.w + self.b
+    def forward(self, inp): return inp @ self.w + self.b
 
     def bwd(self, out, inp):
         inp.g = out.g @ self.w.t()
@@ -394,11 +393,13 @@ class Lin(LayerFunction):
 
 class Mse(LayerFunction):
     def forward(self, inp, targ): return (inp.squeeze() - targ).pow(2).mean()
+
     def bwd(self, out, inp, targ):
         inp.g = 2 * (inp.squeeze() - targ).unsqueeze(-1) / targ.shape[0]
 
 
 # +
+
 
 class MyRelu(Function):
     @staticmethod
@@ -414,6 +415,7 @@ class MyRelu(Function):
 
 
 # +
+
 
 class LinearLayer(nn.Module):
     def __init__(self, n_in, n_out):

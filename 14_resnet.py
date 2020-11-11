@@ -75,6 +75,8 @@ def avg_pool(x): return x.mean((2, 3))
 # A fully convolutional network, therefore, has a number of convolutional layers, some of which will be stride 2, at the end of which is an adaptive average pooling layer, a flatten layer to remove the unit axes, and finally a linear layer. Here is our first fully convolutional network:
 
 def block(ni, nf): return ConvLayer(ni, nf, stride=2)
+
+
 def get_model():
     return nn.Sequential(
         block(3, 16),
@@ -101,6 +103,7 @@ def get_model():
 def get_learner(m):
     return Learner(dls, m, loss_func=nn.CrossEntropyLoss(), metrics=accuracy
                    ).to_fp16()
+
 
 learn = get_learner(get_model())
 # -
@@ -204,6 +207,8 @@ class ResBlock(Module):
 # Let's replace our `block` with `ResBlock`, and try it out:
 
 def block(ni, nf): return ResBlock(ni, nf, stride=2)
+
+
 learn = get_learner(get_model())
 
 learn.fit_one_cycle(5, 3e-3)

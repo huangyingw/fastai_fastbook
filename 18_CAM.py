@@ -45,6 +45,8 @@ fastbook.setup_book()
 
 path = untar_data(URLs.PETS) / 'images'
 def is_cat(x): return x[0].isupper()
+
+
 dls = ImageDataLoaders.from_name_func(
     path, get_image_files(path), valid_pct=0.2, seed=21,
     label_func=is_cat, item_tfms=Resize(224))
@@ -116,6 +118,7 @@ hook.remove()
 class Hook():
     def __init__(self, m):
         self.hook = m.register_forward_hook(self.hook_func)
+
     def hook_func(self, m, i, o): self.stored = o.detach().clone()
     def __enter__(self, *args): return self
     def __exit__(self, *args): self.hook.remove()
@@ -142,6 +145,7 @@ with Hook(learn.model[0]) as hook:
 class HookBwd():
     def __init__(self, m):
         self.hook = m.register_backward_hook(self.hook_func)
+
     def hook_func(self, m, gi, go): self.stored = go[0].detach().clone()
     def __enter__(self, *args): return self
     def __exit__(self, *args): self.hook.remove()

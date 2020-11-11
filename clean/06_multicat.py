@@ -72,6 +72,8 @@ dsets.train[0]
 
 def get_x(r): return r['fname']
 def get_y(r): return r['labels']
+
+
 dblock = DataBlock(get_x=get_x, get_y=get_y)
 dsets = dblock.datasets(df)
 dsets.train[0]
@@ -79,6 +81,8 @@ dsets.train[0]
 
 def get_x(r): return path / 'train' / r['fname']
 def get_y(r): return r['labels'].split(' ')
+
+
 dblock = DataBlock(get_x=get_x, get_y=get_y)
 dsets = dblock.datasets(df)
 dsets.train[0]
@@ -97,6 +101,7 @@ def splitter(df):
     train = df.index[~df['is_valid']].tolist()
     valid = df.index[df['is_valid']].tolist()
     return train, valid
+
 
 dblock = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
                    splitter=splitter,
@@ -138,6 +143,8 @@ loss
 
 
 def say_hello(name, say_what="Hello"): return f"{say_what} {name}."
+
+
 say_hello('Jeremy'), say_hello('Jeremy', 'Ahoy!')
 
 f = partial(say_hello, say_what="Bonjour")
@@ -175,6 +182,8 @@ path.ls().sorted()
 
 img_files = get_image_files(path)
 def img2pose(x): return Path(f'{str(x)[:-7]}pose.txt')
+
+
 img2pose(img_files[0])
 
 im = PILImage.create(img_files[0])
@@ -183,6 +192,8 @@ im.shape
 im.to_thumb(160)
 
 cal = np.genfromtxt(path / '01' / 'rgb.cal', skip_footer=6)
+
+
 def get_ctr(f):
     ctr = np.genfromtxt(img2pose(f), skip_header=3)
     c1 = ctr[0] * cal[0][0] / ctr[2] + cal[0][2]

@@ -106,6 +106,8 @@ tok((txts[0], txts[1]))
 # If you want to write a custom transform to apply to your data, the easiest way is to write a function. As you can see in this example, a `Transform` will only be applied to a matching type, if a type is provided (otherwise it will always be applied). In the following code, the `:int` in the function signature means that `f` only gets applied to `int`s. That's why `tfm(2.0)` returns `2.0`, but `tfm(2)` returns `3` here:
 
 def f(x: int): return x + 1
+
+
 tfm = Transform(f)
 tfm(2), tfm(2.0)
 
@@ -116,6 +118,8 @@ tfm(2), tfm(2.0)
 
 @Transform
 def f(x: int): return x + 1
+
+
 f(2), f(2.0)
 
 

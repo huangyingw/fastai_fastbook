@@ -239,6 +239,7 @@ fi[:10]
 def plot_fi(fi):
     return fi.plot('cols', 'imp', 'barh', figsize=(12, 7), legend=False)
 
+
 plot_fi(fi[:30])
 # -
 

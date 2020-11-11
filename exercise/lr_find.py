@@ -1,3 +1,18 @@
+# ---
+# jupyter:
+#   jupytext:
+#     formats: ipynb,py
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.6.0
+#   kernelspec:
+#     display_name: Python 3
+#     language: python
+#     name: python3
+# ---
+
 from fastai.callback.fp16 import *
 from fastai.vision.all import *
 from fastbook import *
@@ -26,3 +41,18 @@ learn = cnn_learner(dls, resnet34, metrics=error_rate)
 lr_min, lr_steep = learn.lr_find()
 
 print(f"Minimum/10: {lr_min:.2e}, steepest point: {lr_steep:.2e}")
+
+learn = cnn_learner(dls, resnet34, metrics=error_rate)
+learn.fine_tune(2, base_lr=9e-3)
+
+learn = cnn_learner(dls, resnet34, metrics=error_rate)
+learn.fine_tune(2, base_lr=lr_min)
+
+learn = cnn_learner(dls, resnet34, metrics=error_rate)
+learn.fine_tune(2, base_lr=lr_steep)
+
+learn = cnn_learner(dls, resnet34, metrics=error_rate)
+learn.fine_tune(2, base_lr=3e-3)
+
+learn = cnn_learner(dls, resnet34, metrics=error_rate)
+learn.fine_tune(2, base_lr=2e-3)

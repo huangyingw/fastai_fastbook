@@ -68,12 +68,16 @@ tok((txts[0], txts[1]))
 # ### Writing Your Own Transform
 
 def f(x: int): return x + 1
+
+
 tfm = Transform(f)
 tfm(2), tfm(2.0)
 
 
 @Transform
 def f(x: int): return x + 1
+
+
 f(2), f(2.0)
 
 
