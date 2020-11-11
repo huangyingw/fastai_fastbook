@@ -4,10 +4,15 @@ from fastbook import *
 import fastbook
 fastbook.setup_book()
 
+path = untar_data(URLs.ML_100k)
 
 ratings = pd.read_csv(path / 'u.data', delimiter='\t', header=None,
                       names=['user', 'movie', 'rating', 'timestamp'])
 ratings.head()
+
+movies = pd.read_csv(path / 'u.item', delimiter='|', encoding='latin-1',
+                     usecols=(0, 1), names=('movie', 'title'), header=None)
+movies.head()
 
 ratings = ratings.merge(movies)
 ratings.head()
