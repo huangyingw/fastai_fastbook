@@ -25,7 +25,6 @@ dls.classes
 
 n_users = len(dls.classes['user'])
 n_movies = len(dls.classes['title'])
-n_factors = 5
 
 
 class DotProduct(Module):
