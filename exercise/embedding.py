@@ -30,7 +30,15 @@ n_users
 user_factors = torch.randn(n_users, n_factors)
 user_factors
 
+user_factors.t().shape
+
+user_factors.t()
+
 one_hot_3 = one_hot(3, n_users).float()
+one_hot_3.shape, one_hot_3[0].shape
+
+one_hot_3[0]
+
 one_hot_3
 
 user_factors.t() @ one_hot_3
