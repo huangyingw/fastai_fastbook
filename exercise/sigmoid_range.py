@@ -1,3 +1,31 @@
+from fastai.tabular.all import *
+from fastai.collab import *
+from fastbook import *
+import fastbook
+fastbook.setup_book()
+
+path = untar_data(URLs.ML_100k)
+
+ratings = pd.read_csv(path / 'u.data', delimiter='\t', header=None,
+                      names=['user', 'movie', 'rating', 'timestamp'])
+ratings.head()
+
+movies = pd.read_csv(path / 'u.item', delimiter='|', encoding='latin-1',
+                     usecols=(0, 1), names=('movie', 'title'), header=None)
+movies.head()
+
+ratings = ratings.merge(movies)
+ratings.head()
+
+
+dls = CollabDataLoaders.from_df(ratings, item_name='title', bs=64)
+dls.show_batch()
+
+dls.classes
+
+n_users = len(dls.classes['user'])
+n_movies = len(dls.classes['title'])
+
 
 class DotProduct(Module):
     def __init__(self, n_users, n_movies, n_factors, y_range=(0, 5.5)):
