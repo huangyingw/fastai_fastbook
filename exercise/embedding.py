@@ -37,10 +37,12 @@ user_factors.t()
 one_hot_3 = one_hot(3, n_users).float()
 one_hot_3.shape, one_hot_3[0].shape
 
-one_hot_3[0]
+one_hot_3[0], one_hot_3[943]
 
 one_hot_3
 
 user_factors.t() @ one_hot_3
+
+user_factors.shape
 
 user_factors[3]
