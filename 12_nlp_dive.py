@@ -424,7 +424,7 @@ learn.fit_one_cycle(15, 3e-3)
 #
 # Consider, for example, the sentences "Henry has a dog and he likes his dog very much" and "Sophie has a dog and she likes her dog very much." It's very clear that the RNN needs to remember the name at the beginning of the sentence to be able to predict *he/she* or *his/her*.
 #
-# In practice, RNNs are really bad at retaining memory of what happened much earlier in the sentence, which is the motivation to have another hidden state (called *cell state*) in the LSTM. The cell state will be responsible for keeping *long short-term memory*, while the hidden state will focus on the next token to predict. Let's take a closer look and how this is achieved and build an LSTM from scratch.
+# In practice, RNNs are really bad at retaining memory of what happened much earlier in the sentence, which is the motivation to have another hidden state (called *cell state*) in the LSTM. The cell state will be responsible for keeping *long short-term memory*, while the hidden state will focus on the next token to predict. Let's take a closer look at how this is achieved and build an LSTM from scratch.
 
 # ### Building an LSTM from Scratch
 
@@ -442,7 +442,7 @@ learn.fit_one_cycle(15, 3e-3)
 #
 # First, the arrows for input and old hidden state are joined together. In the RNN we wrote earlier in this chapter, we were adding them together. In the LSTM, we stack them in one big tensor. This means the dimension of our embeddings (which is the dimension of $x_{t}$) can be different than the dimension of our hidden state. If we call those `n_in` and `n_hid`, the arrow at the bottom is of size `n_in + n_hid`; thus all the neural nets (orange boxes) are linear layers with `n_in + n_hid` inputs and `n_hid` outputs.
 #
-# Since it’s a linear layer followed by a sigmoid, its output will consist of scalars between 0 and 1. We multiply this result by the cell state to determine which information to keep and which to throw away: values closer to 0 are discarded and values closer to 1 are kept. This gives the LSTM the ability to forget things about its long-term state. For instance, when crossing a period or an `xxbos` token, we would expect to it to (have learned to) reset its cell state.
+# The first gate (looking from left to right) is called the *forget gate*. Since it’s a linear layer followed by a sigmoid, its output will consist of scalars between 0 and 1. We multiply this result by the cell state to determine which information to keep and which to throw away: values closer to 0 are discarded and values closer to 1 are kept. This gives the LSTM the ability to forget things about its long-term state. For instance, when crossing a period or an `xxbos` token, we would expect to it to (have learned to) reset its cell state.
 #
 # The second gate is called the *input gate*. It works with the third gate (which doesn't really have a name but is sometimes called the *cell gate*) to update the cell state. For instance, we may see a new gender pronoun, in which case we'll need to replace the information about gender that the forget gate removed. Similar to the forget gate, the input gate decides which elements of the cell state to update (values close to 1) or not (values close to 0). The third gate determines what those updated values are, in the range of –1 to 1 (thanks to the tanh function). The result is then added to the cell state.
 #
@@ -459,14 +459,14 @@ class LSTMCell(Module):
 
     def forward(self, input, state):
         h, c = state
-        h = torch.stack([h, input], dim=1)
+        h = torch.cat([h, input], dim=1)
         forget = torch.sigmoid(self.forget_gate(h))
         c = c * forget
         inp = torch.sigmoid(self.input_gate(h))
         cell = torch.tanh(self.cell_gate(h))
         c = c + inp * cell
         out = torch.sigmoid(self.output_gate(h))
-        h = outgate * torch.tanh(c)
+        h = out * torch.tanh(c)
         return h, (h, c)
 
 
@@ -558,7 +558,6 @@ learn.fit_one_cycle(15, 1e-2)
 
 class Dropout(Module):
     def __init__(self, p): self.p = p
-
     def forward(self, x):
         if not self.training:
             return x
@@ -590,7 +589,7 @@ class Dropout(Module):
 # loss += beta * (activations[:,1:] - activations[:,:-1]).pow(2).mean()
 # ```
 #
-# `alpha` and `beta` are then two hyperparameters to tune. To make this work, we need our model with dropout to return three things: the proper output, the activations of the LSTM pre-dropout, and the activations of the LSTM post-dropout. AR is often applied on the dropped-out activations (to not penalize the activations we turned in zeros afterward) while TAR is applied on the non-dropped-out activations (because those zeros create big differences between two consecutive time steps). There is then a callback called `RNNRegularizer` that will apply this regularization for us.
+# `alpha` and `beta` are then two hyperparameters to tune. To make this work, we need our model with dropout to return three things: the proper output, the activations of the LSTM pre-dropout, and the activations of the LSTM post-dropout. AR is often applied on the dropped-out activations (to not penalize the activations we turned into zeros afterward) while TAR is applied on the non-dropped-out activations (because those zeros create big differences between two consecutive time steps). There is then a callback called `RNNRegularizer` that will apply this regularization for us.
 
 # ### Training a Weight-Tied Regularized LSTM
 
@@ -600,7 +599,7 @@ class Dropout(Module):
 #
 #     self.h_o.weight = self.i_h.weight
 #
-# In `LMMModel7`, we include these final tweaks:
+# In `LMModel7`, we include these final tweaks:
 
 class LMModel7(Module):
     def __init__(self, vocab_sz, n_hidden, n_layers, p):
@@ -643,8 +642,8 @@ learn.fit_one_cycle(15, 1e-2, wd=0.1)
 
 # You have now seen everything that is inside the AWD-LSTM architecture we used in text classification in <<chapter_nlp>>. It uses dropout in a lot more places:
 #
-# - Embedding dropout (just after the embedding layer)
-# - Input dropout (after the embedding layer)
+# - Embedding dropout (inside the embedding layer, drops some random lines of embeddings)
+# - Input dropout (applied after the embedding layer)
 # - Weight dropout (applied to the weights of the LSTM at each training step)
 # - Hidden dropout (applied to the hidden state between two layers)
 #
@@ -656,7 +655,7 @@ learn.fit_one_cycle(15, 1e-2, wd=0.1)
 
 # 1. If the dataset for your project is so big and complicated that working with it takes a significant amount of time, what should you do?
 # 1. Why do we concatenate the documents in our dataset before creating a language model?
-# 1. To use a standard fully connected network to predict the fourth word given the previous three words, what two tweaks do we need to make to ou model?
+# 1. To use a standard fully connected network to predict the fourth word given the previous three words, what two tweaks do we need to make to our model?
 # 1. How can we share a weight matrix across multiple layers in PyTorch?
 # 1. Write a module that predicts the third word given the previous two words of a sentence, without peeking.
 # 1. What is a recurrent neural network?
@@ -680,13 +679,13 @@ learn.fit_one_cycle(15, 1e-2, wd=0.1)
 # 1. Why does it help to have two hidden states in the LSTM architecture? What is the purpose of each one?
 # 1. What are these two states called in an LSTM?
 # 1. What is tanh, and how is it related to sigmoid?
-# 1. What is the purpose of this code in `LSTMCell`: `h = torch.stack([h, input], dim=1)`
+# 1. What is the purpose of this code in `LSTMCell`: `h = torch.cat([h, input], dim=1)`
 # 1. What does `chunk` do in PyTorch?
 # 1. Study the refactored version of `LSTMCell` carefully to ensure you understand how and why it does the same thing as the non-refactored version.
 # 1. Why can we use a higher learning rate for `LMModel6`?
 # 1. What are the three regularization techniques used in an AWD-LSTM model?
 # 1. What is "dropout"?
-# 1. Why do we scale the weights with dropout? Is this applied during training, inference, or both?
+# 1. Why do we scale the acitvations with dropout? Is this applied during training, inference, or both?
 # 1. What is the purpose of this line from `Dropout`: `if not self.training: return x`
 # 1. Experiment with `bernoulli_` to understand how it works.
 # 1. How do you set your model in training mode in PyTorch? In evaluation mode?
@@ -698,5 +697,5 @@ learn.fit_one_cycle(15, 1e-2, wd=0.1)
 
 # 1. In ` LMModel2`, why can `forward` start with `h=0`? Why don't we need to say `h=torch.zeros(...)`?
 # 1. Write the code for an LSTM from scratch (you may refer to <<lstm>>).
-# 1. Search the internet for the GRU architecture and implement it from scratch, and try training a model. See if you can get results similar to those we saw in this chapter. Compare you results to the results of PyTorch's built in `GRU` module.
+# 1. Search the internet for the GRU architecture and implement it from scratch, and try training a model. See if you can get results similar to those we saw in this chapter. Compare your results to the results of PyTorch's built in `GRU` module.
 # 1. Take a look at the source code for AWD-LSTM in fastai, and try to map each of the lines of code to the concepts shown in this chapter.
