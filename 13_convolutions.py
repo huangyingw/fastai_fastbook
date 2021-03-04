@@ -449,7 +449,7 @@ for bear, ax, color in zip(im, axs, ('Reds', 'Greens', 'Blues')):
 
 # We saw what the convolution operation was for one filter on one channel of the image (our examples were done on a square). A convolutional layer will take an image with a certain number of channels (three for the first layer for regular RGB color images) and output an image with a different number of channels. Like our hidden size that represented the numbers of neurons in a linear layer, we can decide to have as many filters as we want, and each of them will be able to specialize, some to detect horizontal edges, others to detect vertical edges and so forth, to give something like we studied in <<chapter_production>>.
 #
-# In one sliding window, we have a certain number of channels and we need as many filters (we don't use the same kernel for all the channels). So our kernel doesn't have a size of 3 by 3, but `ch_in` (for channels in) by 3 by 3. On each channel, we multiply the elements of our window by the elements of the coresponding filter, then sum the results (as we saw before) and sum over all the filters. In the example given in <<rgbconv>>, the result of our conv layer on that window is red + green + blue.
+# In one sliding window, we have a certain number of channels and we need as many filters (we don't use the same kernel for all the channels). So our kernel doesn't have a size of 3 by 3, but `ch_in` (for channels in) is 3 by 3. On each channel, we multiply the elements of our window by the elements of the coresponding filter, then sum the results (as we saw before) and sum over all the filters. In the example given in <<rgbconv>>, the result of our conv layer on that window is red + green + blue.
 
 # <img src="images/chapter9_rgbconv.svg" id="rgbconv" caption="Convolution over an RGB image" alt="Convolution over an RGB image" width="550">
 
@@ -499,7 +499,6 @@ def get_dls(bs=64):
         batch_tfms=Normalize()
     ).dataloaders(path, bs=bs)
 
-
 dls = get_dls()
 # -
 
@@ -543,6 +542,7 @@ def simple_cnn():
 # As you'll see in a moment, we can look inside our models while they're training in order to try to find ways to make them train better. To do this we use the `ActivationStats` callback, which records the mean, standard deviation, and histogram of activations of every trainable layer (as we've seen, callbacks are used to add behavior to the training loop; we'll explore how they work in <<chapter_accel_sgd>>):
 
 
+
 # We want to train quickly, so that means training at a high learning rate. Let's see how we go at 0.06:
 
 def fit(epochs=1):
@@ -556,7 +556,7 @@ learn = fit()
 
 # This didn't train at all well! Let's find out why.
 #
-# One handy feature of the callbacks passed to `Learner` is that they are made available automatically, with the same name as the callback class, except in `camel_case`. So, our `ActivationStats` callback can be accessed through `activation_stats`. I'm sure you remember `learn.recorder`... can you guess how that is implemented? That's right, it's a callback called `Recorder`!
+# One handy feature of the callbacks passed to `Learner` is that they are made available automatically, with the same name as the callback class, except in `snake_case`. So, our `ActivationStats` callback can be accessed through `activation_stats`. I'm sure you remember `learn.recorder`... can you guess how that is implemented? That's right, it's a callback called `Recorder`!
 #
 # `ActivationStats` includes some handy utilities for plotting the activations during training. `plot_layer_stats(idx)` plots the mean and standard deviation of the activations of layer number *`idx`*, along with the percentage of activations near zero. Here's the first layer's plot:
 
@@ -629,7 +629,7 @@ learn.recorder.plot_sched()
 
 learn.activation_stats.plot_layer_stats(-2)
 
-# The percentage of nonzero weights is getting much better, although it's still quite high.
+# The percentage of near-zero weights is getting much better, although it's still quite high.
 #
 # We can see even more about what's going on in our training using `color_dim`, passing it a layer index:
 
@@ -682,9 +682,9 @@ learn.activation_stats.color_dim(-2)
 
 def conv(ni, nf, ks=3, act=True):
     layers = [nn.Conv2d(ni, nf, stride=2, kernel_size=ks, padding=ks // 2)]
-    layers.append(nn.BatchNorm2d(nf))
     if act:
         layers.append(nn.ReLU())
+    layers.append(nn.BatchNorm2d(nf))
     return nn.Sequential(*layers)
 
 
@@ -701,8 +701,6 @@ learn.activation_stats.color_dim(-4)
 # An interesting observation about models containing batch normalization layers is that they tend to generalize better than models that don't contain them. Although we haven't as yet seen a rigorous analysis of what's going on here, most researchers believe that the reason for this is that batch normalization adds some extra randomness to the training process. Each mini-batch will have a somewhat different mean and standard deviation than other mini-batches. Therefore, the activations will be normalized by different values each time. In order for the model to make accurate predictions, it will have to learn to become robust to these variations. In general, adding additional randomization to the training process often helps.
 #
 # Since things are going so well, let's train for a few more epochs and see how it goes. In fact, let's *increase* the learning rate, since the abstract of the batchnorm paper claimed we should be able to "train at much higher learning rates":
-
-learn = fit(5, lr=0.1)
 
 learn = fit(5, lr=0.1)
 
