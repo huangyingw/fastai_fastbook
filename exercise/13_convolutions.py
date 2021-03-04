@@ -211,7 +211,6 @@ def get_dls(bs=64):
         batch_tfms=Normalize()
     ).dataloaders(path, bs=bs)
 
-
 dls = get_dls()
 # -
 
@@ -236,6 +235,8 @@ def simple_cnn():
         conv(64, 10, act=False),  # 1x1
         Flatten(),
     )
+
+
 
 
 def fit(epochs=1):
