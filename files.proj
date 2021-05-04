@@ -411,6 +411,7 @@
 "./fastai/setup.cfg"
 "./fastai/setup.py"
 "./fastai/test_settings.ini"
+"./fav.log.sort"
 "./includefile.conf"
 "./includefile.rsync"
 "./prunefile.conf"
