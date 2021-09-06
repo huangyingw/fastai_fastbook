@@ -8,7 +8,7 @@
     remote = origin
 [gsync]
     remote = fastai
-    branch = master
+    target = fastai/master
 [merge]
     allow = true
 [branch "dev"]
