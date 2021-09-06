@@ -45,6 +45,7 @@
     ignore = clean/*.py
     ignore = exercise/*
     ignore = fastai
+    ignore = notes
     ignore = pytorch
     ignore = readme
     ignore = vision
