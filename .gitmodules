@@ -1,0 +1,9 @@
+[submodule "pytorch"]
+	path = pytorch
+    url = git@github.com:huangyingw/pytorch.git
+[submodule "vision"]
+	path = vision
+    url = git@github.com:huangyingw/pytorch_vision.git
+[submodule "fastai"]
+	path = fastai
+	url = git@github.com:huangyingw/fastai_fastai.git 

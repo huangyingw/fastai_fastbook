@@ -1,0 +1,16 @@
+from nbdev.export import notebook2script
+# hide
+notebook2script()
+fastai/nbs/71_callback.tensorboard.py <unknown> 313                splitter=RandomSubsetSplitter(train_sz=0.1, valid_sz=0.01),
+exercise/02_production.py <unknown> 98     splitter=RandomSplitter(valid_pct=0.2, seed=42),
+
+train_loss
+train
+train_
+
+learn.fit_one_cycle(5, 3e-3)
+epoch train_loss valid_loss accuracy time
+
+fastai/fastai/callback/schedule.py fit_one_cycle 104 def fit_one_cycle(self:Learner, n_epoch, lr_max=None, div=25., div_final=1e5, pct_start=0.25, wd=None,
+fastai/fastai/callback/schedule.py <unknown> 112     self.fit(n_epoch, cbs=ParamScheduler(scheds)+L(cbs), reset_opt=reset_opt, wd=wd)
+fastai/fastai/learner.py fit 204 def fit(self, n_epoch, lr=None, wd=None, cbs=None, reset_opt=False):
