@@ -19,4 +19,4 @@
     ignore = *.gdio.diff
 [deploy]
 	host = localhost
-	path = ~//Volumes/data/myproject/git/AI/fastai/fastbook
+	path = ~/myproject/git/AI/fastai/fastbook
