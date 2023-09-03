@@ -32,9 +32,6 @@ fi
 # Activate the conda environment
 conda activate fastai
 
-# Install PyTorch, torchvision, and torchaudio
-conda install pytorch torchvision torchaudio -c pytorch -y
-
 # Install fastai library
 pip install fastai
 
@@ -43,3 +40,6 @@ conda install notebook -y
 
 # Install fastbook
 conda install -c fastai fastbook -y
+
+pip uninstall -y torch torchvision torchaudio
+pip install torch torchvision torchaudio -f https://download.pytorch.org/whl/cu122/torch_stable.html
