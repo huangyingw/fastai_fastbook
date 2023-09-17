@@ -1,13 +1,13 @@
-version: '3'
+version: '3.8'
+
 services:
-  fastai-notebook:
-    image: fastai/fastai:latest
+  fastai-dev:
+    build: .
+    runtime: nvidia
     ports:
       - "8888:8888"
     volumes:
-      - ./code:/workspace/code  # 挂载代码文件夹
-      - ./config:/root/.jupyter # 挂载Jupyter配置文件
-    command: ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--allow-root", "--NotebookApp.token=''"]
+      - ./:/app/notebooks  # 挂载代码文件夹
+      - ./config/:/root/.jupyter/ # 挂载Jupyter配置文件
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
-
