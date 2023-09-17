@@ -1,5 +1,5 @@
 # Use an official Python runtime with CUDA support as a parent image
-FROM nvidia/cuda:11.1-base-ubuntu20.04
+FROM nvidia/cuda:11.1.1-base-ubuntu20.04
 
 # Install Python and pip
 RUN apt-get update && apt-get install -y python3.8 python3-pip
