@@ -7,9 +7,6 @@ RUN apt-get update && apt-get install -y python3.8 python3-pip
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
-COPY . /app
-
 # Install FastAI and its dependencies
 RUN pip3 install fastai
 
