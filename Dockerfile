@@ -9,6 +9,10 @@ WORKDIR /app
 
 # Install FastAI and its dependencies
 RUN pip3 install fastai
+RUN pip install jupyter
+RUN pip install jupytext
+RUN pip install fastbook
+
 
 # Make port 8888 available to the world outside this container
 EXPOSE 8888
