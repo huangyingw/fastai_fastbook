@@ -9,5 +9,8 @@ services:
     volumes:
       - ./:/app/notebooks  # 挂载代码文件夹
       - ./config/:/root/.jupyter/ # 挂载Jupyter配置文件
+      - ./.cache/:/root/.cache/
+      - ./data/:/root/.fastai/data/
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
+    shm_size: '32gb'  # 增加共享内存大小
