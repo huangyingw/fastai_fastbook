@@ -1,0 +1,628 @@
+diff --git a/.gitconfig b/.gitconfig
+new file mode 100644
+--- /dev/null
++++ ./.gitconfig
+@@ -0,0 +1,44 @@
++[remote "fastai"]
++    url = git@github.com:fastai/fastbook.git
++    fetch = +refs/heads/*:refs/remotes/fastai/*
++[remote "origin"]
++    url = git@github.com:huangyingw/fastai_fastbook.git
++    fetch = +refs/heads/*:refs/remotes/origin/*
++[push]
++    remote = origin
++[gsync]
++    remote = fastai
++    target = fastai/master
++[branch "dev"]
++    remote = origin
++    merge = refs/heads/dev
++[branch "master"]
++    remote = origin
++    merge = refs/heads/master
++[gdio]
++    ignore = *.gdio.diff
++    ignore = ./01_intro.py
++    ignore = ./02_production.py
++    ignore = ./03_ethics.py
++    ignore = ./04_mnist_basics.py
++    ignore = ./05_pet_breeds.py
++    ignore = ./06_multicat.py
++    ignore = ./07_sizing_and_tta.py
++    ignore = ./08_collab.py
++    ignore = ./09_tabular.py
++    ignore = ./10_nlp.py
++    ignore = ./11_midlevel_data.py
++    ignore = ./12_nlp_dive.py
++    ignore = ./13_convolutions.py
++    ignore = ./14_resnet.py
++    ignore = ./15_arch_details.py
++    ignore = ./16_accel_sgd.py
++    ignore = ./17_foundations.py
++    ignore = ./18_CAM.py
++    ignore = ./19_learner.py
++    ignore = ./20_conclusion.py
++    ignore = ./clean/*.py
++    ignore = ./exercise/*.py
++[deploy]
++    host = localhost
++    path = ~/myproject/git/AI/fastai/fastbook
+diff --git a/.gitignore b/.gitignore
+--- ./.gitignore
++++ ./.gitignore
+@@ -8,3 +8,4 @@ __pycache__/
+ .last_checked
+ .gitconfig
+ .ipynb_checkpoints/
++exercise/*.ipynb
+diff --git a/.gitmodules b/.gitmodules
+new file mode 100644
+--- /dev/null
++++ ./.gitmodules
+@@ -0,0 +1,9 @@
++[submodule "pytorch"]
++	path = pytorch
++    url = git@github.com:huangyingw/pytorch.git
++[submodule "vision"]
++	path = vision
++    url = git@github.com:huangyingw/pytorch_vision.git
++[submodule "fastai"]
++	path = fastai
++	url = git@github.com:huangyingw/fastai_fastai.git 
+diff --git a/.jupytext.yaml b/.jupytext.yaml
+new file mode 100644
+--- /dev/null
++++ ./.jupytext.yaml
+@@ -0,0 +1 @@
++formats: ipynb,py:light
+diff --git a/Dockerfile b/Dockerfile
+new file mode 100644
+--- /dev/null
++++ ./Dockerfile
+@@ -0,0 +1,26 @@
++# Use an official Python runtime with CUDA support as a parent image
++FROM nvidia/cuda:11.1.1-base-ubuntu20.04
++
++# Set environment variables to non-interactive (this prevents some prompts)
++ENV DEBIAN_FRONTEND=non-interactive
++
++# Install Python, pip, and Graphviz
++RUN apt-get update && \
++        apt-get install -y python3.8 python3-pip graphviz && \
++        rm -rf /var/lib/apt/lists/*
++
++# Set the working directory in the container
++WORKDIR /app
++
++# Install FastAI and its dependencies
++RUN python3 -m pip install --no-cache-dir fastai jupyter jupytext fastbook
++
++# Copy requirements file and install requirements
++COPY ./requirements.txt /app/requirements.txt
++RUN python3 -m pip install --no-cache-dir -r requirements.txt
++
++# Make port 8888 available to the world outside this container
++EXPOSE 8888
++
++# Run Jupyter Notebook
++CMD ["jupyter", "notebook", "--ip='*'", "--port=8888", "--no-browser", "--allow-root"]
+diff --git a/app_blog.py b/app_blog.py
+new file mode 100644
+--- /dev/null
++++ ./app_blog.py
+@@ -0,0 +1,133 @@
++# -*- coding: utf-8 -*-
++# ---
++# jupyter:
++#   jupytext:
++#     formats: ipynb,py
++#     split_at_heading: true
++#     text_representation:
++#       extension: .py
++#       format_name: light
++#       format_version: '1.5'
++#       jupytext_version: 1.6.0
++#   kernelspec:
++#     display_name: Python 3
++#     language: python
++#     name: python3
++# ---
++
++# + active=""
++# [[appendix_blog]]
++# [appendix]
++# [role="Creating a blog"]
++# -
++
++# # Creating a Blog
++
++# Unfortunately, when it comes to blogging, it seems like you have to make a difficult decision: either use a platform that makes it easy but subjects you and your readers to advertisements, paywalls, and fees, or spend hours setting up your own hosting service and weeks learning about all kinds of intricate details. Perhaps the biggest benefit to the "do-it-yourself" approach is that you really own your own posts, rather than being at the whim of a service provider and their decisions about how to monetize your content in the future.
++#
++# It turns out, however, that you can have the best of both worlds!
++
++# ## Blogging with GitHub Pages
++
++# A great solution is to host your blog on a platform called [GitHub Pages](https://pages.github.com/), which is free, has no ads or pay wall, and makes your data available in a standard way such that you can at any time move your blog to another host. But all the approaches I’ve seen to using GitHub Pages have required knowledge of the command line and arcane tools that only software developers are likely to be familiar with. For instance, GitHub's [own documentation](https://help.github.com/en/github/working-with-github-pages/creating-a-github-pages-site-with-jekyll) on setting up a blog includes a long list of instructions that involve installing the Ruby programming language, using the `git` command-line tool, copying over version numbers, and more—17 steps in total!
++#
++# To cut down the hassle, we’ve created an easy approach that allows you to use an *entirely browser-based interface* for all your blogging needs. You will be up and running with your new blog within about five minutes. It doesn’t cost anything, and you can easily add your own custom domain to it if you wish to. In this section, we'll explain how to do it, using a template we've created called *fast\_template*. (NB: be sure to check the [book's website](https://book.fast.ai) for the latest blog recommendations, since new tools are always coming out).
++
++# ### Creating the Repository
++
++# You’ll need an account on GitHub, so head over there now and create an account if you don’t have one already. Make sure that you are logged in. Normally, GitHub is used by software developers for writing code, and they use a sophisticated command-line tool to work with it—but we're going to show you an approach that doesn't use the command line at all!
++#
++# To get started, point your browser to [https://github.com/fastai/fast_template/generate](https://github.com/fastai/fast_template/generate) (you need to be logged in to GitHub for the link to work). This will allow you to create a place to store your blog, called a *repository*. You will a screen like the one in <<github_repo>>. Note that you have to enter your repository name using the *exact* format shown here—that is, your GitHub username followed by `.github.io`.
++#
++# <img width="440" src="images/fast_template/image1.png" id="github_repo" caption="Creating your repository" alt="Screenshot of the GitHub page for creating a new repository">
++#
++# Once you’ve entered that, and any description you like, click "Create repository from template." You have the choice to make the repository "private," but since you are creating a blog that you want other people to read, having the underlying files publicly available hopefully won't be a problem for you.
++#
++# Now, let's set up your home page!
++
++# ### Setting Up Your Home Page
++
++# When readers arrive at your blog the first thing that they will see is the content of a file called *index.md*. This is a [markdown](https://guides.github.com/features/mastering-markdown/) file.  Markdown is a powerful yet simple way of creating formatted text, such as bullet points, italics, hyperlinks, and so forth. It is very widely used, including for all the formatting in Jupyter notebooks, nearly every part of the GitHub site, and many other places all over the internet. To create markdown text, you can just type in plain English, then add some special characters to add special behavior. For instance, if you type a `*` character before and after a word or phrase, that will put it in *italics*. Let’s try it now.
++#
++# To open the file, click its filename in GitHub. To edit it, click on the pencil icon at the far right hand side of the screen as shown in <<fastpage_edit>>.
++#
++# <img width="800" src="images/fast_template/image3.png" alt="Screenshot showing where to click to edit the file" id="fastpage_edit" caption="Click Edit this file">
++
++# You can add to, edit, or replace the texts that you see. Click "Preview changes" (<<fastpage_preview>>) to see what your markdown text will look like in your blog. Lines that you have added or changed will appear with a green bar on the lefthand side.
++#
++# <img width="350" src="images/fast_template/image4.png" alt="Screenshot showing where to click to preview changes" id="fastpage_preview" caption="Preview changes to catch any mistake">
++#
++# To save your changes, scroll to the bottom of the page and click "Commit changes," as shown in <<fastpage_commit>>. On GitHub, to "commit" something means to save it to the GitHub server.
++#
++# <img width="600" src="images/fast_template/image5.png" alt="Screenshot showing where to click to commit the changes" id="fastpage_commit" caption="Commit your changes to save them">
++
++# Next, you should configure your blog’s settings. To do so, click on the file called *\_config.yml*, then click the edit button like you did for the index file. Change the title, description, and GitHub username values (see <<github_config>>. You need to leave the names before the colons in place, and type your new values in after the colon (and a space) on each line. You can also add to your email address and Twitter username if you wish, but note that these will appear on your public blog if you fill them in here.
++#
++# <img width="800" src="images/fast_template/image6.png" id="github_config" caption="Fill in the config file" alt="Screenshot showing the config file and how to fill it in">
++#
++# After you’re done, commit your changes just like you did with the index file, then wait a minute or so while GitHub processes your new blog. Point your web browser to *&lt;username> .github.io* (replacing *&lt;username>* with your GitHub username). You should see your blog, which will look something like <<github_blog>>.
++#
++# <img width="540" src="images/fast_template/image7.png" id="github_blog" caption="Your blog is online!" alt="Screenshot showing the website username.github.io">
++
++# ### Creating Posts
++
++# Now you’re ready to create your first post. All your posts will go in the *\_posts* folder. Click on that now, and then click the "Create file" button. You need to be careful to name your file using the format *&lt;year>-&lt;month>-&lt;day>-&lt;name>.md*, as shown in <<fastpage_name>>, where *&lt;year>* is a four-digit number, and *&lt;month>* and *&lt;day>* are two-digit numbers. *&lt;name>* can be anything you want that will help you remember what this post was about. The *.md* extension is for markdown documents.
++#
++# <img width="440" src="images/fast_template/image8.png" alt="Screenshot showing the right syntax to create a new blog post" id="fastpage_name" caption="Naming your posts">
++#
++# You can then type the contents of your first post. The only rule is that the first line of your post must be a markdown heading. This is created by putting `# ` at the start of a line, as shown in <<fastpage_title>> (that creates a level-1 heading, which you should just use once at the start of your document; you can create level-2 headings using `## `, level 3 with `###`, and so forth).
++#
++# <img width="300" src="images/fast_template/image9.png" alt="Screenshot showing the start of a blog post" id="fastpage_title" caption="Markdown syntax for a title">
++
++# As before, you can click the "Preview" button to see how your markdown formatting will look (<<fastpage_preview1>>).
++#
++# <img width="400" src="images/fast_template/image10.png" alt="Screenshot showing the same blog post interpreted in HTML" id="fastpage_preview1" caption="What the previous markdown syntax will look like on your blog">
++#
++# And you will need to click the "Commit new file" button to save it to GitHub, as shown in <<fastpage_commit1>>.
++#
++# <img width="700" src="images/fast_template/image11.png" alt="Screenshot showing where to click to commit the new file" id="fastpage_commit1" caption="Commit your changes to save them">
++
++# Have a look at your blog home page again, and you will see that this post has now appeared--<<fastpage_live>> shows the result with the sample pose we just added. (Remember that you will need to wait a minute or so for GitHub to process the request before the file shows up.)
++#
++# <img width="500" src="images/fast_template/image12.png" alt="Screenshot showing the first post on the blog website" id="fastpage_live" caption="Your first post is live!">
++#
++# You may have noticed that we provided a sample blog post, which you can go ahead and delete now. Go to your *\_posts* folder, as before, and click on *2020-01-14-welcome.md*. Then click the trash icon on the far right, as shown in <<fastpage_delete>>.
++#
++# <img width="400" src="images/fast_template/image13.png" alt="Screenshot showing how to delete the mock post" id="fastpage_delete" caption="Delete the sample blog post">
++
++# In GitHub, nothing actually changes until you commit—including when you delete a file! So, after you click the trash icon, scroll down to the bottom of the page and commit your changes.
++#
++# You can include images in your posts by adding a line of markdown like
++# the following:
++#
++#     ![Image description](images/filename.jpg)
++#
++# For this to work, you will need to put the image inside your *images* folder. To do this, click the *images* folder, them click "Upload files" button (<<fastpage_upload>>).
++#
++# <img width="400" src="images/fast_template/image14.png" alt="Screenshot showing how to upload new files" id="fastpage_upload" caption="Upload a file from your computer">
++
++# Now let's see how to do all of this directly from your computer.
++
++# ### Synchronizing GitHub and Your Computer
++
++# There are lots of reasons you might want to copy your blog content from GitHub to your computer--you might want to be able to read or edit your posts offline, or maybe you’d like a backup in case something happens to your GitHub repository.
++#
++# GitHub does more than just let you copy your repository to your computer; it lets you *synchronize* it with your computer. That means you can make changes on GitHub, and they’ll copy over to your computer, and you can make changes on your computer, and they’ll copy over to GitHub. You can even let other people access and modify your blog, and their changes and your changes will be automatically combined together the next time you sync.
++#
++# To make this work, you have to install an application called [GitHub Desktop](https://desktop.github.com/) on your computer. It runs on Mac, Windows, and Linux. Follow the directions to install it, and when you run it it’ll ask you to log in to GitHub and select the repository to sync. Click "Clone a repository from the Internet," as shown in <<fastpage_clone>>.
++#
++# <img src="images/gitblog/image1.png" width="400" alt="A screenshot showing how to clone your repository" id="fastpage_clone" caption="Clone your repository on GitHub Desktop">
++
++# Once GitHub has finished syncing your repo, you’ll be able to click "View the files of your repository in Explorer" (or Finder), as shown in <<fastpage_explorer>> and you’ll see the local copy of your blog! Try editing one of the files on your computer. Then return to GitHub Desktop, and you’ll see the "Sync" button is waiting for you to press it. When you click it your changes will be copied over to GitHub, where you’ll see them reflected on the website.
++#
++# <img src="images/gitblog/image2.png" width="600" alt="A screenshot showing the cloned repository" id="fastpage_explorer" caption="Viewing your files locally">
++
++# If you haven't used `git` before, GitHub Desktop is a great way to get started. As you'll discover, it's a fundamental tool used by most data scientists. Another tool that we hope you now love is Jupyter Notebooks--and there's a way to write your blog directly with that too!
++
++# ## Jupyter for Blogging
++
++# You can also write blog posts using Jupyter notebooks. Your markdown cells, code cells, and all the outputs will appear in your exported blog post. The best way to do this may have changed by the time you are reading this book, so be sure to check out the [book's website](https://book.fast.ai) for the latest information. As we write this, the easiest way to create a blog from notebooks is to use [`fastpages`](http://fastpages.fast.ai/), which is a more advanced version of `fast_template`.
++#
++# To blog with a notebook, just pop it in the *\_notebooks* folder in your blog repo, and it will appear in your list of blog posts. When you write your notebook, write whatever you want your audience to see. Since most writing platforms make it hard to include code and outputs, many of us are in the habit of including fewer real examples than we should. This is a great way to instead get into the habit of including lots of examples as you write.
++#
++# Often, you'll want to hide boilerplate such as import statements. You can add `#hide` to the top of any cell to make it not show up in output. Jupyter displays the result of the last line of a cell, so there's no need to include `print()`. (Including extra code that isn't needed means there's more cognitive overhead for the reader; so don't include code that you don't really need!)
+diff --git a/app_jupyter.py b/app_jupyter.py
+new file mode 100644
+--- /dev/null
++++ ./app_jupyter.py
+@@ -0,0 +1,248 @@
++# ---
++# jupyter:
++#   jupytext:
++#     formats: ipynb,py
++#     text_representation:
++#       extension: .py
++#       format_name: light
++#       format_version: '1.5'
++#       jupytext_version: 1.6.0
++#   kernelspec:
++#     display_name: Python 3
++#     language: python
++#     name: python3
++# ---
++
++# hide
++from fastai.vision.all import *
++from PIL import Image
++import matplotlib.pyplot as plt
++from fastbook import *
++import fastbook
++fastbook.setup_book()
++
++
++# + active=""
++# [appendix]
++# [role="Jupyter notebook 101"]
++# -
++
++# # Appendix: Jupyter Notebook 101
++
++# You can read this tutorial in the book, but we strongly suggest reading it in a (yes, you guessed it) Jupyter Notebook. This way, you will be able to actually *try* the different commands we will introduce here. If you followed one of our tutorials in the previous section, you should have been left in the course folder. Just click on `nbs` then `dl1` and you should find the tutorial named `00_notebook_tutorial`. Click on it to open a new tab and you'll be ready to go.
++#
++# If you are on your personal machine, clone the course repository and navigate inside before following the same steps.
++#
++
++# ## Introduction
++
++# Let's build up from the basics: what is a Jupyter Notebook? Well, we wrote this book using Jupyter Notebooks. A notebook is a document made of cells. You can write in some of them (markdown cells) or you can perform calculations in Python (code cells) and run them like this:
++
++1 + 1
++
++# Cool, huh? This combination of prose and code makes Jupyter Notebook ideal for experimentation: we can see the rationale for each experiment, the code, and the results in one comprehensive document.
++#
++# Other renowned institutions in academia and industry use Jupyter Notebook, including Google, Microsoft, IBM, Bloomberg, Berkeley and NASA among others. Even Nobel-winning economists [use Jupyter Notebooks](https://paulromer.net/jupyter-mathematica-and-the-future-of-the-research-paper/)  for their experiments and some suggest that Jupyter Notebooks will be the [new format for research papers](https://www.theatlantic.com/science/archive/2018/04/the-scientific-paper-is-obsolete/556676/).
++#
++
++# ## Writing
++
++# A type of cell in which you can write text is called a _Markdown cell_. [_Markdown_](https://en.wikipedia.org/wiki/Markdown) is a very popular markup language. To specify that a cell is Markdown you need to click in the drop-down menu in the toolbar and select Markdown.
++#
++# Click on the the '+' button on the left and select Markdown from the toolbar. Now you can type your first Markdown cell. Write 'My first markdown cell' and press run.
++#
++# ![add](images/chapter1_add.png)
++#
++# You should see something like this:
++
++# My first markdown cell
++
++# Now try making your first _Code_ cell: follow the same steps as before but don't change the cell type (when you add a cell its default type is _Code_). Type something like 3/2. You should see '1.5' as output.
++
++3 / 2
++
++# ## Modes
++
++# If you made a mistake in your *Markdown* cell and you have already run it, you will notice that you cannot edit it just by clicking on it. This is because you are in **Command Mode**. Jupyter Notebooks have two distinct modes:
++#
++# - Edit Mode:: Allows you to edit a cell's content.
++#
++# - Command Mode:: Allows you to edit the notebook as a whole and use keyboard shortcuts but not edit a cell's content.
++#
++# You can toggle between these two by either pressing <kbd>ESC</kbd> and <kbd>Enter</kbd> or clicking outside a cell or inside it (you need to double click if it's a Markdown cell). You can always tell which mode you're on: the current cell will have a green border in **Edit Mode** and a blue border in **Command Mode**. Try it!
++#
++
++# ## Other Important Considerations
++
++# Your notebook is autosaved every 120 seconds. If you want to manually save it you can just press the save button on the upper left corner or press <kbd>s</kbd> in **Command Mode**.
++#
++# ![Save](images/chapter1_save.png)
++#
++# To know if your *kernel* (the Python engine executing your instructions behind the scenes) is computing or not, you can check the dot in your upper right corner. If the dot is full, it means that the kernel is working. If not, it is idle. You can place the mouse on it and the state of the kernel will be displayed.
++#
++# ![Busy](images/chapter1_busy.png)
++#
++# There are a couple of shortcuts you must know about which we use **all** the time (always in **Command Mode**). These are:
++#
++#  - Shift+Enter:: Run the code or markdown on a cell
++#
++#  - Up Arrow+Down Arrow:: Toggle across cells
++#
++#  - b:: Create new cell
++#
++#  - 0+0:: Reset Kernel
++#
++# You can find more shortcuts by typing <kbd>h</kbd> (for help).
++#
++# You may need to use a terminal in a Jupyter Notebook environment (for example to git pull on a repository). That is very easy to do: just press 'New' in your Home directory and 'Terminal'. Don't know how to use the Terminal? We made a tutorial for that as well. You can find it [here](https://course.fast.ai/terminal_tutorial.html).
++#
++# ![Terminal](images/chapter1_terminal.png)
++
++# That's it. This is all you need to know to use Jupyter Notebooks. That said, we have more tips and tricks below, so don't jump to the next section just yet.
++#
++
++# ## Markdown Formatting
++#
++
++# ### Italics, Bold, Strikethrough, Inline, Blockquotes and Links
++
++# The five most important concepts to format your code appropriately when using Markdown are:
++#
++# - *Italics*:: Surround your text with \_ or \*.
++#
++# - **Bold**:: Surround your text with \__ or \**.
++#
++# - `inline`:: Surround your text with \`.
++#
++# - blockquote:: Place \> before your text.
++#
++# - [Links](http://course-v3.fast.ai/):: Surround the text you want to link with \[\] and place the link adjacent to the text, surrounded with ().
++#
++#
++
++# ### Headings
++
++# Notice that including a hashtag before the text in a markdown cell makes the text a heading. The number of hashtags you include will determine the priority of the header (# is level one, ## is level two, ### is level three and #### is level four). We will add three new cells with the + button on the left to see how every level of heading looks.
++#
++# In the notebook, double click on some headings and find out what level they are!
++#
++
++# ### Lists
++
++# There are three types of lists in markdown.
++#
++# Ordered list:
++#
++# 1. Step 1
++#     2. Step 1B
++# 3. Step 3
++#
++# Unordered list
++#
++# * learning rate
++# * cycle length
++# * weight decay
++#
++# Task list
++#
++# - [x] Learn Jupyter Notebooks
++#     - [x] Writing
++#     - [x] Modes
++#     - [x] Other Considerations
++# - [ ] Change the world
++#
++# In the notebook, double click on them to see how they are built!
++#
++
++# ## Code Capabilities
++
++# **Code** cells are different than **Markdown** cells in that they have an output cell. This means that we can _keep_ the results of our code within the notebook and share them. Let's say we want to show a graph that explains the result of an experiment. We can just run the necessary cells and save the notebook. The output will be there when we open it again! Try it out by running the next four cells.
++
++# Import necessary libraries
++
++
++a = 1
++b = a + 1
++c = b + a + 1
++d = c + b + a + 1
++a, b, c, d
++
++plt.plot([a, b, c, d])
++plt.show()
++
++# We can also print images while experimenting.
++
++Image.open(image_cat())
++
++# ## Running the App Locally
++
++# You may be running Jupyter Notebook from an interactive coding environment like Gradient, Sagemaker or Salamander. You can also run a Jupyter Notebook server from your local computer. What's more, if you have installed Anaconda you don't even need to install Jupyter (if not, just `pip install jupyter`).
++#
++# You just need to run `jupyter notebook` in your terminal. Remember to run it from a folder that contains all the folders/files you will want to access. You will be able to open, view, and edit files located within the directory in which you run this command but not files in parent directories.
++#
++# If a browser tab does not open automatically once you run the command, you should CTRL+CLICK the link starting with 'http://localhost:' and this will open a new tab in your default browser.
++#
++
++# ## Creating a Notebook
++
++# Now that you have your own Jupyter Notebook server running, you will probably want to write your own notebook. Click on 'New' in the upper left corner and 'Python 3' in the drop-down list (we are going to use a [Python kernel](https://github.com/ipython/ipython) for all our experiments).
++#
++# ![new_notebook](images/chapter1_new_notebook.png)
++#
++
++# ## Shortcuts and Tricks
++
++# Here is a list of useful tricks when in a Jupyter Notebook. Make sure you learn them early and use them as often as you can!
++#
++
++# ### Command Mode Shortcuts
++
++# There are a couple of useful keyboard shortcuts in `Command Mode` that you can leverage to make Jupyter Notebook faster to use. Remember that you can switch back and forth between `Command Mode` and `Edit Mode` with <kbd>Esc</kbd> and <kbd>Enter</kbd>.
++#
++# - m:: Convert cell to Markdown
++#
++# - y:: Convert cell to Code
++#
++# - d+d:: Delete cell
++#
++# - o:: Toggle between hide or show output
++#
++# - Shift+Arrow up/Arrow down:: Select multiple cells. Once you have selected them you can operate on them like a batch (run, copy, paste etc).
++#
++# - Shift+M:: Merge selected cells
++#
++# - Shift+Tab (press once):: See which parameters to pass to a function
++#
++# - Shift+Tab (press three times):: Get additional information on the method
++#
++
++# ### Cell Tricks
++
++# There are also some tricks that you can code into a cell:
++#
++# - `?function-name`:: Shows the definition and docstring for that function
++#
++# - `??function-name`:: Shows the source code for that function
++#
++# - `doc(function-name)`:: Shows the definition, docstring **and links to the documentation** of the function
++# (only works with fastai library imported)
++#
++
++# ### Line Magics
++
++# Line magics are functions that you can run on cells. They should be at the beginning of a line and take as an argument the rest of the line from where they are called. You call them by placing a '%' sign before the command. The most useful ones are:
++#
++# - `%matplotlib inline`:: Ensures that all matplotlib plots will be plotted in the output cell within the notebook and will be kept in the notebook when saved.
++#
++# This command is always called together at the beginning of every notebook of the fast.ai course.
++#
++# ``` python
++# # %matplotlib inline
++# ```
++#
++# - `%timeit`:: Runs a line ten thousand times and displays the average time it took to run.
++
++# %timeit [i+1 for i in range(1000)]
++
++# `%debug`: Inspects a function which is showing an error using the [Python debugger](https://docs.python.org/3/library/pdb.html). If you type this in a cell just after an error, you will be directed to a console where you can inspect the values of all the variables.
++#
+diff --git a/clean/01_intro.py.sh b/clean/01_intro.py.sh
+new file mode 100644
+--- /dev/null
++++ ./clean/01_intro.py.sh
+@@ -0,0 +1,7 @@
++#!/bin/zsh
++SCRIPT=$(realpath "$0")
++SCRIPTPATH=$(dirname "$SCRIPT")
++cd "$SCRIPTPATH"
++
++
++cd -
+diff --git a/docker-compose.yml b/docker-compose.yml
+new file mode 100644
+--- /dev/null
++++ ./docker-compose.yml
+@@ -0,0 +1,16 @@
++version: '3.8'
++
++services:
++  fastai-dev:
++    build: .
++    runtime: nvidia
++    ports:
++      - "8888:8888"
++    volumes:
++      - ./:/app/notebooks  # 挂载代码文件夹
++      - ./config/:/root/.jupyter/ # 挂载Jupyter配置文件
++      - ./.cache/:/root/.cache/
++      - ./data/:/root/.fastai/data/
++    environment:
++      - NVIDIA_VISIBLE_DEVICES=all
++    shm_size: '32gb'  # 增加共享内存大小
+diff --git a/exercise/images b/exercise/images
+new file mode 120000
+--- /dev/null
++++ ./exercise/images
+@@ -0,0 +1 @@
++../images
+\ No newline at end of file
+diff --git a/fastai b/fastai
+new file mode 160000
+--- /dev/null
++++ ./fastai
+@@ -0,0 +1 @@
++Subproject commit 0d8afb111be230ba2eae36ee23fa3ca754cb50d2
+diff --git a/install_fastai.sh b/install_fastai.sh
+new file mode 100755
+--- /dev/null
++++ ./install_fastai.sh
+@@ -0,0 +1,45 @@
++#!/bin/bash -
++SCRIPT=$(realpath "$0")
++SCRIPTPATH=$(dirname "$SCRIPT")
++cd "$SCRIPTPATH"
++
++ANACONDA_PATH="$HOME/anaconda3"
++
++# >>> conda initialize >>>
++# !! Contents within this block are managed by 'conda init' !!
++__conda_setup="$('$ANACONDA_PATH/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
++if [ $? -eq 0 ]; then
++    eval "$__conda_setup"
++else
++    if [ -f "$ANACONDA_PATH/etc/profile.d/conda.sh" ]; then
++        . "$ANACONDA_PATH/etc/profile.d/conda.sh"
++    else
++        export PATH="$ANACONDA_PATH/bin:$PATH"
++    fi
++fi
++unset __conda_setup
++# <<< conda initialize <<<
++
++# Check if the environment "fastai" already exists
++conda info --envs | awk '{print $1}' | grep -w "fastai" &>/dev/null
++
++# If the environment doesn't exist, create it
++if [ $? -ne 0 ]; then
++    # Create a new conda environment with Python 3.8
++    conda create -n fastai python=3.8 -y
++fi
++
++# Activate the conda environment
++conda activate fastai
++
++# Install fastai library
++pip install fastai
++
++# Install Jupyter Notebook
++conda install notebook -y
++
++# Install fastbook
++conda install -c fastai fastbook -y
++
++pip uninstall -y torch torchvision torchaudio
++pip install torch torchvision torchaudio -f https://download.pytorch.org/whl/cu122/torch_stable.html
+diff --git a/notes b/notes
+new file mode 100644
+--- /dev/null
++++ ./notes
+@@ -0,0 +1,2 @@
++Feature engineering: 
++    Creating new transformations of the input data in order to make it easier to model.
+diff --git a/pytorch b/pytorch
+new file mode 160000
+--- /dev/null
++++ ./pytorch
+@@ -0,0 +1 @@
++Subproject commit a06ba8837955f753323271803aa749a20a46339f
+diff --git a/test.py b/test.py
+new file mode 100644
+--- /dev/null
++++ ./test.py
+@@ -0,0 +1,9 @@
++from dtreeviz.trees import *
++from fastai.tabular.all import *
++from fastbook import *
++import fastbook
++fastbook.setup_book()
++import fastai
++
++print(f"version: {fastai.__version__}")
++file_extract('bluebook-for-bulldozers.zip')
+diff --git a/vision b/vision
+new file mode 160000
+--- /dev/null
++++ ./vision
+@@ -0,0 +1 @@
++Subproject commit e0a271e35bef50cc3c18b7921be656fb2d0765f1
